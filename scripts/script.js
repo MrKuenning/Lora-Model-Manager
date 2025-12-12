@@ -818,9 +818,9 @@ function openModelDetails(model) {
     // Set associated files in the non-editable section
     const associatedFilesElement = document.getElementById('model-associated-files');
     if (model.associatedFiles && model.associatedFiles.length > 0) {
-        associatedFilesElement.innerHTML = model.associatedFiles.join('<br>');
+        associatedFilesElement.innerHTML = model.associatedFiles.map(file => `<li>${file}</li>`).join('');
     } else {
-        associatedFilesElement.textContent = 'None';
+        associatedFilesElement.innerHTML = '<li>None</li>';
     }
 
     // Set author and base model in static info section

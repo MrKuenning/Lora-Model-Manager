@@ -172,10 +172,6 @@
                                     <label>BASE MODEL:</label>
                                     <span id="model-basemodel-static"></span>
                                 </div>
-                                <div class="static-info-row">
-                                    <label>ASSOCIATED FILES:</label>
-                                    <span id="model-associated-files"></span>
-                                </div>
                             </div>
 
                             <!-- NSFW checkbox moved here -->
@@ -186,9 +182,9 @@
                                 </label>
                                 <button class="btn btn-small btn-success save-btn">Save</button>
                             </div>
-                        </div>
+                    </div>
 
-                        <!-- Container for all field sections (column 2) -->
+                     <!-- Container for all field sections (column 2) -->
                         <div class="field-sections-container">
                             <!-- Section 1: Filename and Placeholder -->
                             <h3 class="section-title">File Management</h3>
@@ -363,7 +359,13 @@
                                 </button>
                             </div>
                             <div id="civitai-action-status" class="civitai-action-status"></div>
-                        </div>
+                            
+                            <!-- Associated Files List -->
+                            <div class="associated-files-box">
+                                <h4>Associated Files</h4>
+                                <ul id="model-associated-files" class="file-list"></ul>
+                            </div>
+                        
 
                         <!-- JSON Editor section -->
                         <div class="json-editor-section">
