@@ -1,0 +1,552 @@
+/* Model Modal Styles */
+/* Note: Base .modal, .close-modal, and #modal-title styles are in modal.css */
+
+/* Filename editing styles (model-modal specific) */
+.filename-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.filename-parts {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    flex: 1;
+}
+
+.file-extension {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+
+/* Filename Helper Buttons */
+.filename-helper-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+}
+
+.filename-helper-buttons .btn {
+    width: 100%;
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.filename-helper-buttons .btn i {
+    margin-right: var(--spacing-xs);
+}
+
+.filename-helper-buttons .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#model-modal .modal-content {
+    background-color: var(--color-bg-secondary);
+    margin: 50px auto;
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-md);
+    max-width: 95vw;
+    width: clamp(800px, 90vw, 1600px);
+    box-shadow: var(--shadow-modal);
+    position: relative;
+    color: var(--color-text);
+}
+
+/* Redesigned model details layout with three distinct rows */
+.model-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xxl);
+}
+
+/* Row 1: Image and two columns of editable fields */
+.model-details-top {
+    display: grid;
+    grid-template-columns: minmax(250px, 300px) 1fr;
+    /* 2 columns: left side and sections */
+    gap: var(--spacing-xxl);
+    align-items: start;
+    /* Prevent vertical stretching */
+}
+
+/* Left column - image and static info */
+.model-details-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    grid-row: 1 / -1;
+    /* Span all rows */
+}
+
+/* Model modal specific preview (taller than card preview) */
+#model-modal .model-preview {
+    width: 100%;
+    height: auto;
+    background-color: var(--color-bg-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+    position: relative;
+}
+
+/* Modal preview main image */
+#model-modal .preview-main-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background-color: var(--color-bg-image);
+}
+
+/* Modal carousel thumbnails - below image, not overlaid */
+#model-modal .preview-thumbnails {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: 100%;
+    background-color: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+    justify-content: center;
+}
+
+#model-modal .model-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Static info section in left column */
+.model-static-info {
+    background-color: #333333;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-border);
+}
+
+.static-info-row {
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+/* Style for the base model and size row */
+.base-size-row {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.base-model-field {
+    flex: 2;
+}
+
+.size-field {
+    flex: 1;
+}
+
+.static-info-row:last-child {
+    margin-bottom: 0;
+}
+
+.static-info-row label {
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+}
+
+.static-info-row span {
+    color: var(--color-text);
+    word-break: break-word;
+    font-size: var(--font-size-sm);
+}
+
+/* NSFW checkbox in left column */
+.nsfw-checkbox-container {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nsfw-checkbox-container label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+.nsfw-checkbox-container input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.nsfw-checkbox-container span {
+    user-select: none;
+}
+
+/* URL link styling */
+.static-info-row a {
+    color: var(--color-text-link);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    word-break: break-all;
+}
+
+.static-info-row a:hover {
+    color: var(--color-text-link-hover);
+    text-decoration: underline;
+}
+
+/* Associated files styling */
+#model-associated-files {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+}
+
+/* Right column with editable fields */
+.model-basic-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.info-row {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header row with label and save button */
+.info-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Textareas now use full width */
+.info-row textarea.editable-field {
+    width: 100%;
+}
+
+/* Input fields and selects also use full width */
+.info-row input.editable-field,
+.info-row select.editable-field {
+    width: 100%;
+}
+
+
+
+/* Container for all field sections in column 2 */
+.field-sections-container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Field sections with subtle boxes */
+.field-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: #2d2d2d;
+}
+
+
+
+
+.info-row label {
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-secondary);
+    text-align: left;
+}
+
+.info-row-controls {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: var(--spacing-md);
+}
+
+.editable-field,
+#model-filename {
+    flex: 1;
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 36px;
+}
+
+.editable-field:focus,
+#model-filename:focus {
+    border-color: var(--color-text-link);
+    outline: none;
+}
+
+textarea.editable-field {
+    min-height: 96px;
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Description field should be larger */
+.description-container {
+    margin-top: var(--spacing-lg);
+    width: 100%;
+    padding-top: var(--spacing-lg);
+}
+
+/* Civitai Actions Section */
+.civitai-actions-section {
+    margin-top: var(--spacing-xl);
+    width: 100%;
+    grid-column: 1 /-1;
+    padding: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: #2d2d2d;
+}
+
+.civitai-actions-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.civitai-actions-buttons .btn {
+    width: 100%;
+}
+
+.civitai-action-status {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    min-height: 20px;
+}
+
+.civitai-action-status.success {
+    background-color: rgba(46, 160, 67, 0.2);
+    color: #2ea043;
+    border: 1px solid #2ea043;
+}
+
+.civitai-action-status.error {
+    background-color: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+    border: 1px solid #f85149;
+}
+
+.civitai-action-status.info {
+    background-color: rgba(56, 139, 253, 0.2);
+    color: #58a6ff;
+    border: 1px solid #58a6ff;
+}
+
+/* Row 3: JSON edit box */
+.json-editor-section {
+    margin-top: var(--spacing-xl);
+    width: 100%;
+    grid-column: 1 / -1;
+    /* Span both columns for full width */
+}
+
+.json-editor-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.json-editor-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.json-editor-header button i {
+    transition: transform 0.3s ease;
+}
+
+.json-editor-content {
+    display: none;
+}
+
+
+
+
+/* Ensure activation words textareas are properly sized */
+.activation-words textarea.editable-field {
+    min-height: 80px;
+    width: 100%;
+}
+
+.edit-btn,
+.save-btn {
+    align-self: flex-start;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Row 2: Static info box and textarea fields */
+.model-activation-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-md);
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-xl);
+}
+
+.model-text-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* Text field rows - two columns */
+.text-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 1200px) {
+    .text-field-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.model-activation-info .info-row {
+    width: 100%;
+}
+
+.model-activation-info textarea.editable-field {
+    min-height: 60px;
+    width: 100%;
+}
+
+.description-row {
+    grid-column: 1 / -1;
+}
+
+/* Make specific fields span full width across columns 2 and 3 */
+.full-width-field {
+    grid-column: 2 / span 2;
+}
+
+/* Style for the activation words fields to span full width */
+.activation-words {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.nsfw-field .info-row-controls {
+    align-items: left;
+}
+
+/* Responsive styles */
+@media (max-width: 1200px) {
+    .model-details-top {
+        grid-template-columns: minmax(250px, 25%) 1fr;
+    }
+
+    .model-activation-info {
+        grid-template-columns: minmax(250px, 25%) 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .model-details-top {
+        grid-template-columns: 1fr;
+    }
+
+    .model-details-left {
+        width: 100%;
+    }
+
+    .model-activation-info {
+        grid-template-columns: 1fr;
+    }
+
+    .nsfw-field {
+        grid-column: 1 / -1;
+    }
+
+    .json-editor-section {
+        margin-top: 15px;
+    }
+}
+
+
+/* Inline NSFW checkbox styling */
+
+.nsfw-checkbox-inline {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 8px;
+}
+
+
+.nsfw-checkbox-inline label {
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    margin-bottom: 0;
+}
+
+
+.nsfw-checkbox-inline input[type="checkbox"] {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+}

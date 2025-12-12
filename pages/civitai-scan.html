@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civitai Scan - Lora Model Manager</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/civitai-scan.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-top">
+                <h1>Civitai Scan</h1>
+                <div class="header-top-controls">
+                    <button id="backButton" class="btn btn-medium btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Manager
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="scan-container">
+            <div class="scan-controls">
+                <div class="scan-options">
+                    <h2>Scan Options</h2>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="skipExisting" checked>
+                            Skip models with existing .civitai.info files
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="skipNsfwPreview" checked>
+                            Skip NSFW preview images
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="maxSizePreview">
+                            Download full-size preview images
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="useApiForCreator" checked>
+                            Fetch creator info from API (slower)
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label for="delayBetweenRequests">Delay between requests (seconds):</label>
+                        <input type="number" id="delayBetweenRequests" min="0" max="5" step="0.1" value="0.5">
+                    </div>
+                </div>
+
+                <div class="scan-actions">
+                    <h2>Actions</h2>
+                    <button id="scanModelsBtn" class="btn btn-large btn-primary">
+                        <i class="fas fa-search"></i> Scan Models & Create Info Files
+                    </button>
+                    <button id="downloadPreviewsBtn" class="btn btn-large btn-secondary">
+                        <i class="fas fa-download"></i> Download Preview Images
+                    </button>
+                    <button id="convertToJsonBtn" class="btn btn-large btn-success">
+                        <i class="fas fa-file-code"></i> Convert to JSON
+                    </button>
+                    <button id="fixThumbnailsBtn" class="btn btn-large btn-warning">
+                        <i class="fas fa-image"></i> Fix Thumbnail Names
+                    </button>
+                </div>
+            </div>
+
+            <div class="scan-progress">
+                <h2>Progress</h2>
+                <div class="progress-info">
+                    <div class="progress-stats">
+                        <span id="progressText">Ready to scan</span>
+                        <span id="progressCount">0 / 0</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scan-results">
+                <h2>Scan Results</h2>
+                <div class="results-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Models:</span>
+                        <span id="totalModels">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">With Info Files:</span>
+                        <span id="modelsWithInfo">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Without Info Files:</span>
+                        <span id="modelsWithoutInfo">0</span>
+                    </div>
+                </div>
+
+                <div class="results-log-container">
+                    <div class="results-log-header">
+                        <h3>Activity Log</h3>
+                        <button id="clearLogBtn" class="btn btn-small btn-secondary">Clear Log</button>
+                    </div>
+                    <div id="resultsLog" class="results-log"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../scripts/civitai-scan.js"></script>
+</body>
+
+</html>

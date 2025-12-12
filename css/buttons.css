@@ -1,0 +1,126 @@
+/* Standardized Button Styles */
+
+/* Base Button Style */
+.btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-md);
+    transition: var(--transition-standard);
+    text-align: center;
+}
+
+/* Button Sizes */
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    min-width: 60px;
+}
+
+.btn-medium {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-md);
+}
+
+.btn-large {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-lg);
+}
+
+/* Button Types */
+.btn-primary {
+    background-color: var(--color-btn-primary);
+    color: white;
+    transition: var(--transition-standard);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-btn-primary-hover);
+    transform: scale(1.02);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background-color: var(--color-btn-secondary);
+    color: var(--color-text);
+    transition: var(--transition-standard);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-btn-secondary-hover);
+    transform: scale(1.02);
+}
+
+.btn-secondary:active {
+    transform: scale(0.98);
+}
+
+.btn-success {
+    background-color: var(--color-btn-success);
+    color: white;
+    transition: var(--transition-standard);
+}
+
+.btn-success:hover {
+    background-color: var(--color-btn-success-hover);
+    transform: scale(1.02);
+}
+
+.btn-success:active {
+    transform: scale(0.98);
+}
+
+/* Icon Button */
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background-color: var(--color-bg-hover);
+}
+
+/* Tab Button Styles */
+.tab-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background-color: var(--color-btn-secondary);
+    color: var(--color-text);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-standard);
+}
+
+.tab-btn:first-child {
+    border-top-left-radius: var(--border-radius-sm);
+    border-bottom-left-radius: var(--border-radius-sm);
+}
+
+.tab-btn:last-child {
+    border-top-right-radius: var(--border-radius-sm);
+    border-bottom-right-radius: var(--border-radius-sm);
+}
+
+.tab-btn.active {
+    background-color: var(--color-btn-primary);
+    color: white;
+}
+
+.tab-btn:hover:not(.active) {
+    background-color: var(--color-bg-hover-light);
+}
+
+/* Utility Classes */
+.btn-hidden {
+    display: none;
+}

@@ -1,0 +1,57 @@
+/* CSS Variables */
+:root {
+    /* Colors */
+    --color-text: #e0e0e0;
+    --color-text-secondary: #777;
+    --color-text-link: #3498db;
+    --color-text-link-hover: #2980b9;
+
+    --color-bg-primary: #1e1e1e;
+    --color-bg-secondary: #2d2d2d;
+    --color-bg-tertiary: #333;
+    --color-bg-hover: #3d3d3d;
+    --color-bg-hover-light: #4d4d4d;
+    --color-bg-image: #222;
+
+    --color-border: #444;
+
+    --color-btn-primary: #3498db;
+    --color-btn-primary-hover: #2980b9;
+    --color-btn-secondary: #3d3d3d;
+    --color-btn-secondary-hover: #4d4d4d;
+    --color-btn-success: #2ecc71;
+    --color-btn-success-hover: #27ae60;
+
+    /* Shadows */
+    --shadow-standard: 0 2px 10px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.1);
+    --shadow-focus: 0 0 4px rgba(0, 0, 0, 0.3);
+    --shadow-modal: 0 5px 15px rgba(0, 0, 0, 0.5);
+
+    /* Border Radius */
+    --border-radius-sm: 6px;
+    --border-radius-md: 10px;
+
+    /* Spacing */
+    --spacing-xs: 5px;
+    --spacing-sm: 8px;
+    --spacing-md: 10px;
+    --spacing-lg: 15px;
+    --spacing-xl: 20px;
+    --spacing-xxl: 30px;
+
+    /* Transitions */
+    --transition-standard: all 0.2s ease;
+    --transition-smooth: all 0.3s ease-out;
+
+    /* Font Sizes */
+    --font-size-xs: 0.9em;
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 24px;
+
+    /* Font Families */
+    --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-family-mono: 'Courier New', Consolas, monospace;
+}

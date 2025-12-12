@@ -1,0 +1,6 @@
+/* Container for all field sections - sits in grid columns 2-3 */
+.field-sections-wrapper {
+    grid-column: 2 / 4;
+    display: flex;
+    flex-direction: column;
+}
