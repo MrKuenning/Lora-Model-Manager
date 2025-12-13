@@ -12,6 +12,7 @@ const modelsContainer = document.getElementById('models-container');
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
 const groupSelect = document.getElementById('group-select');
+const modelFilterSelect = document.getElementById('model-filter-select');
 const gridViewBtn = document.getElementById('grid-view-btn');
 const tableViewBtn = document.getElementById('table-view-btn');
 const refreshBtn = document.getElementById('refresh-btn');
@@ -46,6 +47,7 @@ let currentModel = null;
 let currentView = appSettings.getSetting('defaultView');
 let currentSort = appSettings.getSetting('defaultSort');
 let currentGroupBy = 'none'; // Default to no grouping
+let currentModelFilter = 'all'; // Default to show all models
 let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
 
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
 groupSelect.addEventListener('change', handleGroupChange);
+modelFilterSelect.addEventListener('change', handleModelFilterChange);
 gridViewBtn.addEventListener('click', () => switchView('grid'));
 tableViewBtn.addEventListener('click', () => switchView('table'));
 refreshBtn.addEventListener('click', refreshModels);
@@ -489,6 +492,16 @@ function displayModels() {
         }
     }
 
+    // Apply base model filter
+    if (currentModelFilter !== 'all') {
+        filteredModels = filteredModels.filter(model =>
+            model.baseModel === currentModelFilter
+        );
+    }
+
+    // Populate the model filter dropdown with unique base models
+    populateModelFilter();
+
     // Sort models
     filteredModels = sortModels(filteredModels, currentSort);
 
@@ -646,6 +659,54 @@ function handleGroupChange(e) {
     currentGroupBy = e.target.value;
     displayModels();
 }
+
+// Handle model filter selection
+function handleModelFilterChange(e) {
+    currentModelFilter = e.target.value;
+    displayModels();
+}
+
+// Populate model filter dropdown with unique base models
+function populateModelFilter() {
+    // Extract unique base models from the models array
+    const baseModels = new Set();
+    models.forEach(model => {
+        const baseModel = model.baseModel || 'Unknown';
+        baseModels.add(baseModel);
+    });
+
+    // Convert to array and sort alphabetically
+    const sortedBaseModels = Array.from(baseModels).sort((a, b) => {
+        // Put "Unknown" at the end
+        if (a === 'Unknown') return 1;
+        if (b === 'Unknown') return -1;
+        return a.localeCompare(b);
+    });
+
+    // Save current selection
+    const currentSelection = currentModelFilter;
+
+    // Clear existing options except "All Models"
+    modelFilterSelect.innerHTML = '<option value="all">All Models</option>';
+
+    // Add options for each unique base model
+    sortedBaseModels.forEach(baseModel => {
+        const option = document.createElement('option');
+        option.value = baseModel;
+        option.textContent = baseModel;
+        modelFilterSelect.appendChild(option);
+    });
+
+    // Restore selection if it still exists in the new list
+    if (currentSelection !== 'all' && sortedBaseModels.includes(currentSelection)) {
+        modelFilterSelect.value = currentSelection;
+    } else if (currentSelection !== 'all') {
+        // If the previously selected model no longer exists, reset to "all"
+        currentModelFilter = 'all';
+        modelFilterSelect.value = 'all';
+    }
+}
+
 
 // Switch between grid and table view
 function switchView(view, savePreference = true) {
@@ -818,9 +879,9 @@ function openModelDetails(model) {
     // Set associated files in the non-editable section
     const associatedFilesElement = document.getElementById('model-associated-files');
     if (model.associatedFiles && model.associatedFiles.length > 0) {
-        associatedFilesElement.innerHTML = model.associatedFiles.join('<br>');
+        associatedFilesElement.innerHTML = model.associatedFiles.map(file => `<li>${file}</li>`).join('');
     } else {
-        associatedFilesElement.textContent = 'None';
+        associatedFilesElement.innerHTML = '<li>None</li>';
     }
 
     // Set author and base model in static info section
@@ -1343,30 +1404,30 @@ cleanFilenameBtn?.addEventListener('click', handleCleanFilename);
 // Function to clean and format filename
 function handleCleanFilename() {
     if (!currentModel) return;
-    
+
     let filename = modelFilename.value;
-    
+
     // 1. Replace underscores with spaces
     filename = filename.replace(/_/g, ' ');
-    
+
     // 2. Add leading and trailing space to dashes/hyphens
     filename = filename.replace(/-/g, ' - ');
-    
+
     // 3. Replace multiple spaces with single space
     filename = filename.replace(/\s+/g, ' ');
-    
+
     // 4. Replace multiple dashes with single dash
     filename = filename.replace(/-+/g, '-');
-    
+
     // 5. Remove leading and trailing spaces
     filename = filename.trim();
-    
+
     // 6. Capitalize first letter of each word
     filename = filename.replace(/\b\w/g, char => char.toUpperCase());
-    
+
     // Update the filename field
     modelFilename.value = filename;
-    
+
     console.log('Cleaned filename:', filename);
 }
 
@@ -1401,10 +1462,10 @@ appendPrefixBtn?.addEventListener('click', handleAppendPrefix);
 // Function to append prefix based on base model
 function handleAppendPrefix() {
     if (!currentModel) return;
-    
+
     const baseModel = currentModel.baseModel || '';
     const currentFilename = modelFilename.value;
-    
+
     // Map base models to their prefixes
     const prefixMap = {
         'Pony': '[P]',
@@ -1412,10 +1473,10 @@ function handleAppendPrefix() {
         'Illustrious': '[I]',
         'ZImageTurbo': '[Z]'
     };
-    
+
     // Find matching prefix
     const prefix = prefixMap[baseModel];
-    
+
     if (!prefix) {
         alert(`No prefix mapping found for base model: "${baseModel}"
 
@@ -1426,17 +1487,17 @@ Supported models:
 - ZImageTurbo ? [Z]`);
         return;
     }
-    
+
     // Check if prefix already exists at the start
     if (currentFilename.startsWith(prefix)) {
         alert(`Prefix "${prefix}" already exists at the beginning of the filename`);
         return;
     }
-    
+
     // Append prefix to the beginning of the filename
     const newFilename = `${prefix} ${currentFilename}`;
     modelFilename.value = newFilename;
-    
+
     console.log(`Appended prefix to filename: ${currentFilename} -> ${newFilename}`);
 }
 // Event listener for Append Suffix button
@@ -1445,10 +1506,10 @@ appendSuffixBtn?.addEventListener('click', handleAppendSuffix);
 // Function to append suffix based on base model
 function handleAppendSuffix() {
     if (!currentModel) return;
-    
+
     const baseModel = currentModel.baseModel || '';
     let currentFilename = modelFilename.value;
-    
+
     // Map base models to their suffixes
     const suffixMap = {
         'Wan Video 2.2 I2V-A14B': '- High I2v - Wan22 14b',
@@ -1457,10 +1518,10 @@ function handleAppendSuffix() {
         'Wan Video 14B i2v 720p': '- I2v 720p - Wan21 14b',
         'Wan Video': '- Wan21 14B'
     };
-    
+
     // Find matching suffix
     const suffix = suffixMap[baseModel];
-    
+
     if (!suffix) {
         alert(`No suffix mapping found for base model: "${baseModel}"
 
@@ -1472,14 +1533,14 @@ Supported models:
 - Wan Video`);
         return;
     }
-    
+
     // Check if a suffix already exists and remove it
     // Look for patterns like ' - <text> - Wan<number>'
     currentFilename = currentFilename.replace(/\s+-\s+.*?\s+-\s+Wan\d+\s+\d+[bB]$/, '');
-    
+
     // Append suffix to the end of the filename
     const newFilename = `${currentFilename} ${suffix}`;
     modelFilename.value = newFilename;
-    
+
     console.log(`Appended suffix to filename: ${currentFilename} -> ${newFilename}`);
 }
