@@ -164,6 +164,33 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(settings).encode())
             
+        elif parsed_url.path == '/get-folders':
+            # Get list of all subdirectories in models directory
+            loraPath = self.load_settings().get('modelsDirectory', "")
+            if not loraPath or not os.path.exists(loraPath):
+                self.send_error(400, "Models directory not set or does not exist")
+                return
+            
+            folders = []
+            # Add root option
+            folders.append({'path': '', 'name': 'Root'})
+            
+            # Walk through directory and collect all subdirectories
+            for root, dirs, files in os.walk(loraPath):
+                for dir_name in dirs:
+                    full_path = os.path.join(root, dir_name)
+                    # Get relative path from lora_path
+                    relative_path = os.path.relpath(full_path, loraPath)
+                    folders.append({
+                        'path': relative_path.replace("\\", "/"),
+                        'name': relative_path.replace("\\", "/")
+                    })
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'folders': folders}).encode())
+            
         elif parsed_url.path == '/edit-json':
             name = query_params.get('name', [''])[0]
             if not name:
@@ -419,6 +446,92 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'success'}).encode())
+            
+        elif parsed_url.path == '/move-model':
+            # Move a model and all its associated files to a new folder
+            data = json.loads(post_data)
+            model_name = data.get('modelName')
+            target_folder = data.get('targetFolder', '')  # Empty string means root
+            
+            if not model_name:
+                self.send_error(400, "Missing 'modelName' parameter")
+                return
+            
+            loraPath = self.load_settings().get('modelsDirectory', "")
+            if not loraPath:
+                self.send_error(400, "Models directory not set")
+                return
+            
+            # Find all associated files for this model
+            model_file = self.find_file_path(loraPath, model_name + ".safetensors")
+            if not model_file:
+                self.send_error(404, "Model file not found")
+                return
+            
+            # Get the current directory of the model
+            current_dir = os.path.dirname(model_file)
+            
+            # Determine target directory
+            if target_folder:
+                target_dir = os.path.join(loraPath, target_folder)
+            else:
+                target_dir = loraPath
+            
+            # Create target directory if it doesn't exist
+            if not os.path.exists(target_dir):
+                try:
+                    os.makedirs(target_dir)
+                except Exception as e:
+                    self.send_error(500, f"Failed to create target directory: {e}")
+                    return
+            
+            # Find all associated files
+            files_to_move = []
+            extensions = [
+                ".safetensors",
+                ".json",
+                ".civitai.info",
+                ".preview.png",
+                ".preview2.png",
+                ".preview3.png",
+                ".preview4.png"
+            ]
+            
+            for ext in extensions:
+                file_path = self.find_file_path(loraPath, model_name + ext)
+                if file_path and os.path.exists(file_path):
+                    files_to_move.append(file_path)
+            
+            # Move all files
+            try:
+                for file_path in files_to_move:
+                    filename = os.path.basename(file_path)
+                    new_path = os.path.join(target_dir, filename)
+                    
+                    # Check if file already exists in target
+                    if os.path.exists(new_path):
+                        self.send_error(409, f"File already exists in target directory: {filename}")
+                        return
+                    
+                    shutil.move(file_path, new_path)
+                    print(f"Moved: {file_path} -> {new_path}")
+                
+                # Invalidate cache after successful move
+                self.lora_data_cache = None
+                print("Cache invalidated due to model move")
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': f'Moved {len(files_to_move)} file(s) successfully',
+                    'filesMoved': len(files_to_move)
+                }).encode())
+                
+            except Exception as e:
+                self.send_error(500, f"Error moving files: {e}")
+                return
             
         elif parsed_url.path == '/civitai/scan-models':
             # Scan models directory and return list with status

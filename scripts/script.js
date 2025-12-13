@@ -901,6 +901,9 @@ function openModelDetails(model) {
     document.getElementById('model-example-prompt').value = model.json?.['example prompt'] || '';
     document.getElementById('model-tags').value = model.json?.['tags'] || '';
 
+    // Populate file location dropdown
+    populateFileLocationDropdown(relativePath || '');
+
     // All fields are editable by default, no need to disable them
     // Show save buttons
     document.querySelectorAll('.save-btn').forEach(btn => btn.classList.remove('hidden'));
@@ -1543,4 +1546,155 @@ Supported models:
     modelFilename.value = newFilename;
 
     console.log(`Appended suffix to filename: ${currentFilename} -> ${newFilename}`);
+}
+
+// ===== File Location Dropdown Functions =====
+
+// Populate file location dropdown with available folders
+async function populateFileLocationDropdown(currentLocation) {
+    const fileLocationSelect = document.getElementById('model-file-location');
+
+    if (!fileLocationSelect) {
+        console.error('File location dropdown not found');
+        return;
+    }
+
+    try {
+        // Fetch available folders from server
+        const response = await fetch('/get-folders');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const folders = data.folders || [];
+
+        // Clear existing options
+        fileLocationSelect.innerHTML = '';
+
+        // Populate dropdown with folders
+        folders.forEach(folder => {
+            const option = document.createElement('option');
+            option.value = folder.path;
+            option.textContent = folder.name;
+
+            // Select the current location
+            if (folder.path === currentLocation ||
+                (folder.path === '' && currentLocation === '')) {
+                option.selected = true;
+            }
+
+            fileLocationSelect.appendChild(option);
+        });
+
+        // Attach move button handler if not already attached
+        attachMoveButtonHandler();
+
+    } catch (error) {
+        console.error('Error fetching folders:', error);
+        fileLocationSelect.innerHTML = '<option value="">Error loading folders</option>';
+    }
+}
+
+// Attach event handler to the Move button
+function attachMoveButtonHandler() {
+    const moveButton = document.getElementById('move-file-location-btn');
+
+    if (!moveButton) {
+        console.error('Move button not found');
+        return;
+    }
+
+    // Remove existing click handlers to prevent duplicates
+    const newButton = moveButton.cloneNode(true);
+    moveButton.parentNode.replaceChild(newButton, moveButton);
+
+    // Add new click handler
+    newButton.addEventListener('click', handleMoveModel);
+}
+
+// Handle move model operation
+async function handleMoveModel() {
+    if (!currentModel) return;
+
+    const fileLocationSelect = document.getElementById('model-file-location');
+    const targetFolder = fileLocationSelect.value;
+
+    // Get current location from model path
+    const modelPath = currentModel.path || '';
+    const pathWithoutFilename = modelPath.substring(0, modelPath.lastIndexOf('\\'));
+    const modelsDir = settingsManager.getSetting('modelsDirectory').replace(/\\/g, '/');
+    const fullPath = pathWithoutFilename.replace(/\\/g, '/');
+
+    let currentFolder = fullPath;
+    if (modelsDir && fullPath.startsWith(modelsDir)) {
+        currentFolder = fullPath.substring(modelsDir.length);
+        if (currentFolder.startsWith('/')) {
+            currentFolder = currentFolder.substring(1);
+        }
+    }
+
+    // Check if target is different from current location
+    if (targetFolder === currentFolder ||
+        (targetFolder === '' && currentFolder === '')) {
+        alert('Model is already in the selected location');
+        return;
+    }
+
+    // Get display names for confirmation
+    const currentLocationDisplay = currentFolder || 'Root';
+    const targetLocationDisplay = targetFolder || 'Root';
+
+    // Confirm with user
+    const confirmMessage = `Move "${currentModel.name}" and all associated files?\n\nFrom: ${currentLocationDisplay}\nTo: ${targetLocationDisplay}`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    // Disable button during operation
+    const moveButton = document.getElementById('move-file-location-btn');
+    moveButton.disabled = true;
+    moveButton.textContent = 'Moving...';
+
+    try {
+        // Send move request to server
+        const response = await fetch('/move-model', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                modelName: currentModel.name,
+                targetFolder: targetFolder
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            alert(`Success! Moved ${data.filesMoved} file(s) to ${targetLocationDisplay}`);
+
+            // Close modal
+            closeModelModal();
+
+            // Refresh model list to show updated locations
+            await refreshModels();
+        } else {
+            throw new Error(data.message || 'Move operation failed');
+        }
+
+    } catch (error) {
+        console.error('Error moving model:', error);
+        alert(`Error moving model: ${error.message}`);
+    } finally {
+        // Re-enable button
+        moveButton.disabled = false;
+        moveButton.textContent = 'Move';
+    }
 }
