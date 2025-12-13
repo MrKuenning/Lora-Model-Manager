@@ -72,10 +72,7 @@ function switchToImage(cardElement, index, previewImages) {
     }
     mainImage.dataset.index = index;
 
-    // Update indicator
-    if (indicator) {
-        indicator.textContent = `${index + 1}/${previewImages.length}`;
-    }
+    // Indicator now just shows total count, no need to update
 }
 
 /**
@@ -94,17 +91,15 @@ export function generateCarouselHTML(previewImages, modelName) {
         return `<img src="placeholder.png" data-src="${previewImages[0]}" alt="${modelName}" class="lazy-image preview-main-image">`;
     }
 
-    // Multiple images - create carousel with arrow navigation
+    // Multiple images - create carousel with side arrow navigation
     return `
-        <img src="placeholder.png" data-src="${previewImages[0]}" alt="${modelName}" class="lazy-image preview-main-image" data-index="0">
-        <div class="carousel-controls">
-            <button class="carousel-arrow carousel-arrow-prev" title="Previous image">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="carousel-indicator">1/${previewImages.length}</span>
-            <button class="carousel-arrow carousel-arrow-next" title="Next image">
-                <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
+        \u003cimg src=\"placeholder.png\" data-src=\"${previewImages[0]}\" alt=\"${modelName}\" class=\"lazy-image preview-main-image\" data-index=\"0\"\u003e
+        \u003cbutton class=\"carousel-arrow carousel-arrow-prev\" title=\"Previous image\"\u003e
+            \u003ci class=\"fas fa-chevron-left\"\u003e\u003c/i\u003e
+        \u003c/button\u003e
+        \u003cbutton class=\"carousel-arrow carousel-arrow-next\" title=\"Next image\"\u003e
+            \u003ci class=\"fas fa-chevron-right\"\u003e\u003c/i\u003e
+        \u003c/button\u003e
+        \u003cspan class=\"carousel-indicator\"\u003e${previewImages.length}\u003c/span\u003e
     `;
 }

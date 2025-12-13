@@ -36,61 +36,99 @@
     object-fit: contain;
 }
 
-/* Multi-image carousel styles */
+/* Multi-image carousel styles - Modern side navigation */
 .preview-main-image {
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
+/* Remove old bottom bar controls */
 .carousel-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-sm) var(--spacing-md);
-    background-color: rgba(0, 0, 0, 0.7);
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    gap: var(--spacing-sm);
+    display: none;
+    /* Deprecated - using side navigation now */
 }
 
+/* Side navigation arrows - subtle indicators that expand on hover */
 .carousel-arrow {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    /* Narrow when not hovered */
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent);
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    /* Subtle when not hovered */
     cursor: pointer;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    transition: var(--transition-standard);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-size-md);
-    min-width: 32px;
-    height: 32px;
+    font-size: 18px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    opacity: 0;
+    /* Hidden by default */
 }
 
+.carousel-arrow-prev {
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent);
+}
+
+.carousel-arrow-next {
+    right: 0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.3), transparent);
+}
+
+/* Show subtle indicators on card hover */
+.model-card:hover .carousel-arrow {
+    opacity: 1;
+}
+
+/* Expand and emphasize on arrow hover */
 .carousel-arrow:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: scale(1.1);
+    width: 60px;
+    /* Wider on hover */
+    color: rgba(255, 255, 255, 1);
+    /* Bright white */
+    font-size: 24px;
+    /* Larger icon */
+}
+
+.carousel-arrow-prev:hover {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.6), transparent);
+}
+
+.carousel-arrow-next:hover {
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.6), transparent);
 }
 
 .carousel-arrow:active {
     transform: scale(0.95);
 }
 
+/* Corner badge indicator showing number of images */
 .carousel-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
     color: white;
-    font-size: var(--font-size-sm);
+    font-size: 11px;
     font-weight: 600;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-    flex: 1;
-    text-align: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 11;
     user-select: none;
+    pointer-events: none;
+    /* Don't interfere with clicks */
+    display: flex;
+    align-items: center;
 }
+
 
 .model-info {
     padding: var(--spacing-md);
