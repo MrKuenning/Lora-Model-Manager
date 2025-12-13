@@ -583,6 +583,35 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 api_call_made = use_api and not existing_creator
                 
                 mapped_data = json_converter.parse_civitai_info_file(info_path, use_api, existing_creator)
+                
+                # Preserve existing data for certain fields (same logic as in zCivitai-2-JSONv4.py)
+                if os.path.exists(json_path):
+                    try:
+                        with open(json_path, 'r', encoding='utf-8') as f:
+                            existing_data = json.load(f)
+                            
+                            print(f"DEBUG: Existing data loaded: {existing_data}")
+                            
+                            # Fields to preserve if already populated
+                            fields_to_preserve = [
+                                'activation text', 'sd version', 'preferred weight',
+                                'negative text', 'civitai text', 
+                                'nsfw', 'url', 'base model', 'example prompt',
+                                'category', 'subcategory', 'tags', 'creator'
+                            ]
+                            for field in fields_to_preserve:
+                                # If field exists in existing data and has a value, keep the existing value
+                                # Otherwise, use the new value from civitai.info
+                                # Check explicitly for None and empty string to handle 0 and other falsy values correctly
+                                if field in existing_data and existing_data[field] is not None and existing_data[field] != '':
+                                    print(f"DEBUG: Preserving field '{field}': '{existing_data[field]}'")
+                                    # Existing field has data, preserve it
+                                    mapped_data[field] = existing_data[field]
+                                else:
+                                    print(f"DEBUG: Not preserving field '{field}' (empty or missing)")
+                    except Exception as e:
+                        print(f"Error reading existing JSON for field preservation: {e}")
+                
                 json_converter.write_json_file(info_path, mapped_data)
                 
                 # Invalidate cache

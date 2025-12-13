@@ -167,7 +167,8 @@ def process_civitai_info_files(directory, use_api=True):
                         with open(json_file_path, 'r', encoding='utf-8') as json_file:
                             existing_data = json.load(json_file)
                             
-                            # Keep existing values if they are populated
+                            # Only populate fields that are empty in existing data
+                            # Fields to preserve if already populated
                             fields_to_preserve = [
                                 'activation text', 'sd version', 'preferred weight',
                                 'negative text', 'civitai text', 
@@ -175,8 +176,14 @@ def process_civitai_info_files(directory, use_api=True):
                                 'category', 'subcategory', 'tags', 'creator'
                             ]
                             for field in fields_to_preserve:
-                                if field in existing_data and existing_data[field]:
+                                # If field exists in existing data and has a value, keep the existing value
+                                # Otherwise, use the new value from civitai.info
+                                # Check explicitly for None and empty string to handle 0 and other falsy values correctly
+                                if field in existing_data and existing_data[field] is not None and existing_data[field] != '':
+                                    # Existing field has data, preserve it
                                     data[field] = existing_data[field]
+                                # else: use the new value that was already set in data
+
                     except Exception as e:
                         print(f"Error reading JSON file {json_file_path}: {e}")
                         print("Creating a new JSON file instead.")
