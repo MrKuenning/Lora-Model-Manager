@@ -74,6 +74,21 @@
     transform: scale(0.98);
 }
 
+.btn-light {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #1a1a1a;
+    transition: var(--transition-standard);
+}
+
+.btn-light:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.02);
+}
+
+.btn-light:active {
+    transform: scale(0.98);
+}
+
 /* Icon Button */
 .btn-icon {
     background: none;

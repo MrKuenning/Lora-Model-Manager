@@ -209,6 +209,7 @@
     cursor: pointer;
     margin: 0;
 }
+
 /* Associated Files Box */
 .associated-files-box {
     margin-top: var(--spacing-md);
@@ -582,4 +583,103 @@ textarea.editable-field {
     width: auto;
     min-height: auto;
     margin: 0;
+}
+
+/* Image Drop Zone Overlay */
+.image-drop-zone {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    border: 3px dashed transparent;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.image-drop-zone.drag-over {
+    opacity: 1;
+    pointer-events: all;
+    border-color: var(--color-text-link);
+    background: rgba(0, 0, 0, 0.95);
+}
+
+.drop-zone-content {
+    text-align: center;
+    color: white;
+    user-select: none;
+    transition: transform 0.3s ease;
+}
+
+.image-drop-zone.drag-over .drop-zone-content {
+    transform: scale(1.1);
+}
+
+.drop-zone-content i {
+    font-size: 48px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.7;
+    display: block;
+}
+
+.image-drop-zone.drag-over .drop-zone-content i {
+    opacity: 1;
+    color: var(--color-text-link);
+}
+
+.drop-zone-content p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.image-drop-zone.drag-over .drop-zone-content p {
+    opacity: 1;
+}
+
+
+/* Drop target indicator badge */
+.drop-target-indicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.drop-target-indicator i {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.model-preview:hover .drop-target-indicator {
+    background: rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.model-preview:hover .drop-target-indicator i {
+    opacity: 1;
+    color: var(--color-text-link);
 }

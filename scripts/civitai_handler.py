@@ -224,7 +224,7 @@ def scan_models_directory(directory):
         directory: Path to scan
         
     Returns:
-        List of dicts with model info: {path, name, has_info, has_preview}
+        List of dicts with model info: {path, name, has_info, has_preview, has_json}
     """
     models = []
     
@@ -240,7 +240,8 @@ def scan_models_directory(directory):
                         'path': file_path,
                         'name': filename,
                         'has_info': os.path.exists(f"{base_path}{INFO_EXTENSION}"),
-                        'has_preview': os.path.exists(f"{base_path}{PREVIEW_EXTENSION}")
+                        'has_preview': os.path.exists(f"{base_path}{PREVIEW_EXTENSION}"),
+                        'has_json': os.path.exists(f"{base_path}.json")
                     }
                     models.append(model_data)
     except Exception as e:

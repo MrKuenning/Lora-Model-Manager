@@ -60,15 +60,18 @@
                 <div class="scan-actions">
                     <h2>Actions</h2>
                     <button id="scanModelsBtn" class="btn btn-large btn-primary">
-                        <i class="fas fa-search"></i> Scan Models & Create Info Files
+                        <i class="fas fa-search"></i> Scan Files & Get Civitai Data
                     </button>
-                    <button id="downloadPreviewsBtn" class="btn btn-large btn-secondary">
-                        <i class="fas fa-download"></i> Download Preview Images
+                    <button id="convertMissingJsonBtn" class="btn btn-large btn-success">
+                        <i class="fas fa-file-code"></i> Create JSON - Missing
                     </button>
                     <button id="convertToJsonBtn" class="btn btn-large btn-success">
-                        <i class="fas fa-file-code"></i> Convert to JSON
+                        <i class="fas fa-sync"></i> Update JSON - All (Slow)
                     </button>
-                    <button id="fixThumbnailsBtn" class="btn btn-large btn-warning">
+                    <button id="downloadPreviewsBtn" class="btn btn-large btn-secondary">
+                        <i class="fas fa-download"></i> Download Thumbnails - Missing
+                    </button>
+                    <button id="fixThumbnailsBtn" class="btn btn-large btn-light">
                         <i class="fas fa-image"></i> Fix Thumbnail Names
                     </button>
                 </div>
@@ -101,6 +104,10 @@
                     <div class="summary-item">
                         <span class="summary-label">Without Info Files:</span>
                         <span id="modelsWithoutInfo">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Missing JSON Files:</span>
+                        <span id="modelsMissingJson">0</span>
                     </div>
                 </div>
 

@@ -262,7 +262,13 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed_url = urllib.parse.urlparse(self.path)
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
+        
+        # For file uploads, don't read post_data - let cgi.FieldStorage handle it
+        if parsed_url.path == '/upload-preview':
+            # Skip reading post_data for multipart uploads
+            post_data = None
+        else:
+            post_data = self.rfile.read(content_length)
 
         if parsed_url.path == '/save-settings':
             data = json.loads(post_data)
@@ -767,6 +773,87 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"Error in fix-thumbnail: {e}")
                 self.send_error(500, f"Error: {e}")
+                
+        elif parsed_url.path == '/upload-preview':
+            # Upload a preview image for a model
+            try:
+                import cgi
+                from io import BytesIO
+                
+                # Parse multipart form data using cgi module
+                form = cgi.FieldStorage(
+                    fp=self.rfile,
+                    headers=self.headers,
+                    environ={
+                        'REQUEST_METHOD': 'POST',
+                        'CONTENT_TYPE': self.headers['Content-Type'],
+                    }
+                )
+                
+                # Get model name and image file
+                model_name = form.getvalue('modelName')
+                image_file = form['imageFile']
+                
+                if not model_name or not image_file.file:
+                    self.send_error(400, "Missing modelName or imageFile")
+                    return
+                
+                # Read image data
+                image_data = image_file.file.read()
+                
+                if not image_data:
+                    self.send_error(400, "Empty image file")
+                    return
+                
+                loraPath = self.load_settings().get('modelsDirectory', "")
+                if not loraPath:
+                    self.send_error(400, "Models directory not set")
+                    return
+                
+                # Find the model file to get its directory
+                model_file = self.find_file_path(loraPath, model_name + ".safetensors")
+                if not model_file:
+                    self.send_error(404, "Model not found")
+                    return
+                
+                model_dir = os.path.dirname(model_file)
+                
+                # Determine next preview number
+                preview_num = ""
+                if os.path.exists(os.path.join(model_dir, f"{model_name}.preview.png")):
+                    # preview.png exists, find next number
+                    n = 2
+                    while os.path.exists(os.path.join(model_dir, f"{model_name}.preview{n}.png")):
+                        n += 1
+                    preview_num = str(n)
+                
+                # Save the image file
+                preview_filename = f"{model_name}.preview{preview_num}.png"
+                preview_path = os.path.join(model_dir, preview_filename)
+                
+                with open(preview_path, 'wb') as f:
+                    f.write(image_data)
+                
+                print(f"Saved preview image: {preview_path}")
+                
+                # Invalidate cache
+                self.lora_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': f'Preview image saved as {preview_filename}',
+                    'filename': preview_filename
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in upload-preview: {e}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, f"Error: {e}")
+
 
         else:
             self.send_error(404, "Not found")
