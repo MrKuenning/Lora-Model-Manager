@@ -54,6 +54,24 @@ let currentJsonType = 'model'; // 'model' or 'civitai'
 // Initialize settings
 const settingsManager = appSettings;
 
+// Loading Progress Bar Functions
+function showLoadingOverlay() {
+    const progressBar = document.getElementById('loading-progress-bar');
+    if (progressBar) {
+        progressBar.classList.remove('hidden');
+    }
+}
+
+function hideLoadingOverlay() {
+    const progressBar = document.getElementById('loading-progress-bar');
+    if (progressBar) {
+        // Add a small delay for smooth transition
+        setTimeout(() => {
+            progressBar.classList.add('hidden');
+        }, 300);
+    }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', initApp);
 searchInput.addEventListener('input', handleSearch);
@@ -375,6 +393,9 @@ function initDragAndDrop() {
 
 // Initialize the application
 async function initApp() {
+    // Show loading overlay
+    showLoadingOverlay();
+
     // Wait for settings to be fully loaded from server
     await ensureSettingsInitialized();
 
@@ -397,7 +418,10 @@ async function initApp() {
     // Check if we have a saved directory path and load models
     const savedDirPath = settingsManager.getSetting('modelsDirectory');
     if (savedDirPath) {
-        loadModelsFromDirectory(savedDirPath);
+        await loadModelsFromDirectory(savedDirPath);
+    } else {
+        // Hide loading overlay if no directory is set
+        hideLoadingOverlay();
     }
 }
 
@@ -434,13 +458,17 @@ async function loadModelsFromDirectory(dirPath) {
                 <p>${error.message || 'Error loading models. Please check the directory path in settings and try again.'}</p>
             </div>
         `;
+    } finally {
+        // Always hide loading overlay when done (success or error)
+        hideLoadingOverlay();
     }
 }
 // Refresh models
-function refreshModels() {
+async function refreshModels() {
     const dirPath = settingsManager.getSetting('modelsDirectory');
     if (dirPath) {
-        loadModelsFromDirectory(dirPath);
+        showLoadingOverlay();
+        await loadModelsFromDirectory(dirPath);
     } else {
         alert('No models directory set. Please set a directory in Settings.');
         openSettingsModal();
@@ -1793,6 +1821,43 @@ function initializeImageDropZone() {
             handleImageDrop(files[0]);
         }
     }
+
+    // Re-attach thumbnail event listeners after container has been cloned
+    // This ensures thumbnails still work after drop zone initialization
+    reattachThumbnailListeners();
+}
+
+// Reattach thumbnail mouseover event listeners
+function reattachThumbnailListeners() {
+    if (!currentModel) return;
+
+    // Get preview images array
+    const previewImages = currentModel.previewImages || (currentModel.previewUrl ? [currentModel.previewUrl] : []);
+
+    // Only proceed if we have multiple images
+    if (previewImages.length <= 1) return;
+
+    const modalMainImage = document.querySelector('#model-modal .preview-main-image');
+    const modalThumbnails = document.querySelectorAll('#model-modal .preview-thumb');
+
+    if (!modalMainImage || !modalThumbnails || modalThumbnails.length === 0) return;
+
+    modalThumbnails.forEach((thumb, index) => {
+        thumb.addEventListener('mouseover', () => {
+            // Update main image
+            modalMainImage.src = previewImages[index];
+            modalMainImage.dataset.index = index;
+
+            // Update active thumbnail
+            modalThumbnails.forEach((t, i) => {
+                if (i === index) {
+                    t.classList.add('active');
+                } else {
+                    t.classList.remove('active');
+                }
+            });
+        });
+    });
 }
 
 // Handle the dropped image file

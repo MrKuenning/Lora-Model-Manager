@@ -1,0 +1,78 @@
+/* Loading Progress Bar */
+.loading-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: transparent;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-progress-bar:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg,
+            var(--color-text-link) 0%,
+            #58a6ff 50%,
+            var(--color-text-link) 100%);
+    background-size: 200% 100%;
+    width: 0%;
+    animation: progressAnimation 2s ease-in-out infinite, shimmer 1.5s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--color-text-link),
+        0 0 5px var(--color-text-link);
+    transition: width 0.3s ease;
+}
+
+@keyframes progressAnimation {
+    0% {
+        width: 0%;
+    }
+
+    50% {
+        width: 70%;
+    }
+
+    100% {
+        width: 100%;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Add a subtle pulse to the glow */
+.loading-progress-bar:not(.hidden) .loading-progress-fill {
+    animation: progressAnimation 2s ease-in-out infinite,
+        shimmer 1.5s ease-in-out infinite,
+        pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px var(--color-text-link),
+            0 0 5px var(--color-text-link);
+    }
+
+    50% {
+        box-shadow: 0 0 20px var(--color-text-link),
+            0 0 10px var(--color-text-link),
+            0 0 5px rgba(88, 166, 255, 0.5);
+    }
+}
