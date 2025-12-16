@@ -21,7 +21,7 @@ function sortModels(models, column) {
     return [...models].sort((a, b) => {
         let valueA, valueB;
 
-        switch(column) {
+        switch (column) {
             case 'Preview':
                 return 0; // Don't sort by preview
             case 'Filename':
@@ -128,7 +128,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
         `;
         return;
     }
-    
+
     // Calculate statistics for info box
     const totalSize = models.reduce((sum, model) => sum + (model.size || 0), 0);
     const totalCount = models.length;
@@ -164,10 +164,10 @@ export function displayTableView(models, container, openModelDetails, settings) 
     // Table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    
+
     // Filter and order columns based on visibility settings and column order
     let columns = [];
-    
+
     // Use column order from settings if available
     if (settings.columnOrder && Array.isArray(settings.columnOrder)) {
         // Create a reverse mapping from setting key to column name
@@ -175,7 +175,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
         Object.entries(columnMappings).forEach(([column, settingKey]) => {
             reverseMapping[settingKey] = column;
         });
-        
+
         // Filter and order columns based on the saved order
         columns = settings.columnOrder
             .filter(settingKey => visibleColumns[settingKey] === true)
@@ -214,10 +214,10 @@ export function displayTableView(models, container, openModelDetails, settings) 
                 header.querySelector('.sort-indicator').textContent = '';
             });
             th.querySelector('.sort-indicator').textContent = currentSortDirection === 'asc' ? ' ↑' : ' ↓';
-            
+
             // Create a sort option string for the global sort dropdown
             const sortOption = `column:${column}:${currentSortDirection}`;
-            
+
             // Update the global sort dropdown if it exists
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) {
@@ -230,7 +230,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
                         break;
                     }
                 }
-                
+
                 // If the option doesn't exist, add it temporarily
                 if (!optionExists) {
                     const newOption = document.createElement('option');
@@ -239,7 +239,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
                     sortSelect.add(newOption);
                     sortSelect.value = sortOption;
                 }
-                
+
                 // Trigger the change event to update the global sort
                 const event = new Event('change');
                 sortSelect.dispatchEvent(event);
@@ -269,7 +269,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
         </div>
     `;
     container.appendChild(infoBox);
-    
+
     // Initial table body
     displayTableBody(models, table, openModelDetails, columns);
     container.appendChild(table);
@@ -284,7 +284,7 @@ function displayTableBody(models, table, openModelDetails, columns) {
 
     // Create new tbody
     const tbody = document.createElement('tbody');
-    
+
     // Create and setup Intersection Observer for lazy loading
     const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -312,14 +312,14 @@ function displayTableBody(models, table, openModelDetails, columns) {
         // Add cells based on visible columns
         columns.forEach(column => {
             const cell = document.createElement('td');
-            
-            switch(column) {
+
+            switch (column) {
                 case 'Preview':
                     const thumbnail = document.createElement('div');
                     thumbnail.className = 'thumbnail';
                     const img = document.createElement('img');
-                    img.src = 'placeholder.png';
-                    img.setAttribute('data-src', model.previewUrl || 'placeholder.png');
+                    img.src = '/assets/placeholder.png';
+                    img.setAttribute('data-src', model.previewUrl || '/assets/placeholder.png');
                     img.alt = model.filename;
                     img.className = 'lazy-image';
                     thumbnail.appendChild(img);
@@ -344,10 +344,10 @@ function displayTableBody(models, table, openModelDetails, columns) {
                     const fullPath = model.path.replace(/\\/g, '/');
                     // Get the directory part of the path (remove filename)
                     const pathDir = fullPath.substring(0, fullPath.lastIndexOf('/'));
-                    
+
                     // Get the models directory from settings
                     const modelsDir = appSettings.getSetting('modelsDirectory').replace(/\\/g, '/');
-                    
+
                     // Create relative path by removing the models directory prefix
                     let relativePath = pathDir;
                     if (modelsDir && pathDir.startsWith(modelsDir)) {
@@ -357,7 +357,7 @@ function displayTableBody(models, table, openModelDetails, columns) {
                             relativePath = relativePath.substring(1);
                         }
                     }
-                    
+
                     cell.textContent = relativePath || 'Root';
                     break;
                 case 'Size':
@@ -420,7 +420,7 @@ function displayTableBody(models, table, openModelDetails, columns) {
                     cell.textContent = notes.length > 50 ? `${notes.substring(0, 50)}...` : notes;
                     break;
             }
-            
+
             row.appendChild(cell);
         });
 

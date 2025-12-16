@@ -2,54 +2,61 @@
 // ===== Image Drop Zone Functions =====
 
 // Initialize drag-and-drop for image upload
-function initializeImageDropZone() {
+export function initializeImageDropZone(getCurrentModel, getRefreshModelData) {
     const dropZone = document.getElementById('image-drop-zone');
-    const previewContainer = document.getElementById('model-preview-container');
+    const imageWrapper = document.querySelector('.preview-image-wrapper');
 
-    if (!dropZone || !previewContainer) {
-        console.error('Drop zone elements not found');
+    if (!dropZone || !imageWrapper) {
+        console.error('Drop zone elements not found - dropZone:', dropZone, 'imageWrapper:', imageWrapper);
         return;
     }
 
-    // Prevent default drag behaviors on the container
+    // Use a counter to track drag depth and prevent flickering from child elements
+    let dragCounter = 0;
+
+    // Prevent default drag behaviors
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        previewContainer.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // Highlight drop zone when item is dragged over it
-    ['dragenter', 'dragover'].forEach(eventName => {
-        previewContainer.addEventListener(eventName, () => {
-            dropZone.classList.add('drag-over');
+        imageWrapper.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
         }, false);
     });
 
-    ['dragleave', 'drop'].forEach(eventName => {
-        previewContainer.addEventListener(eventName, () => {
+    // Track dragenter to increment counter
+    imageWrapper.addEventListener('dragenter', (e) => {
+        dragCounter++;
+        dropZone.classList.add('drag-over');
+    }, false);
+
+    // Only remove highlight when we've left all elements (counter = 0)
+    imageWrapper.addEventListener('dragleave', (e) => {
+        dragCounter--;
+        if (dragCounter === 0) {
             dropZone.classList.remove('drag-over');
-        }, false);
-    });
+        }
+    }, false);
+
+    // Ensure dragover keeps the highlight active
+    imageWrapper.addEventListener('dragover', (e) => {
+        dropZone.classList.add('drag-over');
+    }, false);
 
     // Handle dropped files
-    previewContainer.addEventListener('drop', handleDrop, false);
+    imageWrapper.addEventListener('drop', (e) => {
+        dragCounter = 0; // Reset counter on drop
+        dropZone.classList.remove('drag-over');
 
-    function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
 
         if (files.length > 0) {
-            handleImageDrop(files[0]);
+            handleImageDrop(files[0], getCurrentModel(), getRefreshModelData);
         }
-    }
+    }, false);
 }
 
 // Handle the dropped image file
-async function handleImageDrop(file) {
+export async function handleImageDrop(file, currentModel, refreshModelData) {
     if (!currentModel) {
         alert('No model selected');
         return;

@@ -854,6 +854,162 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 traceback.print_exc()
                 self.send_error(500, f"Error: {e}")
 
+        elif parsed_url.path == '/delete-thumbnail':
+            # Delete a specific thumbnail and renumber remaining ones
+            try:
+                data = json.loads(post_data)
+                model_name = data.get('modelName')
+                thumbnail_index = data.get('thumbnailIndex')  # 1-based index (1, 2, 3, 4)
+                
+                if not model_name or thumbnail_index is None:
+                    self.send_error(400, "Missing modelName or thumbnailIndex")
+                    return
+                
+                loraPath = self.load_settings().get('modelsDirectory', "")
+                if not loraPath:
+                    self.send_error(400, "Models directory not set")
+                    return
+                
+                # Determine the filename for the thumbnail to delete
+                if thumbnail_index == 1:
+                    thumb_filename = f"{model_name}.preview.png"
+                else:
+                    thumb_filename = f"{model_name}.preview{thumbnail_index}.png"
+                
+                # Find and delete the file
+                thumb_path = self.find_file_path(loraPath, thumb_filename)
+                if not thumb_path or not os.path.exists(thumb_path):
+                    self.send_error(404, f"Thumbnail not found: {thumb_filename}")
+                    return
+                
+                # Delete the thumbnail
+                os.remove(thumb_path)
+                print(f"Deleted thumbnail: {thumb_path}")
+                
+                # Renumber remaining thumbnails to fill the gap
+                base_dir = os.path.dirname(thumb_path)
+                
+                # Find all remaining thumbnails
+                remaining_thumbs = []
+                for i in range(1, 5):
+                    if i == thumbnail_index:
+                        continue  # Skip the one we just deleted
+                    
+                    if i == 1:
+                        check_file = f"{model_name}.preview.png"
+                    else:
+                        check_file = f"{model_name}.preview{i}.png"
+                    
+                    check_path = os.path.join(base_dir, check_file)
+                    if os.path.exists(check_path):
+                        remaining_thumbs.append((i, check_path))
+                
+                # Renumber files using temp names first to avoid conflicts
+                temp_renames = []
+                for idx, (original_idx, file_path) in enumerate(remaining_thumbs, 1):
+                    # Rename to temp name
+                    temp_name = f"{model_name}.preview_temp_{idx}.png"
+                    temp_path = os.path.join(base_dir, temp_name)
+                    os.rename(file_path, temp_path)
+                    temp_renames.append((temp_path, idx))
+                    print(f"Temp rename: {file_path} -> {temp_path}")
+                
+                # Rename from temp names to final names
+                for temp_path, final_idx in temp_renames:
+                    if final_idx == 1:
+                        final_name = f"{model_name}.preview.png"
+                    else:
+                        final_name = f"{model_name}.preview{final_idx}.png"
+                    
+                    final_path = os.path.join(base_dir, final_name)
+                    os.rename(temp_path, final_path)
+                    print(f"Final rename: {temp_path} -> {final_path}")
+                
+                # Invalidate cache
+                self.lora_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': 'Thumbnail deleted and remaining thumbnails renumbered'
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in delete-thumbnail: {e}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, f"Error: {e}")
+
+        elif parsed_url.path == '/reorder-thumbnails':
+            # Reorder thumbnails (primarily for setting a new default)
+            try:
+                data = json.loads(post_data)
+                model_name = data.get('modelName')
+                new_order = data.get('newOrder')  # e.g., [2, 1, 3, 4] means preview2 becomes preview
+                
+                if not model_name or not new_order:
+                    self.send_error(400, "Missing modelName or newOrder")
+                    return
+                
+                loraPath = self.load_settings().get('modelsDirectory', "")
+                if not loraPath:
+                    self.send_error(400, "Models directory not set")
+                    return
+                
+                # Find the model file to get the directory
+                model_file = self.find_file_path(loraPath, f"{model_name}.safetensors")
+                if not model_file:
+                    self.send_error(404, "Model file not found")
+                    return
+                
+                base_dir = os.path.dirname(model_file)
+                
+                # Step 1: Collect existing files and rename to temp names
+                existing_files = []
+                for orig_idx in new_order:
+                    if orig_idx == 1:
+                        filename = f"{model_name}.preview.png"
+                    else:
+                        filename = f"{model_name}.preview{orig_idx}.png"
+                    
+                    file_path = os.path.join(base_dir, filename)
+                    if os.path.exists(file_path):
+                        temp_name = f"{model_name}.preview_temp_{orig_idx}.png"
+                        temp_path = os.path.join(base_dir, temp_name)
+                        os.rename(file_path, temp_path)
+                        existing_files.append((orig_idx, temp_path))
+                        print(f"Temp rename: {file_path} -> {temp_path}")
+                
+                # Step 2: Rename temp files to final positions
+                for new_idx, (orig_idx, temp_path) in enumerate(existing_files, 1):
+                    if new_idx == 1:
+                        final_name = f"{model_name}.preview.png"
+                    else:
+                        final_name = f"{model_name}.preview{new_idx}.png"
+                    
+                    final_path = os.path.join(base_dir, final_name)
+                    os.rename(temp_path, final_path)
+                    print(f"Final rename: {temp_path} -> {final_path}")
+                
+                # Invalidate cache
+                self.lora_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': 'Thumbnails reordered successfully'
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in reorder-thumbnails: {e}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, f"Error: {e}")
+
 
         else:
             self.send_error(404, "Not found")

@@ -6,6 +6,10 @@ import { displayGridView } from './grid-view.js';
 import { displayTableView } from './table-view.js';
 import { displayGroupedGridView } from './grid-group-view.js';
 import { filterModelsByQuery } from './search-parser.js';
+import { initializeImageDropZone, handleImageDrop } from './drop-zone-functions.js';
+import { showLoadingOverlay, hideLoadingOverlay } from './ui-utils.js';
+import * as ModelOps from './model-operations.js';
+import * as CivitaiAPI from './civitai-api.js';
 
 // DOM Elements
 const modelsContainer = document.getElementById('models-container');
@@ -40,37 +44,23 @@ const saveJsonBtn = document.getElementById('save-json-btn');
 const refreshJsonBtn = document.getElementById('refresh-json-btn');
 const modelJsonBtn = document.getElementById('model-json-btn');
 const civitaiJsonBtn = document.getElementById('civitai-json-btn');
+const preferredWeightSlider = document.getElementById('model-preferred-weight');
+const preferredWeightValue = document.getElementById('preferred-weight-value');
 
 // Application State
 let models = [];
-let currentModel = null;
+export let currentModel = null;
 let currentView = appSettings.getSetting('defaultView');
 let currentSort = appSettings.getSetting('defaultSort');
 let currentGroupBy = 'none'; // Default to no grouping
 let currentModelFilter = 'all'; // Default to show all models
 let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
+let selectedThumbnailIndex = 0; // Currently selected thumbnail (0-based for preview-thumb elements)
 
 // Initialize settings
 const settingsManager = appSettings;
 
-// Loading Progress Bar Functions
-function showLoadingOverlay() {
-    const progressBar = document.getElementById('loading-progress-bar');
-    if (progressBar) {
-        progressBar.classList.remove('hidden');
-    }
-}
-
-function hideLoadingOverlay() {
-    const progressBar = document.getElementById('loading-progress-bar');
-    if (progressBar) {
-        // Add a small delay for smooth transition
-        setTimeout(() => {
-            progressBar.classList.add('hidden');
-        }, 300);
-    }
-}
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', initApp);
@@ -82,6 +72,14 @@ gridViewBtn.addEventListener('click', () => switchView('grid'));
 tableViewBtn.addEventListener('click', () => switchView('table'));
 refreshBtn.addEventListener('click', refreshModels);
 closeModal.addEventListener('click', closeModelModal);
+
+// Refresh button in modal
+document.addEventListener('DOMContentLoaded', () => {
+    const refreshModelBtn = document.getElementById('refresh-model-btn');
+    if (refreshModelBtn) {
+        refreshModelBtn.addEventListener('click', refreshModelData);
+    }
+});
 
 // Add event listener to close modal when clicking outside of it
 modelModal.addEventListener('click', function (event) {
@@ -114,6 +112,11 @@ document.getElementById('toggle-json-editor').addEventListener('click', () => {
         icon.classList.remove('fa-chevron-up');
         icon.classList.add('fa-chevron-down');
     }
+});
+
+// Preferred Weight slider event listener to update display value
+preferredWeightSlider.addEventListener('input', function () {
+    preferredWeightValue.textContent = parseFloat(this.value).toFixed(1);
 });
 
 // No need for edit button event listeners as fields are always editable
@@ -239,6 +242,7 @@ safemodeToggle.addEventListener('change', async function () {
     // Reload the page to apply the filter
     window.location.reload();
 });
+
 
 async function openSettingsModal() {
     console.log("Open Settings Modal");
@@ -441,38 +445,18 @@ async function ensureSettingsInitialized() {
     }
 }
 
-// Load models from the specified directory (now uses Python server)
+// Load models from the specified directory (wrapper for ModelOps)
 async function loadModelsFromDirectory(dirPath) {
     try {
-        const response = await fetch('/load-loras?path=' + encodeURIComponent(dirPath));
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || `HTTP error! status: ${response.status}`);
-        }
-        models = await response.json();
+        models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer);
         displayModels();
     } catch (error) {
-        console.error('Error loading Lora data:', error);
-        modelsContainer.innerHTML = `
-            <div class="placeholder-message">
-                <p>${error.message || 'Error loading models. Please check the directory path in settings and try again.'}</p>
-            </div>
-        `;
-    } finally {
-        // Always hide loading overlay when done (success or error)
-        hideLoadingOverlay();
+        // Error already handled in  ModelOps
     }
 }
-// Refresh models
+// Refresh models (wrapper for ModelOps)
 async function refreshModels() {
-    const dirPath = settingsManager.getSetting('modelsDirectory');
-    if (dirPath) {
-        showLoadingOverlay();
-        await loadModelsFromDirectory(dirPath);
-    } else {
-        alert('No models directory set. Please set a directory in Settings.');
-        openSettingsModal();
-    }
+    await ModelOps.refreshModels(settingsManager, loadModelsFromDirectory, openSettingsModal);
 }
 
 // Display models based on current view, sort, and search
@@ -840,33 +824,45 @@ function openModelDetails(model) {
         ).join('');
 
         modalPreviewHTML = `
-            <img id="model-preview-image" src="${previewImages[0]}" alt="${model.name}" class="preview-main-image" data-index="0">
+            <div class="preview-image-wrapper">
+                <img id="model-preview-image" src="${previewImages[0]}" alt="${model.name}" class="preview-main-image" data-index="0">
+                <div class="drop-target-indicator">
+                    <i class="fas fa-upload"></i>
+                    <span>Drop image to add</span>
+                </div>
+                <div class="image-drop-zone" id="image-drop-zone">
+                    <div class="drop-zone-content">
+                        <i class="fas fa-image"></i>
+                        <p>Drop image here to add thumbnail</p>
+                    </div>
+                </div>
+            </div>
             <div class="preview-thumbnails">
                 ${thumbnailsHTML}
             </div>
-            <div class="drop-target-indicator">
-                <i class="fas fa-upload"></i>
-                <span>Drop image to add</span>
-            </div>
-            <div class="image-drop-zone" id="image-drop-zone">
-                <div class="drop-zone-content">
-                    <i class="fas fa-image"></i>
-                    <p>Drop image here to add thumbnail</p>
-                </div>
+            <div class="preview-management-buttons">
+                <button id="set-default-preview-btn" class="preview-mgmt-btn star-btn" title="Set current image as default" disabled>
+                    <i class="fas fa-star"></i> Set as Default
+                </button>
+                <button id="delete-preview-btn" class="preview-mgmt-btn delete-btn" title="Delete current image">
+                    <i class="fas fa-times"></i> Delete
+                </button>
             </div>
         `;
     } else {
         // Single or no image - simple display
         modalPreviewHTML = `
-            <img id="model-preview-image" src="${previewImages[0] || '/assets/placeholder.png'}" alt="${model.name}">
-            <div class="drop-target-indicator">
-                <i class="fas fa-upload"></i>
-                <span>Drop image to add</span>
-            </div>
-            <div class="image-drop-zone" id="image-drop-zone">
-                <div class="drop-zone-content">
-                    <i class="fas fa-image"></i>
-                    <p>Drop image here to add thumbnail</p>
+            <div class="preview-image-wrapper">
+                <img id="model-preview-image" src="${previewImages[0] || '/assets/placeholder.png'}" alt="${model.name}">
+                <div class="drop-target-indicator">
+                    <i class="fas fa-upload"></i>
+                    <span>Drop image to add</span>
+                </div>
+                <div class="image-drop-zone" id="image-drop-zone">
+                    <div class="drop-zone-content">
+                        <i class="fas fa-image"></i>
+                        <p>Drop image here to add thumbnail</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -949,6 +945,11 @@ function openModelDetails(model) {
     document.getElementById('model-example-prompt').value = model.json?.['example prompt'] || '';
     document.getElementById('model-tags').value = model.json?.['tags'] || '';
 
+    // Set preferred weight slider
+    const preferredWeight = parseFloat(model.json?.['preferred weight']) || 0;
+    preferredWeightSlider.value = preferredWeight;
+    preferredWeightValue.textContent = preferredWeight.toFixed(1);
+
     // Populate file location dropdown
     populateFileLocationDropdown(relativePath || '');
 
@@ -974,12 +975,15 @@ function openModelDetails(model) {
             // Try to find the field in different container types
             const infoRow = this.closest('.info-row');
             const nsfwContainer = this.closest('.nsfw-checkbox-container');
+            const preferredWeightContainer = this.closest('.preferred-weight-container');
 
             let field;
             if (infoRow) {
                 field = infoRow.querySelector('.editable-field');
             } else if (nsfwContainer) {
                 field = nsfwContainer.querySelector('.editable-field');
+            } else if (preferredWeightContainer) {
+                field = preferredWeightContainer.querySelector('.editable-field');
             }
 
             if (!field) {
@@ -1034,6 +1038,9 @@ function openModelDetails(model) {
                 case 'model-tags':
                     currentModel.json['tags'] = value;
                     break;
+                case 'model-preferred-weight':
+                    currentModel.json['preferred weight'] = parseFloat(value);
+                    break;
             }
 
             try {
@@ -1067,14 +1074,38 @@ function openModelDetails(model) {
 
     // Initialize carousel handlers for modal if multiple images
     if (previewImages.length > 1) {
+        console.log('Multiple images detected, setting up handlers...');
         const modalMainImage = document.querySelector('#model-modal .preview-main-image');
         const modalThumbnails = document.querySelectorAll('#model-modal .preview-thumb');
+        const setDefaultBtn = document.getElementById('set-default-preview-btn');
+        const deleteBtn = document.getElementById('delete-preview-btn');
 
+        console.log('Modal main image:', modalMainImage);
+        console.log('Modal thumbnails:', modalThumbnails.length);
+        console.log('Set default button:', setDefaultBtn);
+        console.log('Delete button:', deleteBtn);
+
+        // Mouseover to update preview
         modalThumbnails.forEach((thumb, index) => {
-            thumb.addEventListener('mouseover', () => {
+            console.log(`Setting up mouseover for thumbnail ${index}`, thumb);
+
+            // Try both mouseover and mouseenter in case one is blocked
+            const updatePreview = () => {
+                console.log(`Mouseover thumbnail ${index}`);
+
                 // Update main image
                 modalMainImage.src = previewImages[index];
                 modalMainImage.dataset.index = index;
+
+                console.log(`Updated data-index to: ${index}`);
+                console.log(`Is index 0?`, index === 0);
+
+                // Update star button state
+                if (setDefaultBtn) {
+                    const shouldDisable = (index === 0);
+                    console.log(`Setting star button disabled to: ${shouldDisable}`);
+                    setDefaultBtn.disabled = shouldDisable;
+                }
 
                 // Update active thumbnail
                 modalThumbnails.forEach((t, i) => {
@@ -1084,12 +1115,97 @@ function openModelDetails(model) {
                         t.classList.remove('active');
                     }
                 });
-            });
+            };
+
+            thumb.addEventListener('mouseover', updatePreview);
+            thumb.addEventListener('mouseenter', updatePreview);
+            thumb.addEventListener('click', () => console.log(`Click on thumbnail ${index}`));
         });
+
+        // Delete button handler
+        if (deleteBtn) {
+            console.log('Attaching delete button handler...');
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent drop zone from capturing this
+                console.log('Delete button clicked!');
+                const currentIndex = parseInt(modalMainImage.dataset.index) || 0;
+                const thumbnailNumber = currentIndex + 1;
+
+                if (!confirm(`Delete this thumbnail? This cannot be undone.`)) return;
+
+                try {
+                    const response = await fetch('/delete-thumbnail', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            modelName: currentModel.name,
+                            thumbnailIndex: thumbnailNumber
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to delete thumbnail');
+
+                    await refreshModels();
+                    const updatedModel = models.find(m => m.name === currentModel.name);
+                    if (updatedModel) {
+                        openModelDetails(updatedModel);
+                    }
+                } catch (error) {
+                    console.error('Error deleting thumbnail:', error);
+                    alert('Failed to delete thumbnail');
+                }
+            });
+        }
+
+        // Set as default button handler
+        if (setDefaultBtn) {
+            console.log('Attaching set default button handler...');
+            setDefaultBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent drop zone from capturing this
+                console.log('Set default button clicked!');
+                const currentIndex = parseInt(modalMainImage.dataset.index) || 0;
+                if (currentIndex === 0) return; // Already default
+
+                const thumbnailNumber = currentIndex + 1;
+
+                if (!confirm(`Set this as the default thumbnail?`)) return;
+
+                try {
+                    const currentPreviewCount = currentModel.previewImages?.length || 0;
+                    const newOrder = [thumbnailNumber];
+
+                    for (let i = 1; i <= currentPreviewCount; i++) {
+                        if (i !== thumbnailNumber) {
+                            newOrder.push(i);
+                        }
+                    }
+
+                    const response = await fetch('/reorder-thumbnails', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            modelName: currentModel.name,
+                            newOrder: newOrder
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to reorder thumbnails');
+
+                    await refreshModels();
+                    const updatedModel = models.find(m => m.name === currentModel.name);
+                    if (updatedModel) {
+                        openModelDetails(updatedModel);
+                    }
+                } catch (error) {
+                    console.error('Error reordering thumbnails:', error);
+                    alert('Failed to set thumbnail as default');
+                }
+            });
+        }
     }
 
     // Initialize image drop zone functionality
-    initializeImageDropZone();
+    initializeImageDropZone(() => currentModel, refreshModelData);
 }
 
 function closeModelModal() {
@@ -1102,43 +1218,16 @@ function closeModelModal() {
 async function saveFilename() {
     if (!currentModel) return;
 
-    const oldName = currentModel.name;
     const newName = modelFilename.value.trim();
 
-    if (oldName === newName) {
-        // No change, nothing to do
-        return;
-    }
-
     try {
-        const response = await fetch('/rename-lora', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                oldName: oldName,
-                newName: newName
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        currentModel = await ModelOps.saveFilename(currentModel, newName, refreshModels);
 
         // Update UI
-        currentModel.name = newName;
-        currentModel.filename = newName + '.safetensors';
         modalTitle.textContent = newName;
 
-        // Filename remains editable -
-
-        // Refresh the model list
-        refreshModels();
-
     } catch (error) {
-        console.error('Error renaming file:', error);
-        alert('Error renaming file. Please try again.');
+        alert(error.message);
     }
 }
 
@@ -1147,33 +1236,10 @@ async function saveJsonMetadata() {
 
     try {
         const jsonContent = jsonEditor.value;
-        let jsonData;
-
-        try {
-            jsonData = JSON.parse(jsonContent);
-        } catch (e) {
-            alert('Invalid JSON format. Please check your syntax.');
-            return;
-        }
-
-        const endpoint = currentJsonType === 'model' ? '/save-json' : '/save-civitai';
-        const response = await fetch(`${endpoint}?name=${encodeURIComponent(currentModel.name)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: jsonContent
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        await ModelOps.saveJsonMetadata(currentModel, jsonContent, currentJsonType);
         alert('JSON metadata saved successfully!');
-
     } catch (error) {
-        console.error('Error saving JSON metadata:', error);
-        alert('Error saving JSON metadata. Please try again.');
+        alert(error.message || 'Error saving JSON metadata. Please try again.');
     }
 }
 
@@ -1195,38 +1261,25 @@ function switchJsonType(type) {
 }
 
 // Function to refresh the current model data
-async function refreshModelData() {
+export async function refreshModelData() {
     if (!currentModel) return;
 
     try {
-        // Fetch the latest data for all models
-        const response = await fetch('/load-loras?refresh=true');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const result = await ModelOps.refreshModelData(
+            currentModel,
+            models,
+            (model) => {
+                currentModel = model;
+                openModelDetails(currentModel);
+            }
+        );
 
-        // Update the models array
-        const updatedModels = await response.json();
-        models = updatedModels;
-
-        // Find the current model in the updated data
-        const updatedModel = models.find(model => model.name === currentModel.name);
-
-        if (updatedModel) {
-            // Update the current model reference
-            currentModel = updatedModel;
-
-            // Refresh all fields in the modal
-            openModelDetails(currentModel);
-
-            console.log('Model data refreshed successfully');
-        } else {
-            console.error('Could not find the current model in the updated data');
-            alert('Could not refresh model data. The model may have been renamed or deleted.');
+        // Update models array with fresh data
+        if (result && result.updatedModels) {
+            models = result.updatedModels;
         }
     } catch (error) {
-        console.error('Error refreshing model data:', error);
-        alert('Error refreshing model data. Please try again.');
+        alert(error.message || 'Error refreshing model data. Please try again.');
     }
 }
 
@@ -1246,181 +1299,13 @@ const getCivitaiDataBtn = document.getElementById('get-civitai-data-btn');
 const createJsonBtn = document.getElementById('create-json-btn');
 const downloadThumbnailBtn = document.getElementById('download-thumbnail-btn');
 const fixThumbnailBtn = document.getElementById('fix-thumbnail-btn');
-const civitaiActionStatus = document.getElementById('civitai-action-status');
 
-// Add event listeners for Civitai action buttons
-getCivitaiDataBtn?.addEventListener('click', handleGetCivitaiData);
-createJsonBtn?.addEventListener('click', handleCreateJson);
-downloadThumbnailBtn?.addEventListener('click', handleDownloadThumbnail);
-fixThumbnailBtn?.addEventListener('click', handleFixThumbnail);
+// Event Listeners (using CivitaiAPI module)
+getCivitaiDataBtn?.addEventListener('click', () => CivitaiAPI.getCivitaiData(currentModel, refreshModelData));
+createJsonBtn?.addEventListener('click', () => CivitaiAPI.convertCivitaiToJson(currentModel, refreshModelData));
+downloadThumbnailBtn?.addEventListener('click', () => CivitaiAPI.downloadCivitaiThumbnail(currentModel, refreshModelData));
+fixThumbnailBtn?.addEventListener('click', () => CivitaiAPI.fixThumbnailName(currentModel, refreshModelData));
 
-// Helper function to show status message
-function showCivitaiStatus(message, type = 'info') {
-    if (!civitaiActionStatus) return;
-
-    civitaiActionStatus.textContent = message;
-    civitaiActionStatus.className = `civitai-action-status ${type}`;
-}
-
-// Helper function to disable buttons during operation
-function disableCivitaiButtons(disabled = true) {
-    [getCivitaiDataBtn, createJsonBtn, downloadThumbnailBtn, fixThumbnailBtn].forEach(btn => {
-        if (btn) btn.disabled = disabled;
-    });
-}
-
-// Get Civitai Data for current model
-async function handleGetCivitaiData() {
-    if (!currentModel) return;
-
-    disableCivitaiButtons(true);
-    showCivitaiStatus(`Fetching Civitai data for ${currentModel.name}...`, 'info');
-
-    try {
-        const response = await fetch('/civitai/get-model-info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ modelPath: currentModel.path })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showCivitaiStatus('✓ Civitai data saved successfully!', 'success');
-            // Refresh model data to show updated info
-            await refreshModelData();
-        } else if (data.status === 'not_found') {
-            showCivitaiStatus('⚠ Model not found on Civitai', 'error');
-        } else {
-            showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error fetching Civitai data:', error);
-        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
-    } finally {
-        disableCivitaiButtons(false);
-    }
-}
-
-// Create JSON from .civitai.info for current model
-async function handleCreateJson() {
-    if (!currentModel) return;
-
-    disableCivitaiButtons(true);
-    showCivitaiStatus(`Converting to JSON for ${currentModel.name}...`, 'info');
-
-    try {
-        const response = await fetch('/civitai/convert-to-json', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                modelPath: currentModel.path,
-                useApi: true
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showCivitaiStatus('✓ JSON created successfully!', 'success');
-            // Refresh model data to  show updated JSON
-            await refreshModelData();
-        } else {
-            showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error creating JSON:', error);
-        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
-    } finally {
-        disableCivitaiButtons(false);
-    }
-}
-
-// Download thumbnail for current model
-async function handleDownloadThumbnail() {
-    if (!currentModel) return;
-
-    disableCivitaiButtons(true);
-    showCivitaiStatus(`Downloading thumbnail for ${currentModel.name}...`, 'info');
-
-    try {
-        const response = await fetch('/civitai/download-preview', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                modelPath: currentModel.path,
-                maxSize: false,
-                skipNsfw: true
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showCivitaiStatus('✓ Thumbnail downloaded successfully!', 'success');
-            // Refresh model data to show new thumbnail
-            await refreshModelData();
-        } else {
-            showCivitaiStatus(`⊝ ${data.message}`, 'info');
-        }
-    } catch (error) {
-        console.error('Error downloading thumbnail:', error);
-        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
-    } finally {
-        disableCivitaiButtons(false);
-    }
-}
-
-// Fix thumbnail name for current model
-async function handleFixThumbnail() {
-    if (!currentModel) return;
-
-    disableCivitaiButtons(true);
-    showCivitaiStatus(`Fixing thumbnail name for ${currentModel.name}...`, 'info');
-
-    try {
-        const response = await fetch('/civitai/fix-thumbnail', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                modelPath: currentModel.path
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showCivitaiStatus(`✓ ${data.message}`, 'success');
-            // Refresh model data in case thumbnail path changed
-            await refreshModelData();
-        } else if (data.status === 'skipped') {
-            showCivitaiStatus(`⊝ ${data.message}`, 'info');
-        } else {
-            showCivitaiStatus(`⊝ ${data.message}`, 'info');
-        }
-    } catch (error) {
-        console.error('Error fixing thumbnail:', error);
-        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
-    } finally {
-        disableCivitaiButtons(false);
-    }
-}
 
 // ===== Filename Helper Buttons =====
 
@@ -1749,199 +1634,3 @@ async function handleMoveModel() {
         moveButton.textContent = 'Move';
     }
 }
-
-
-
-// ===== Image Drop Zone Functions =====
-
-// Initialize drag-and-drop for image upload
-function initializeImageDropZone() {
-    let dropZone = document.getElementById('image-drop-zone');
-    let previewContainer = document.getElementById('model-preview-container');
-
-    if (!dropZone || !previewContainer) {
-        console.error('Drop zone elements not found');
-        return;
-    }
-
-    // Clone the container to remove all old event listeners
-    const newContainer = previewContainer.cloneNode(true);
-    previewContainer.parentNode.replaceChild(newContainer, previewContainer);
-    previewContainer = newContainer;
-
-    // Re-query drop zone after cloning
-    dropZone = previewContainer.querySelector('#image-drop-zone');
-
-    console.log('Drop zone elements found, attaching listeners...');
-
-    // Prevent default drag behaviors on the container
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        previewContainer.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // Use a counter to track drag state and prevent flickering
-    let dragCounter = 0;
-
-    // Highlight drop zone when item is dragged over it
-    previewContainer.addEventListener('dragenter', (e) => {
-        dragCounter++;
-        dropZone.classList.add('drag-over');
-    }, false);
-
-    previewContainer.addEventListener('dragleave', (e) => {
-        dragCounter--;
-        if (dragCounter === 0) {
-            dropZone.classList.remove('drag-over');
-        }
-    }, false);
-
-    previewContainer.addEventListener('drop', (e) => {
-        dragCounter = 0;
-        dropZone.classList.remove('drag-over');
-    }, false);
-
-    // Handle dropped files
-    previewContainer.addEventListener('drop', handleDrop, false);
-
-    function handleDrop(e) {
-        console.log('Drop event fired!', e);
-        const dt = e.dataTransfer;
-        const files = dt.files;
-
-        console.log('Files dropped:', files);
-
-        if (files.length > 0) {
-            console.log('Calling handleImageDrop with file:', files[0]);
-            handleImageDrop(files[0]);
-        }
-    }
-
-    // Re-attach thumbnail event listeners after container has been cloned
-    // This ensures thumbnails still work after drop zone initialization
-    reattachThumbnailListeners();
-}
-
-// Reattach thumbnail mouseover event listeners
-function reattachThumbnailListeners() {
-    if (!currentModel) return;
-
-    // Get preview images array
-    const previewImages = currentModel.previewImages || (currentModel.previewUrl ? [currentModel.previewUrl] : []);
-
-    // Only proceed if we have multiple images
-    if (previewImages.length <= 1) return;
-
-    const modalMainImage = document.querySelector('#model-modal .preview-main-image');
-    const modalThumbnails = document.querySelectorAll('#model-modal .preview-thumb');
-
-    if (!modalMainImage || !modalThumbnails || modalThumbnails.length === 0) return;
-
-    modalThumbnails.forEach((thumb, index) => {
-        thumb.addEventListener('mouseover', () => {
-            // Update main image
-            modalMainImage.src = previewImages[index];
-            modalMainImage.dataset.index = index;
-
-            // Update active thumbnail
-            modalThumbnails.forEach((t, i) => {
-                if (i === index) {
-                    t.classList.add('active');
-                } else {
-                    t.classList.remove('active');
-                }
-            });
-        });
-    });
-}
-
-// Handle the dropped image file
-async function handleImageDrop(file) {
-    console.log('handleImageDrop called with:', file);
-
-    if (!currentModel) {
-        alert('No model selected');
-        console.error('No current model');
-        return;
-    }
-
-    console.log('Current model:', currentModel);
-
-    // Validate file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    console.log('File type:', file.type, 'Valid:', validTypes.includes(file.type));
-    if (!validTypes.includes(file.type)) {
-        alert('Please drop a valid image file (PNG or JPEG)');
-        return;
-    }
-
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-        alert('Image file is too large. Maximum size is 10MB');
-        return;
-    }
-
-    try {
-        console.log('Starting upload process...');
-
-        // Create FormData for multipart upload
-        const formData = new FormData();
-        formData.append('modelName', currentModel.name);
-        formData.append('imageFile', file);
-
-        console.log('FormData created, model name:', currentModel.name);
-
-        // Show loading state
-        const dropZone = document.getElementById('image-drop-zone');
-        const originalContent = dropZone.innerHTML;
-        dropZone.classList.add('drag-over');
-        dropZone.querySelector('.drop-zone-content p').textContent = 'Uploading...';
-
-        console.log('Sending POST request to /upload-preview...');
-
-        // Upload to server
-        const response = await fetch('/upload-preview', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Upload failed: ${errorText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            // Success! Refresh the modal to show the new preview
-            alert(`Successfully added thumbnail: ${data.filename}`);
-
-            // Refresh model data to get updated preview list
-            await refreshModelData();
-        } else {
-            throw new Error(data.message || 'Upload failed');
-        }
-
-        // Reset drop zone
-        dropZone.innerHTML = originalContent;
-        dropZone.classList.remove('drag-over');
-
-    } catch (error) {
-        console.error('Error uploading image:', error);
-        alert(`Error uploading image: ${error.message}`);
-
-        // Reset drop zone
-        const dropZone = document.getElementById('image-drop-zone');
-        dropZone.classList.remove('drag-over');
-        location.reload(); // Simple way to reset the drop zone content
-    }
-}
-
-
-

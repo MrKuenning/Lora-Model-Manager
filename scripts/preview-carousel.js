@@ -83,17 +83,17 @@ function switchToImage(cardElement, index, previewImages) {
  */
 export function generateCarouselHTML(previewImages, modelName) {
     if (!previewImages || previewImages.length === 0) {
-        return `<img src="placeholder.png" data-src="/assets/placeholder.png" alt="${modelName}" class="lazy-image">`;
+        return `<img src="/assets/placeholder.png" data-src="/assets/placeholder.png" alt="${modelName}" class="lazy-image">`;
     }
 
     if (previewImages.length === 1) {
         // Single image - no carousel needed
-        return `<img src="placeholder.png" data-src="${previewImages[0]}" alt="${modelName}" class="lazy-image preview-main-image">`;
+        return `<img src="/assets/placeholder.png" data-src="${previewImages[0]}" alt="${modelName}" class="lazy-image preview-main-image">`;
     }
 
     // Multiple images - create carousel with side arrow navigation
     return `
-        \u003cimg src=\"placeholder.png\" data-src=\"${previewImages[0]}\" alt=\"${modelName}\" class=\"lazy-image preview-main-image\" data-index=\"0\"\u003e
+        \u003cimg src=\"/assets/placeholder.png\" data-src=\"${previewImages[0]}\" alt=\"${modelName}\" class=\"lazy-image preview-main-image\" data-index=\"0\"\u003e
         \u003cbutton class=\"carousel-arrow carousel-arrow-prev\" title=\"Previous image\"\u003e
             \u003ci class=\"fas fa-chevron-left\"\u003e\u003c/i\u003e
         \u003c/button\u003e
