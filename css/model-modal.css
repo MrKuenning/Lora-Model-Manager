@@ -56,7 +56,8 @@
     padding: var(--spacing-xl);
     border-radius: var(--border-radius-md);
     max-width: 95vw;
-    width: clamp(800px, 90vw, 1600px);
+    width: clamp(320px, 95vw, 1600px);
+    /* Changed from 800px to 320px for mobile support */
     box-shadow: var(--shadow-modal);
     position: relative;
     color: var(--color-text);
@@ -538,19 +539,82 @@ textarea.editable-field {
 }
 
 /* Responsive styles */
+
+/* Large tablets and small laptops */
 @media (max-width: 1200px) {
     .model-details-top {
-        grid-template-columns: minmax(250px, 25%) 1fr;
+        grid-template-columns: minmax(220px, 280px) 1fr;
+        gap: var(--spacing-lg);
     }
 
     .model-activation-info {
-        grid-template-columns: minmax(250px, 25%) 1fr;
+        grid-template-columns: minmax(220px, 280px) 1fr;
+    }
+
+    #model-modal .modal-content {
+        padding: var(--spacing-lg);
     }
 }
 
+/* Tablet landscape - CRITICAL: Stack edit fields to single column */
+@media (max-width: 1024px) {
+    .model-details-top {
+        grid-template-columns: minmax(200px, 250px) 1fr;
+        gap: var(--spacing-md);
+    }
+
+    /* CRITICAL FIX: Stack edit fields from 2 columns to 1 column */
+    .field-section {
+        grid-template-columns: 1fr !important;
+        /* Single column for all edit fields */
+        gap: var(--spacing-md);
+    }
+
+    .civitai-actions-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .filename-helper-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-xs);
+    }
+
+    #model-modal .modal-content {
+        margin: 30px auto;
+        padding: var(--spacing-md);
+    }
+}
+
+/* Tablet portrait - Full single column layout */
 @media (max-width: 768px) {
+    #model-modal .modal-content {
+        padding: var(--spacing-md);
+        margin: 20px auto;
+        width: calc(100vw - 40px);
+    }
+
+    .modal-header {
+        padding: var(--spacing-md);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .modal-header-buttons {
+        align-self: flex-end;
+        position: absolute;
+        top: var(--spacing-md);
+        right: var(--spacing-md);
+    }
+
+    .model-details {
+        gap: var(--spacing-lg);
+    }
+
     .model-details-top {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
     }
 
     .model-details-left {
@@ -566,7 +630,123 @@ textarea.editable-field {
     }
 
     .json-editor-section {
-        margin-top: 15px;
+        margin-top: var(--spacing-md);
+    }
+
+    .civitai-actions-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .filename-helper-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .section-title {
+        font-size: var(--font-size-md);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    /* Thumbnail carousel stacks better on mobile */
+    #model-modal .preview-thumbnails {
+        padding: var(--spacing-sm);
+        gap: var(--spacing-xs);
+    }
+
+    #model-modal .preview-thumb {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Large mobile */
+@media (max-width: 640px) {
+    .modal-title-container h2 {
+        font-size: var(--font-size-lg);
+    }
+
+    .modal-subtitle {
+        font-size: var(--font-size-md);
+    }
+
+    .editable-field,
+    #model-filename {
+        font-size: var(--font-size-sm);
+    }
+
+    textarea.editable-field {
+        min-height: 80px;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    #model-modal .modal-content {
+        margin: 10px auto;
+        width: calc(100vw - 20px);
+        padding: var(--spacing-sm);
+    }
+
+    .modal-header {
+        padding: var(--spacing-sm);
+    }
+
+    .modal-title-container h2 {
+        font-size: var(--font-size-md);
+    }
+
+    .modal-subtitle {
+        font-size: var(--font-size-sm);
+    }
+
+    .section-title {
+        font-size: var(--font-size-sm);
+    }
+
+    .editable-field,
+    #model-filename {
+        padding: var(--spacing-sm);
+        font-size: var(--font-size-xs);
+    }
+
+    textarea.editable-field {
+        min-height: 70px;
+    }
+
+    .btn-small {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-xs);
+    }
+
+    .field-section {
+        padding: var(--spacing-sm);
+    }
+
+    .civitai-actions-section {
+        padding: var(--spacing-sm);
+    }
+
+    .info-row-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .info-row-header .btn {
+        align-self: flex-end;
+    }
+
+    /* Make thumbnails smaller on very small screens */
+    #model-modal .preview-thumb {
+        width: 35px;
+        height: 35px;
+    }
+
+    .static-info-row {
+        font-size: var(--font-size-xs);
+    }
+
+    .static-info-row label {
+        font-size: 10px;
     }
 }
 

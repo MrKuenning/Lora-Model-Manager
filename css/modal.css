@@ -387,7 +387,31 @@
 
 
 /* Responsive Modal Styles */
+
+/* Tablet landscape */
+@media (max-width: 1024px) {
+    .modal-content {
+        width: 95%;
+        max-width: 800px;
+    }
+
+    #settingsModal .modal-content {
+        padding: var(--spacing-lg);
+        gap: var(--spacing-md);
+    }
+
+    .sortable-columns {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablet portrait */
 @media (max-width: 768px) {
+    .modal-content {
+        margin: 30px auto;
+        width: calc(100vw - 40px);
+    }
+
     .model-details {
         flex-direction: column;
     }
@@ -418,5 +442,69 @@
     #settingsModal .setting-group:first-of-type,
     #settingsModal .setting-group:last-of-type {
         grid-column: 1;
+    }
+
+    .sortable-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .columns-container {
+        max-height: 300px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .modal-content {
+        margin: 20px auto;
+        padding: var(--spacing-sm);
+    }
+
+    #settingsModal .modal-content {
+        padding: var(--spacing-sm);
+        gap: var(--spacing-sm);
+    }
+
+    #settingsModal .modal-content h3 {
+        font-size: var(--font-size-lg);
+    }
+
+    .setting-group label {
+        font-size: var(--font-size-sm);
+    }
+
+    .column-name {
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 10px;
+        width: calc(100vw - 20px);
+    }
+
+    .close-modal {
+        font-size: var(--font-size-lg);
+        top: 8px;
+        right: 10px;
+    }
+
+    #modal-title {
+        font-size: var(--font-size-lg);
+    }
+
+    .modal-subtitle {
+        font-size: var(--font-size-sm);
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .modal-buttons .btn {
+        width: 100%;
     }
 }

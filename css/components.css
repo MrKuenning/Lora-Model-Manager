@@ -269,16 +269,168 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+
+/* Tablet landscape - 3 columns */
+@media (max-width: 1024px) {
     .grid-view {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--spacing-lg);
     }
 
     .group-models {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--spacing-lg);
     }
 }
 
+/* Tablet portrait - flexible 2-3 columns */
+@media (max-width: 768px) {
+    .grid-view {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: var(--spacing-md);
+    }
+
+    .group-models {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: var(--spacing-md);
+        padding: var(--spacing-lg);
+    }
+
+    .model-preview {
+        height: 220px;
+        /* Slightly shorter on tablets */
+    }
+}
+
+/* Large mobile - 2 columns */
+@media (max-width: 640px) {
+    .grid-view {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .group-models {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
+    }
+
+    .model-preview {
+        height: 200px;
+    }
+}
+
+/* Small mobile - 1 column */
+@media (max-width: 480px) {
+    .grid-view {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .group-models {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+        padding: var(--spacing-sm);
+    }
+
+    .model-preview {
+        height: auto;
+        aspect-ratio: 3/4;
+        /* Maintain aspect ratio on single column */
+    }
+
+    .model-info {
+        padding: var(--spacing-sm);
+    }
+
+    .model-name {
+        font-size: var(--font-size-sm);
+    }
+
+    .model-meta {
+        font-size: var(--font-size-xs);
+    }
+}
+
+
+/* Table View Responsive Styles */
+
+/* Tablet landscape - hide some columns */
+@media (max-width: 1200px) {
+    .table-view {
+        min-width: 800px;
+    }
+}
+
+/* Tablet portrait - hide more columns */
+@media (max-width: 1024px) {
+    .table-view {
+        min-width: 700px;
+    }
+}
+
+/* Mobile - convert to card layout */
+@media (max-width: 768px) {
+    .table-view-container {
+        overflow-x: visible;
+    }
+
+    .table-view {
+        min-width: 100%;
+        border: none;
+    }
+
+    .table-view thead {
+        display: none;
+    }
+
+    .table-view tbody {
+        display: block;
+    }
+
+    .table-view tr {
+        display: block;
+        margin-bottom: var(--spacing-lg);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-md);
+        background-color: var(--color-bg-tertiary);
+    }
+
+    .table-view tr:hover {
+        background-color: var(--color-bg-hover);
+    }
+
+    .table-view td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-xs) 0;
+        border: none;
+        max-width: 100%;
+        white-space: normal;
+        text-align: right;
+    }
+
+    .table-view td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: var(--spacing-md);
+        color: var(--color-text-secondary);
+        text-align: left;
+        flex: 0 0 40%;
+    }
+
+    .table-view .thumbnail {
+        margin-left: auto;
+    }
+
+    .table-view td:not(:last-child) {
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: var(--spacing-sm);
+        margin-bottom: var(--spacing-xs);
+    }
+}
 
 /* Lazy Loading Image Styles */
 .lazy-image {
