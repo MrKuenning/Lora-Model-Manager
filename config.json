@@ -3,7 +3,7 @@
   "theme": "dark",
   "defaultView": "grid",
   "defaultSort": "column:Date:desc",
-  "hideNSFW": true,
+  "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,
     "filename": true,

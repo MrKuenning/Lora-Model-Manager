@@ -65,6 +65,24 @@ const settingsManager = appSettings;
 // Event Listeners
 document.addEventListener('DOMContentLoaded', initApp);
 searchInput.addEventListener('input', handleSearch);
+
+// Clear search button functionality
+const clearSearchBtn = document.getElementById('clear-search-btn');
+if (clearSearchBtn) {
+    // Show/hide clear button based on input
+    searchInput.addEventListener('input', () => {
+        clearSearchBtn.style.display = searchInput.value ? 'flex' : 'none';
+    });
+
+    // Clear search on button click
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearSearchBtn.style.display = 'none';
+        searchTerm = '';
+        displayModels();
+    });
+}
+
 sortSelect.addEventListener('change', handleSort);
 groupSelect.addEventListener('change', handleGroupChange);
 modelFilterSelect.addEventListener('change', handleModelFilterChange);

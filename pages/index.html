@@ -47,7 +47,13 @@
             </div>
             <div class="search-filter">
                 <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Search models...">
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Search models..." />
+                        <button id="clear-search-btn" class="clear-search-btn" title="Clear search"
+                            style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                     <div class="search-syntax-guide">
                         <span class="syntax-title">Search Syntax:</span>
                         <span class="syntax-item"><code>space</code> = AND</span>
