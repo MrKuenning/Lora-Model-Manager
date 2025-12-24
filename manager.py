@@ -357,9 +357,18 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
             loraPath = self.load_settings().get('modelsDirectory', "")
             json_path = self.find_file_path(loraPath, model_name + ".json")
+            
+            # If JSON doesn't exist, create it in the same directory as the model file
             if not json_path:
-                self.send_error(404, "JSON File not found")
-                return
+                # Find the model file to determine where to create the JSON
+                model_path = self.find_file_path(loraPath, model_name + ".safetensors")
+                if not model_path:
+                    self.send_error(404, "Model file not found")
+                    return
+                
+                # Create JSON path in the same directory as the model
+                json_path = os.path.splitext(model_path)[0] + ".json"
+                print(f"Creating new JSON file at: {json_path}")
                 
             try:
                 # Update the JSON file with the model's json data
@@ -716,7 +725,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                                 'activation text', 'sd version', 'preferred weight',
                                 'negative text', 'civitai text', 
                                 'nsfw', 'url', 'base model', 'example prompt',
-                                'category', 'subcategory', 'tags', 'creator'
+                                'category', 'subcategory', 'tags', 'creator',
+                                'name', 'model version', 'high low'  # New fields to preserve
                             ]
                             for field in fields_to_preserve:
                                 # If field exists in existing data and has a value, keep the existing value
@@ -772,6 +782,43 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
             except Exception as e:
                 print(f"Error in fix-thumbnail: {e}")
+                self.send_error(500, f"Error: {e}")
+                
+        elif parsed_url.path == '/civitai/create-dummy-info':
+            # Create an empty .civitai.info file for models not found on Civitai
+            try:
+                data = json.loads(post_data)
+                model_path = data.get('modelPath')
+                
+                if not model_path:
+                    self.send_error(400, "Missing modelPath parameter")
+                    return
+                
+                print(f"Creating dummy info file for: {model_path}")
+                success = civitai_handler.create_dummy_info_file(model_path)
+                
+                if success:
+                    # Invalidate cache
+                    self.lora_data_cache = None
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'success',
+                        'message': 'Dummy info file created successfully'
+                    }).encode())
+                else:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'Failed to create dummy info file'
+                    }).encode())
+                
+            except Exception as e:
+                print(f"Error in create-dummy-info: {e}")
                 self.send_error(500, f"Error: {e}")
                 
         elif parsed_url.path == '/upload-preview':

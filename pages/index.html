@@ -71,11 +71,14 @@
                             <option disabled>Group By:</option>
                             <option value="Category">Category</option>
                             <option value="Civitai Name">Civitai Name</option>
+                            <option value="Model Name">Model Name</option>
+                            <option value="Model Version">Model Version</option>
                             <option value="Base Model">Base Model</option>
                             <option value="Subcategory">Subcategory</option>
                             <option value="Folder">Folder</option>
                             <option value="Creator">Creator</option>
                             <option value="Tags">Tags</option>
+                            <option value="High/Low">High/Low</option>
                             <option value="NSFW">NSFW</option>
                             <option value="Size">Size</option>
                             <option value="Date">Date</option>
@@ -131,6 +134,12 @@
                             <option value="column:Example Prompt:desc">Example Prompt (Z-A)</option>
                             <option value="column:Description:asc">Description (A-Z)</option>
                             <option value="column:Description:desc">Description (Z-A)</option>
+                            <option value="column:Model Name:asc">Model Name (A-Z)</option>
+                            <option value="column:Model Name:desc">Model Name (Z-A)</option>
+                            <option value="column:Model Version:asc">Model Version (A-Z)</option>
+                            <option value="column:Model Version:desc">Model Version (Z-A)</option>
+                            <option value="column:High/Low:asc">High/Low (A-Z)</option>
+                            <option value="column:High/Low:desc">High/Low (Z-A)</option>
                         </select>
                         <span class="dropdown-description"><strong>Sort</strong> Models</span>
                     </div>
@@ -176,8 +185,9 @@
                                 </div>
                             </div>
 
-                            <!-- Static/Non-editable info -->
+                            <!-- File Info Section -->
                             <div class="model-static-info">
+                                <!-- Read-Only File Fields -->
                                 <div class="static-info-row">
                                     <label>PATH:</label>
                                     <span id="model-path"></span>
@@ -187,127 +197,364 @@
                                     <span id="model-size"></span>
                                 </div>
                                 <div class="static-info-row">
-                                    <label>URL:</label>
-                                    <span id="model-url-display"><a id="model-url-link" href="#"
-                                            target="_blank"></a></span>
-                                </div>
-                                <div class="static-info-row">
                                     <label>DATE:</label>
                                     <span id="model-date"></span>
                                 </div>
-                                <div class="static-info-row">
-                                    <label>CIVITAI NAME:</label>
-                                    <span id="model-author-static"></span>
-                                </div>
-                                <div class="static-info-row">
-                                    <label>BASE MODEL:</label>
-                                    <span id="model-basemodel-static"></span>
-                                </div>
                             </div>
 
-                            <!-- NSFW checkbox moved here -->
-                            <div class="nsfw-checkbox-container">
-                                <label>
-                                    <input type="checkbox" id="model-nsfw" class="editable-field">
-                                    <span>NSFW</span>
-                                </label>
-                                <button class="btn btn-small btn-success save-btn">Save</button>
+                            <!-- Model Info Section -->
+                            <div class="model-static-info">
+                                <h4 class="static-section-title">Model Info</h4>
+                                <!-- Editable Model Fields -->
+                                <div class="static-info-row editable-static-row">
+                                    <label>BASE MODEL:</label>
+                                    <div class="static-editable-content">
+                                        <span id="model-basemodel-static" class="static-value"></span>
+                                        <input type="text" id="model-basemodel-input" class="static-edit-input"
+                                            style="display: none;">
+                                        <div class="static-edit-buttons">
+                                            <button id="edit-basemodel-btn" class="btn btn-tiny btn-secondary"
+                                                title="Edit Base Model">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button id="save-basemodel-btn" class="btn btn-tiny btn-success"
+                                                title="Save Base Model" style="display: none;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button id="cancel-basemodel-btn" class="btn btn-tiny btn-secondary"
+                                                title="Cancel" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="static-info-row editable-static-row">
+                                    <label>CREATOR:</label>
+                                    <div class="static-editable-content">
+                                        <span id="model-creator-static" class="static-value"></span>
+                                        <input type="text" id="model-creator-input" class="static-edit-input"
+                                            style="display: none;">
+                                        <div class="static-edit-buttons">
+                                            <button id="edit-creator-btn" class="btn btn-tiny btn-secondary"
+                                                title="Edit Creator">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button id="save-creator-btn" class="btn btn-tiny btn-success"
+                                                title="Save Creator" style="display: none;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button id="cancel-creator-btn" class="btn btn-tiny btn-secondary"
+                                                title="Cancel" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="static-info-row editable-static-row">
+                                    <label>CIVITAI NAME:</label>
+                                    <div class="static-editable-content">
+                                        <span id="model-author-static" class="static-value"></span>
+                                        <input type="text" id="model-author-input" class="static-edit-input"
+                                            style="display: none;">
+                                        <div class="static-edit-buttons">
+                                            <button id="edit-author-btn" class="btn btn-tiny btn-secondary"
+                                                title="Edit Civitai Name">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button id="save-author-btn" class="btn btn-tiny btn-success"
+                                                title="Save Civitai Name" style="display: none;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button id="cancel-author-btn" class="btn btn-tiny btn-secondary"
+                                                title="Cancel" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="static-info-row editable-static-row">
+                                    <label>URL:</label>
+                                    <div class="static-editable-content">
+                                        <span id="model-url-static" class="static-value"><a id="model-url-link" href="#"
+                                                target="_blank"></a></span>
+                                        <input type="text" id="model-url-input" class="static-edit-input"
+                                            style="display: none;">
+                                        <div class="static-edit-buttons">
+                                            <button id="edit-url-btn" class="btn btn-tiny btn-secondary"
+                                                title="Edit URL">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button id="save-url-btn" class="btn btn-tiny btn-success" title="Save URL"
+                                                style="display: none;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button id="cancel-url-btn" class="btn btn-tiny btn-secondary"
+                                                title="Cancel" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="static-info-row editable-static-row">
+                                    <label>NSFW:</label>
+                                    <div class="nsfw-toggle-container">
+                                        <button id="nsfw-toggle" class="nsfw-toggle-btn" data-value="false">
+                                            <span class="toggle-label">No</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Preferred Weight Slider -->
                             <div class="preferred-weight-container">
                                 <div class="slider-header">
                                     <label for="model-preferred-weight">Preferred Weight:</label>
-                                    <span id="preferred-weight-value" class="weight-value">0.0</span>
-                                    <button class="btn btn-small btn-success save-btn">Save</button>
+                                    <span id="model-preferred-weight-display" class="field-display"
+                                        style="display: inline; padding: 4px 8px; margin-left: 8px;">0.0</span>
+                                    <div class="field-edit-buttons">
+                                        <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                            data-field="model-preferred-weight">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-tiny btn-success field-save-btn"
+                                            data-field="model-preferred-weight" style="display: none;">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                            data-field="model-preferred-weight" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <input type="range" id="model-preferred-weight" class="editable-field weight-slider"
-                                    min="-4.0" max="4.0" step="0.1" value="0.0">
-                                <div class="slider-labels">
-                                    <span>-4.0</span>
-                                    <span>0.0</span>
-                                    <span>4.0</span>
+
+                                <!-- Visual-only gradient bar (shown in view mode) -->
+                                <div id="weight-visual-bar" class="weight-visual-bar">
+                                    <div class="weight-gradient"></div>
+                                    <div id="weight-indicator" class="weight-indicator" style="left: 50%;"></div>
+                                </div>
+
+                                <!-- Interactive slider (shown in edit mode) -->
+                                <div id="weight-slider-container" style="display: none;">
+                                    <input type="range" id="model-preferred-weight" class="field-input weight-slider"
+                                        min="-4.0" max="4.0" step="0.1" value="0.0">
+                                    <div class="slider-labels">
+                                        <span>-4.0</span>
+                                        <span>0.0</span>
+                                        <span>4.0</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Container for all field sections (column 2) -->
+                        <!-- Column 2: All editable field sections -->
                         <div class="field-sections-container">
-                            <!-- Section 1: Filename and Placeholder -->
-                            <h3 class="section-title">File Management</h3>
+                            <!-- Section: Model Identity -->
+                            <h3 class="section-title">Model Identity</h3>
                             <div class="field-section">
-                                <!-- Column 2: Filename -->
+                                <!-- Column 1: Model Name and Version -->
                                 <div class="model-basic-info">
-                                    <div class="info-row highlight-box">
+                                    <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Filename:</label>
-                                            <button id="save-filename-btn"
-                                                class="btn btn-small btn-success">Save</button>
+                                            <label>Model Name:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-name">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-name" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-name" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div class="filename-parts">
-                                            <input type="text" id="model-filename">
-                                            <span id="file-extension" class="file-extension">.safetensors</span>
-                                        </div>
-                                        <!-- Filename Helper Buttons -->
-                                        <div class="filename-helper-buttons">
-                                            <button id="use-civitai-name-btn" class="btn btn-small btn-secondary"
-                                                title="Populate filename with Civitai Name">
+                                        <span class="field-display" id="model-name-display"></span>
+                                        <input type="text" id="model-name" class="field-input">
+                                        <!-- Model Name Helper Buttons -->
+                                        <div class="model-name-helper-buttons" style="display: none;">
+                                            <button id="model-name-civitai-btn" class="btn btn-small btn-secondary"
+                                                title="Populate Model Name with Civitai Name">
                                                 <i class="fas fa-cloud-download-alt"></i> Civitai Name
                                             </button>
-                                            <button id="clean-filename-btn" class="btn btn-small btn-secondary"
-                                                title="Clean and format filename">
+                                            <button id="model-name-clean-btn" class="btn btn-small btn-secondary"
+                                                title="Clean and format Model Name">
                                                 <i class="fas fa-broom"></i> Clean
                                             </button>
-                                            <button id="wan-high-low-btn" class="btn btn-small btn-secondary"
-                                                title="Swap High and Low in filename">
-                                                <i class="fas fa-exchange-alt"></i> High/Low
+                                            <button id="model-name-trim-btn" class="btn btn-small btn-secondary"
+                                                title="Trim Model Name">
+                                                <i class="fas fa-cut"></i> Trim Name
                                             </button>
-                                            <button id="append-prefix-btn" class="btn btn-small btn-secondary"
-                                                title="Add base model prefix to filename">
-                                                <i class="fas fa-plus-circle"></i> Append Prefix
-                                            </button>
-                                            <button id="append-suffix-btn" class="btn btn-small btn-secondary"
-                                                title="Add base model suffix to filename">
-                                                <i class="fas fa-plus-square"></i> Append Suffix
+                                        </div>
+                                    </div>
+
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>Model Version:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-version">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-version" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-version" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span class="field-display" id="model-version-display"></span>
+                                        <input type="text" id="model-version" class="field-input">
+                                    </div>
+
+                                    <!-- High/Low Toggle (moved from Categorization) -->
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>High/Low:</label>
+                                        </div>
+                                        <div class="high-low-toggle-container">
+                                            <button id="high-low-toggle" class="high-low-toggle-btn" data-value="">
+                                                <span class="toggle-label">None</span>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Column 3: File Location -->
+                                <!-- Column 2: File Management -->
                                 <div class="model-basic-info">
-                                    <div class="info-row highlight-box">
-                                        <div class="info-row-header">
-                                            <label>File Location:</label>
-                                            <button id="move-file-location-btn"
-                                                class="btn btn-small btn-primary">Move</button>
+                                    <div class="info-row highlight-box" id="filename-section">
+                                        <!-- Default View: Read-only filename display -->
+                                        <div id="filename-display-container">
+                                            <div class="info-row-header">
+                                                <label>Filename:</label>
+                                            </div>
+                                            <div class="filename-display-value">
+                                                <span id="filename-display-text"></span>
+                                                <span class="file-extension">.safetensors</span>
+                                            </div>
                                         </div>
-                                        <select id="model-file-location" class="editable-field">
-                                            <option value="">Loading...</option>
-                                        </select>
+
+                                        <!-- Edit Mode: Editable filename (hidden by default) -->
+                                        <div id="filename-edit-container" style="display: none;">
+                                            <div class="info-row-header">
+                                                <label>Filename:</label>
+                                            </div>
+                                            <div class="filename-parts">
+                                                <input type="text" id="model-filename">
+                                                <span id="file-extension" class="file-extension">.safetensors</span>
+                                            </div>
+                                            <!-- Filename Helper Buttons -->
+                                            <div class="filename-helper-buttons">
+                                                <button id="recommended-filename-btn" class="btn btn-small btn-primary"
+                                                    title="Generate recommended filename based on model type">
+                                                    <i class="fas fa-magic"></i> Recommended
+                                                </button>
+                                                <button id="clean-filename-btn" class="btn btn-small btn-secondary"
+                                                    title="Clean and format filename">
+                                                    <i class="fas fa-broom"></i> Clean
+                                                </button>
+                                                <button id="use-model-name-btn" class="btn btn-small btn-secondary"
+                                                    title="Populate filename with Model Name">
+                                                    <i class="fas fa-tag"></i> Model Name
+                                                </button>
+                                                <button id="creator-suffix-btn" class="btn btn-small btn-secondary"
+                                                    title="Append creator name as suffix">
+                                                    <i class="fas fa-user-plus"></i> Creator Suffix
+                                                </button>
+                                                <button id="wan-high-low-btn" class="btn btn-small btn-secondary"
+                                                    title="Swap High and Low in filename">
+                                                    <i class="fas fa-exchange-alt"></i> High/Low
+                                                </button>
+                                                <button id="append-prefix-btn" class="btn btn-small btn-secondary"
+                                                    title="Add base model prefix to filename">
+                                                    <i class="fas fa-plus-circle"></i> Append Prefix
+                                                </button>
+                                                <button id="append-suffix-btn" class="btn btn-small btn-secondary"
+                                                    title="Add base model suffix to filename">
+                                                    <i class="fas fa-plus-square"></i> Append Suffix
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- File Location Section -->
+                                    <div class="info-row highlight-box" id="location-section">
+                                        <!-- Location dropdown (hidden by default) -->
+                                        <div id="location-edit-container" style="display: none;">
+                                            <div class="info-row-header">
+                                                <label>File Location:</label>
+                                            </div>
+                                            <select id="model-file-location" class="editable-field">
+                                                <option value="">Loading...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons - Default View (always visible when not editing) -->
+                                    <div id="file-mgmt-actions-default" class="file-mgmt-actions">
+                                        <button id="modify-name-btn" class="btn btn-medium btn-secondary">
+                                            <i class="fas fa-edit"></i> Modify Name
+                                        </button>
+                                        <button id="use-recommended-btn" class="btn btn-medium btn-primary">
+                                            <i class="fas fa-magic"></i> Use Recommended
+                                        </button>
+                                        <button id="move-model-btn" class="btn btn-medium btn-secondary">
+                                            <i class="fas fa-arrows-alt"></i> Move Model
+                                        </button>
+                                    </div>
+
+                                    <!-- Action Buttons - Edit Mode (visible when editing filename) -->
+                                    <div id="file-mgmt-actions-edit" class="file-mgmt-actions" style="display: none;">
+                                        <button id="save-filename-btn" class="btn btn-medium btn-success">
+                                            <i class="fas fa-check"></i> Save
+                                        </button>
+                                        <button id="cancel-filename-btn" class="btn btn-medium btn-secondary">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </div>
+
+                                    <!-- Action Buttons - Move Mode (visible when moving model) -->
+                                    <div id="file-mgmt-actions-move" class="file-mgmt-actions" style="display: none;">
+                                        <button id="execute-move-btn" class="btn btn-medium btn-success">
+                                            <i class="fas fa-check"></i> Move
+                                        </button>
+                                        <button id="cancel-move-btn" class="btn btn-medium btn-secondary">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Section 2: Tags, Creator, Category, Subcategory -->
-                            <h3 class="section-title">Catagorization</h3>
+                            <h3 class="section-title">Categorization</h3>
                             <div class="field-section">
                                 <!-- Column 2 -->
                                 <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
                                             <label>Tags:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-tags">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-tags" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-tags" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <input type="text" id="model-tags" class="editable-field">
-                                    </div>
-
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>Creator:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
-                                        </div>
-                                        <input type="text" id="model-creator" class="editable-field">
+                                        <span class="field-display" id="model-tags-display"></span>
+                                        <input type="text" id="model-tags" class="field-input">
                                     </div>
                                 </div>
 
@@ -316,18 +563,47 @@
                                     <div class="info-row">
                                         <div class="info-row-header">
                                             <label>Category:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-category">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-category" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-category" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <input type="text" id="model-category" class="editable-field">
+                                        <span class="field-display" id="model-category-display"></span>
+                                        <input type="text" id="model-category" class="field-input">
                                     </div>
 
                                     <div class="info-row">
                                         <div class="info-row-header">
                                             <label>Subcategory:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-subcategory">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-subcategory" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-subcategory" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <input type="text" id="model-subcategory" class="editable-field">
+                                        <span class="field-display" id="model-subcategory-display"></span>
+                                        <input type="text" id="model-subcategory" class="field-input">
                                     </div>
+
                                 </div>
                             </div>
 
@@ -338,26 +614,83 @@
                                 <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Positive Words:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <label>Triggerwords for WebUI:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-positive" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-positive">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-positive" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-positive" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-positive" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-positive-display"></span>
+                                        <textarea id="model-positive" class="field-input"></textarea>
                                     </div>
 
                                     <div class="info-row">
                                         <div class="info-row-header">
                                             <label>Example Prompt:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-example-prompt" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-example-prompt">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-example-prompt" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-example-prompt" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-example-prompt" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-example-prompt-display"></span>
+                                        <textarea id="model-example-prompt" class="field-input"></textarea>
                                     </div>
 
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Notes:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <label>Example Prompt 2:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-example-prompt-2" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-example-prompt-2">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-example-prompt-2" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-example-prompt-2" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-notes" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-example-prompt-2-display"></span>
+                                        <textarea id="model-example-prompt-2" class="field-input"></textarea>
                                     </div>
                                 </div>
 
@@ -365,26 +698,112 @@
                                 <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Negative Words:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <label>Negative Words for WebUI:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-negative" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-negative">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-negative" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-negative" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-negative" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-negative-display"></span>
+                                        <textarea id="model-negative" class="field-input"></textarea>
                                     </div>
 
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Civitai Words:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <label>All Triggerwords:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-authors" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-authors">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-authors" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-authors" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-authors" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-authors-display"></span>
+                                        <textarea id="model-authors" class="field-input"></textarea>
                                     </div>
+                                </div>
+                            </div>
 
+                            <!-- Section: Description -->
+                            <h3 class="section-title">Description</h3>
+                            <div class="field-section">
+                                <!-- Column 2 -->
+                                <div class="model-basic-info">
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>Notes:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-notes">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-notes" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-notes" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-notes-display"></span>
+                                        <textarea id="model-notes" class="field-input"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Column 3 -->
+                                <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
                                             <label>Description:</label>
-                                            <button class="btn btn-small btn-success save-btn">Save</button>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-description">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-description" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-description" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <textarea id="model-description" class="editable-field"></textarea>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-description-display"></span>
+                                        <textarea id="model-description" class="field-input"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -439,7 +858,8 @@
                                         <button id="civitai-json-btn"
                                             class="btn btn-small btn-secondary json-type-btn">Civitai
                                             Info</button>
-                                        <button id="save-json-btn" class="btn btn-small btn-success">Save JSON</button>
+                                        <button id="save-json-btn" class="btn btn-small btn-success">Save
+                                            JSON</button>
                                         <button id="refresh-json-btn" class="btn btn-small btn-primary">Refresh</button>
                                     </div>
                                     <div class="json-editor-container">
@@ -525,6 +945,12 @@
                         <option value="column:Example Prompt:desc">Example Prompt (Z-A)</option>
                         <option value="column:Description:asc">Description (A-Z)</option>
                         <option value="column:Description:desc">Description (Z-A)</option>
+                        <option value="column:Model Name:asc">Model Name (A-Z)</option>
+                        <option value="column:Model Name:desc">Model Name (Z-A)</option>
+                        <option value="column:Model Version:asc">Model Version (A-Z)</option>
+                        <option value="column:Model Version:desc">Model Version (Z-A)</option>
+                        <option value="column:High/Low:asc">High/Low (A-Z)</option>
+                        <option value="column:High/Low:desc">High/Low (Z-A)</option>
                     </select>
                 </div>
                 <div class="setting-group">
@@ -680,6 +1106,27 @@
                                 <div class="column-item">
                                     <div class="column-checkbox"><input type="checkbox" id="col-notes"></div>
                                     <div class="column-name">Notes</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="modelName">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-modelName"></div>
+                                    <div class="column-name">Model Name</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="modelVersion">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-modelVersion"></div>
+                                    <div class="column-name">Model Version</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="highLow">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-highLow"></div>
+                                    <div class="column-name">High/Low</div>
                                     <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
                                 </div>
                             </li>

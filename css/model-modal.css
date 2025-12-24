@@ -46,8 +46,158 @@
 }
 
 .filename-helper-buttons .btn:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Model Name Helper Buttons */
+.model-name-helper-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+}
+
+.model-name-helper-buttons .btn {
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.model-name-helper-buttons .btn i {
+    margin-right: var(--spacing-xs);
+}
+
+/* File Management Progressive Disclosure Styles */
+.file-management-container {
+    width: 100%;
+}
+
+/* Read-only filename display */
+.filename-display-value {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-md);
+}
+
+.filename-display-value #filename-display-text {
+    flex: 1;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+/* Filename edit mode styling */
+#filename-edit-container {
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+.filename-edit-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* File Management Action Buttons */
+.file-mgmt-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    justify-content: center;
+}
+
+.file-mgmt-actions .btn {
+    flex: 1;
+    max-width: 200px;
+}
+
+/* Location section - hide when empty */
+#location-section:has(#location-edit-container[style*="display: none"]) {
+    display: none;
+}
+
+#location-edit-container {
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+
+#location-edit-container select {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+}
+
+/* High/Low Toggle Styles */
+.high-low-toggle-container {
+    margin-top: var(--spacing-sm);
+}
+
+.high-low-toggle-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.high-low-toggle-btn:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-btn-primary);
+}
+
+.high-low-toggle-btn[data-value="High"] {
+    background-color: #4CAF50;
+    border-color: #45a049;
+    color: white;
+}
+
+.high-low-toggle-btn[data-value="Low"] {
+    background-color: #2196F3;
+    border-color: #1976D2;
+    color: white;
+}
+
+.high-low-toggle-btn[data-value=""] {
+    background-color: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+/* NSFW Toggle Styles */
+.nsfw-toggle-container {
+    margin-top: var(--spacing-sm);
+}
+
+.nsfw-toggle-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.nsfw-toggle-btn:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-btn-primary);
+}
+
+.nsfw-toggle-btn[data-value="true"] {
+    background-color: #f44336;
+    border-color: #d32f2f;
+    color: white;
+}
+
+.nsfw-toggle-btn[data-value="false"] {
+    background-color: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
 }
 
 #model-modal .modal-content {
@@ -108,15 +258,25 @@
 .preview-image-wrapper {
     position: relative;
     width: 100%;
+    aspect-ratio: 3 / 4;
+    /* 3:4 portrait ratio (3 wide, 4 tall) */
+    overflow: hidden;
+    /* Crop image to fit ratio */
     background-color: var(--color-bg-image);
     border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 /* Modal preview main image */
 #model-modal .preview-main-image {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     background-color: var(--color-bg-image);
 }
 
@@ -138,18 +298,24 @@
     /* Higher than drop zone to remain interactive */
 }
 
-#model-modal .model-preview img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
 /* Static info section in left column */
 .model-static-info {
     background-color: #333333;
     padding: var(--spacing-lg);
     border-radius: var(--border-radius-md);
     border: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-lg);
+}
+
+.static-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 var(--spacing-md) 0;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .static-info-row {
@@ -271,6 +437,240 @@
     text-decoration: underline;
 }
 
+/* Editable Static Fields Styles */
+.editable-static-row {
+    position: relative;
+}
+
+.static-editable-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    position: relative;
+}
+
+.static-value {
+    flex: 1;
+    display: inline-block;
+}
+
+.static-edit-input {
+    flex: 1;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    transition: border-color 0.3s ease;
+}
+
+.static-edit-input:focus {
+    border-color: var(--color-text-link);
+    outline: none;
+}
+
+.static-edit-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.btn-tiny {
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    min-width: auto;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-tiny i {
+    margin: 0;
+}
+
+/* Read-Only Field Display Styles */
+.field-display {
+    display: block;
+    padding: var(--spacing-md);
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    min-height: 36px;
+    color: var(--color-text);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    line-height: 1.4;
+}
+
+.field-display-textarea {
+    min-height: 96px;
+}
+
+.field-display:empty::before {
+    content: '(empty)';
+    color: var(--color-text-secondary);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Hidden inputs for edit mode */
+.field-input {
+    display: none;
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.field-input:focus {
+    border-color: var(--color-text-link);
+    outline: none;
+}
+
+textarea.field-input {
+    min-height: 96px;
+    max-height: 200px;
+    /* Limit height to about 10-12 lines */
+    overflow-y: auto;
+    /* Add scrollbar when content exceeds max-height */
+    resize: vertical;
+    line-height: 1.4;
+}
+
+/* Edit button group in info-row-header */
+.field-edit-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+/* Visual Weight Gradient Bar */
+.weight-visual-bar {
+    position: relative;
+    height: 28px;
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+}
+
+.weight-gradient {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right,
+            #ff4444 0%,
+            /* Red at -4 */
+            #ff8844 12.5%,
+            /* Orange */
+            #ffcc44 25%,
+            /* Yellow */
+            #88ff44 37.5%,
+            /* Yellow-green */
+            #44ff88 50%,
+            /* Green at 0 */
+            #44ffcc 62.5%,
+            /* Cyan */
+            #44ccff 75%,
+            /* Light blue */
+            #4488ff 87.5%,
+            /* Blue */
+            #4444ff 100%
+            /* Deep blue at +4 */
+        );
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+}
+
+.weight-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    transition: left 0.2s ease;
+}
+
+/* Interactive Weight Slider Styles */
+#weight-slider-container {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.weight-slider {
+    width: 100%;
+    height: 28px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right,
+            #ff4444 0%,
+            #ff8844 12.5%,
+            #ffcc44 25%,
+            #88ff44 37.5%,
+            #44ff88 50%,
+            #44ffcc 62.5%,
+            #44ccff 75%,
+            #4488ff 87.5%,
+            #4444ff 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    outline: none;
+    cursor: pointer;
+}
+
+/* Webkit Thumb */
+.weight-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    background: white;
+    cursor: grab;
+    border-radius: 50%;
+    border: 3px solid #333;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.weight-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+}
+
+/* Mozilla Firefox - Track */
+/* Removed as gradient is now on the slider itself */
+
+/* Mozilla Firefox - Thumb */
+.weight-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: white;
+    cursor: grab;
+    border-radius: 50%;
+    border: 3px solid #333;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.weight-slider::-moz-range-thumb:active {
+    cursor: grabbing;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
 /* Associated files styling */
 #model-associated-files {
     font-family: var(--font-family-mono);
@@ -282,7 +682,8 @@
 .model-basic-info {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    /* Reduced from lg */
 }
 
 .info-row {
@@ -296,7 +697,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: 4px;
+    /* Reduced from var(--spacing-xs) */
 }
 
 /* Textareas now use full width */
@@ -316,21 +718,56 @@
 .field-sections-container {
     display: flex;
     flex-direction: column;
+    gap: var(--spacing-md);
+    /* Add gap between sections */
 }
 
 /* Field sections with subtle boxes */
 .field-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-xl);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--spacing-md);
+    /* Reduced from xl */
+    padding: var(--spacing-md);
+    /* Reduced from lg */
+    margin-bottom: 0;
+    /* Removed, using gap on container instead */
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-md);
     background-color: #2d2d2d;
 }
 
+/* Ensure hidden inputs take up no space */
+.field-input[style*="display: none"],
+.field-input[style*="display:none"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 
+/* Hide all field inputs by default - they show only in edit mode */
+.field-input {
+    display: none;
+}
+
+/* Field displays are visible by default */
+.field-display {
+    display: block;
+    min-height: 1.2em;
+    /* Ensure there's space even when empty */
+    color: var(--color-text-primary);
+}
+
+.field-display-textarea {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 21em;
+    /* About 15 lines of text (1.4 line-height) */
+    overflow-y: auto;
+    /* Add scrollbar when content exceeds max-height */
+    line-height: 1.4;
+}
 
 
 .info-row label {
@@ -338,6 +775,8 @@
     margin-bottom: var(--spacing-sm);
     color: var(--color-text-secondary);
     text-align: left;
+    white-space: nowrap;
+    /* Prevent labels from wrapping */
 }
 
 .info-row-controls {

@@ -204,6 +204,15 @@ function groupModelsByProperty(models, property) {
                     groupValue = 'Unknown Path';
                 }
                 break;
+            case 'Model Name':
+                groupValue = model.json && model.json['name'] ? model.json['name'] : 'Unnamed';
+                break;
+            case 'Model Version':
+                groupValue = model.json && model.json['model version'] ? model.json['model version'] : 'No Version';
+                break;
+            case 'High/Low':
+                groupValue = model.json && model.json['high low'] ? model.json['high low'] : 'Not Set';
+                break;
             default:
                 groupValue = 'Ungrouped';
         }

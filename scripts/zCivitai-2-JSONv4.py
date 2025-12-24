@@ -51,6 +51,9 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'description': '',  # Will keep this empty as per requirement
         'example prompt': '',
         'folder': '',
+        'high low': '',  # High/Low toggle field
+        'model version': '',  # Model version field
+        'name': '',  # Model name field (populated from civitai name)
         'negative text': '',
         'notes': '',
         'nsfw': '',
@@ -79,6 +82,8 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
     if 'model' in civitai_info_data:
         if 'name' in civitai_info_data['model']:
             mapped_data['civitai name'] = civitai_info_data['model']['name']
+            # Also populate the 'name' field with civitai name
+            mapped_data['name'] = civitai_info_data['model']['name']
         if 'nsfw' in civitai_info_data['model']:
             mapped_data['nsfw'] = str(civitai_info_data['model']['nsfw']).lower()
 
@@ -173,7 +178,8 @@ def process_civitai_info_files(directory, use_api=True):
                                 'activation text', 'sd version', 'preferred weight',
                                 'negative text', 'civitai text', 
                                 'nsfw', 'url', 'base model', 'example prompt',
-                                'category', 'subcategory', 'tags', 'creator'
+                                'category', 'subcategory', 'tags', 'creator',
+                                'name', 'model version', 'high low'  # New fields to preserve
                             ]
                             for field in fields_to_preserve:
                                 # If field exists in existing data and has a value, keep the existing value

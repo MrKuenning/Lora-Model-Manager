@@ -96,6 +96,18 @@ function sortModels(models, column) {
                 valueA = (a.json && a.json['notes'] || '').toLowerCase();
                 valueB = (b.json && b.json['notes'] || '').toLowerCase();
                 break;
+            case 'Model Name':
+                valueA = (a.json && a.json['name'] || '').toLowerCase();
+                valueB = (b.json && b.json['name'] || '').toLowerCase();
+                break;
+            case 'Model Version':
+                valueA = (a.json && a.json['model version'] || '').toLowerCase();
+                valueB = (b.json && b.json['model version'] || '').toLowerCase();
+                break;
+            case 'High/Low':
+                valueA = (a.json && a.json['high low'] || '').toLowerCase();
+                valueB = (b.json && b.json['high low'] || '').toLowerCase();
+                break;
             default:
                 return 0;
         }
@@ -155,7 +167,10 @@ export function displayTableView(models, container, openModelDetails, settings) 
         "Civitai Words": 'civitaiWords',
         'Example Prompt': 'examplePrompt',
         'Description': 'description',
-        'Notes': 'notes'
+        'Notes': 'notes',
+        'Model Name': 'modelName',
+        'Model Version': 'modelVersion',
+        'High/Low': 'highLow'
     };
 
     const table = document.createElement('table');
@@ -418,6 +433,15 @@ function displayTableBody(models, table, openModelDetails, columns) {
                 case 'Notes':
                     const notes = model.json?.['notes'] || '';
                     cell.textContent = notes.length > 50 ? `${notes.substring(0, 50)}...` : notes;
+                    break;
+                case 'Model Name':
+                    cell.textContent = model.json?.['name'] || '';
+                    break;
+                case 'Model Version':
+                    cell.textContent = model.json?.['model version'] || '';
+                    break;
+                case 'High/Low':
+                    cell.textContent = model.json?.['high low'] || '';
                     break;
             }
 

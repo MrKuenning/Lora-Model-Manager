@@ -23,7 +23,10 @@ class Settings {
                 negativeWords: true,
                 authorsWords: true,
                 description: true,
-                notes: true
+                notes: true,
+                modelName: false,
+                modelVersion: false,
+                highLow: false
             },
             columnOrder: [
                 'thumbnail',
@@ -45,7 +48,10 @@ class Settings {
                 'negativeWords',
                 'authorsWords',
                 'description',
-                'notes'
+                'notes',
+                'modelName',
+                'modelVersion',
+                'highLow'
             ]
         };
 
@@ -75,7 +81,7 @@ class Settings {
             } catch (serverError) {
                 console.error('Error loading settings from server:', serverError);
             }
-            
+
             // If server load fails, try localStorage
             const savedSettings = localStorage.getItem('loraManagerSettings');
             if (savedSettings) {
@@ -94,7 +100,7 @@ class Settings {
         try {
             // Save to localStorage
             localStorage.setItem('loraManagerSettings', JSON.stringify(this.settings));
-            
+
             // Save to server's config.json
             try {
                 const response = await fetch('/save-settings', {
@@ -104,14 +110,14 @@ class Settings {
                     },
                     body: JSON.stringify(this.settings)
                 });
-                
+
                 if (!response.ok) {
                     console.error('Error saving settings to server:', response.statusText);
                 }
             } catch (serverError) {
                 console.error('Error communicating with server:', serverError);
             }
-            
+
             return true;
         } catch (error) {
             console.error('Error saving settings:', error);

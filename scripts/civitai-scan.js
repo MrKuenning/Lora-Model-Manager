@@ -112,7 +112,7 @@ async function scanAllModels() {
 
     let successCount = 0;
     let errorCount = 0;
-    let notFoundCount = 0;
+    let notFoundModels = []; // Track models not found on Civitai
 
     for (let i = 0; i < modelsToScan.length; i++) {
         const model = modelsToScan[i];
@@ -138,7 +138,7 @@ async function scanAllModels() {
                 model.has_info = true;
             } else if (data.status === 'not_found') {
                 addLog('warning', `⚠ ${model.name}: Not found on Civitai`);
-                notFoundCount++;
+                notFoundModels.push(model);
             } else {
                 addLog('error', `✗ ${model.name}: ${data.message}`);
                 errorCount++;
@@ -157,7 +157,19 @@ async function scanAllModels() {
 
     updateSummary();
     updateProgress('Scan complete', modelsToScan.length, modelsToScan.length);
-    addLog('info', `Scan complete: ${successCount} success, ${notFoundCount} not found, ${errorCount} errors`);
+    addLog('info', `Scan complete: ${successCount} success, ${notFoundModels.length} not found, ${errorCount} errors`);
+
+    // If any models were not found, ask if user wants to create dummy files
+    if (notFoundModels.length > 0) {
+        const createDummies = confirm(
+            `${notFoundModels.length} model(s) were not found on Civitai.\n\n` +
+            `Would you like to create empty info files for these models to prevent checking them again in future scans?`
+        );
+
+        if (createDummies) {
+            await createDummyFilesForModels(notFoundModels);
+        }
+    }
 
     currentOperation = null;
     enableButtons();
@@ -510,4 +522,47 @@ function enableButtons() {
 // Sleep utility
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Create dummy info files for multiple models (batch operation)
+async function createDummyFilesForModels(modelsArray) {
+    addLog('info', `Creating dummy info files for ${modelsArray.length} models...`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < modelsArray.length; i++) {
+        const model = modelsArray[i];
+
+        try {
+            const response = await fetch('/civitai/create-dummy-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    modelPath: model.path
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                addLog('success', `✓ ${model.name}: Dummy info file created`);
+                successCount++;
+                model.has_info = true;
+            } else {
+                addLog('error', `✗ ${model.name}: ${data.message}`);
+                errorCount++;
+            }
+        } catch (error) {
+            addLog('error', `✗ ${model.name}: ${error.message}`);
+            errorCount++;
+        }
+    }
+
+    updateSummary();
+    addLog('info', `Dummy file creation complete: ${successCount} success, ${errorCount} errors`);
 }

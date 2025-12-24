@@ -128,6 +128,31 @@ def save_civitai_info(model_path, model_info):
         return False
 
 
+def create_dummy_info_file(model_path):
+    """
+    Create an empty .civitai.info file to mark model as already checked
+    
+    Args:
+        model_path: Path to the model file
+        
+    Returns:
+        True on success, False on error
+    """
+    try:
+        base_path = os.path.splitext(model_path)[0]
+        info_path = f"{base_path}{INFO_EXTENSION}"
+        
+        # Create empty JSON object
+        with open(info_path, 'w', encoding='utf-8') as f:
+            json.dump({}, f, indent=2)
+        
+        print(f"Created dummy info file: {info_path}")
+        return True
+    except Exception as e:
+        print(f"Error creating dummy info file: {e}")
+        return False
+
+
 def get_full_size_image_url(image_url, width):
     """
     Convert Civitai image URL to full size version

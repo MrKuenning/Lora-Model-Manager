@@ -10,6 +10,7 @@ import { initializeImageDropZone, handleImageDrop } from './drop-zone-functions.
 import { showLoadingOverlay, hideLoadingOverlay } from './ui-utils.js';
 import * as ModelOps from './model-operations.js';
 import * as CivitaiAPI from './civitai-api.js';
+import { initializeCopyButtons } from './clipboard-utils.js';
 
 // DOM Elements
 const modelsContainer = document.getElementById('models-container');
@@ -97,6 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshModelBtn) {
         refreshModelBtn.addEventListener('click', refreshModelData);
     }
+
+    // Initialize copy buttons
+    initializeCopyButtons();
 });
 
 // Add event listener to close modal when clicking outside of it
@@ -112,6 +116,13 @@ saveJsonBtn.addEventListener('click', saveJsonMetadata);
 refreshJsonBtn.addEventListener('click', refreshModelData);
 modelJsonBtn.addEventListener('click', () => switchJsonType('model'));
 civitaiJsonBtn.addEventListener('click', () => switchJsonType('civitai'));
+
+// File Management Progressive Disclosure Event Listeners
+document.getElementById('modify-name-btn')?.addEventListener('click', enterFilenameEditMode);
+document.getElementById('cancel-filename-btn')?.addEventListener('click', () => exitFilenameEditMode(true));
+document.getElementById('move-model-btn')?.addEventListener('click', enterLocationEditMode);
+document.getElementById('execute-move-btn')?.addEventListener('click', handleMoveModel);
+document.getElementById('cancel-move-btn')?.addEventListener('click', exitLocationEditMode);
 
 // Toggle JSON editor collapse/expand
 document.getElementById('toggle-json-editor').addEventListener('click', () => {
@@ -289,7 +300,8 @@ async function openSettingsModal() {
             'thumbnail', 'filename', 'civitaiName', 'baseModel', 'category',
             'folder', 'subcategory', 'creator', 'examplePrompt', 'tags',
             'path', 'size', 'date', 'url', 'nsfw', 'positiveWords',
-            'negativeWords', 'authorsWords', 'description', 'notes'
+            'negativeWords', 'authorsWords', 'description', 'notes',
+            'modelName', 'modelVersion', 'highLow'
         ];
     }
 
@@ -350,6 +362,10 @@ async function openSettingsModal() {
     document.getElementById('col-negative').checked = columns.negativeWords !== false;
     document.getElementById('col-authors').checked = columns.authorsWords !== false;
     document.getElementById('col-description').checked = columns.description !== false;
+    document.getElementById('col-notes').checked = columns.notes !== false;
+    document.getElementById('col-modelName').checked = columns.modelName === true;
+    document.getElementById('col-modelVersion').checked = columns.modelVersion === true;
+    document.getElementById('col-highLow').checked = columns.highLow === true;
 }
 
 function closeSettingsModal() {
@@ -412,8 +428,363 @@ function initDragAndDrop() {
     });
 }
 
+// ===== Static Field Edit Functionality =====
+// Helper function to setup edit/save/cancel for static fields
+function setupStaticFieldEdit(fieldName) {
+    const editBtn = document.getElementById(`edit-${fieldName}-btn`);
+    const saveBtn = document.getElementById(`save-${fieldName}-btn`);
+    const cancelBtn = document.getElementById(`cancel-${fieldName}-btn`);
+    const staticDisplay = document.getElementById(`model-${fieldName}-static`);
+    const editInput = document.getElementById(`model-${fieldName}-input`);
 
-// Initialize the application
+    if (!editBtn || !saveBtn || !cancelBtn || !staticDisplay || !editInput) {
+        console.warn(`Static field elements not found for: ${fieldName}`);
+        console.log('Looking for:', {
+            editBtn: `edit-${fieldName}-btn`,
+            saveBtn: `save-${fieldName}-btn`,
+            cancelBtn: `cancel-${fieldName}-btn`,
+            staticDisplay: `model-${fieldName}-static`,
+            editInput: `model-${fieldName}-input`
+        });
+        return;
+    }
+
+    // Remove old event listeners by cloning and replacing
+    const newEditBtn = editBtn.cloneNode(true);
+    const newSaveBtn = saveBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+
+    editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    // Enter edit mode
+    newEditBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log(`Edit button clicked for ${fieldName}`);
+
+        // Get current value
+        let currentValue = '';
+        if (fieldName === 'url') {
+            const urlLink = document.getElementById('model-url-link');
+            currentValue = urlLink.href === window.location.href + '#' ? '' : urlLink.href;
+        } else if (fieldName === 'nsfw') {
+            // For checkbox, set the checked state
+            const isNsfw = staticDisplay.textContent.trim() === 'Yes';
+            editInput.checked = isNsfw;
+        } else {
+            currentValue = staticDisplay.textContent.trim();
+        }
+
+        if (fieldName !== 'nsfw') {
+            editInput.value = currentValue;
+        }
+
+        // Toggle visibility
+        staticDisplay.style.display = 'none';
+        if (fieldName === 'nsfw') {
+            editInput.parentElement.style.display = 'block';
+        } else {
+            editInput.style.display = 'block';
+        }
+        newEditBtn.style.display = 'none';
+        newSaveBtn.style.display = 'inline-block';
+        newCancelBtn.style.display = 'inline-block';
+
+        // Focus the input (not for checkboxes)
+        if (fieldName !== 'nsfw') {
+            setTimeout(() => editInput.focus(), 50);
+        }
+    });
+
+    // Cancel edit mode
+    newCancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Reset visibility
+        staticDisplay.style.display = 'inline';
+        if (fieldName === 'nsfw') {
+            editInput.parentElement.style.display = 'none';
+        } else {
+            editInput.style.display = 'none';
+        }
+        newEditBtn.style.display = 'inline-block';
+        newSaveBtn.style.display = 'none';
+        newCancelBtn.style.display = 'none';
+    });
+
+    // Save the edited value
+    newSaveBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!currentModel) {
+            alert('No model selected');
+            return;
+        }
+        let newValue;
+        if (fieldName === 'nsfw') {
+            newValue = editInput.checked;
+        } else {
+            newValue = editInput.value.trim();
+        }
+
+        try {
+            // Update the model object based on field
+            if (fieldName === 'url') {
+                currentModel.json['url'] = newValue;
+            } else if (fieldName === 'author') {
+                currentModel.json['civitai name'] = newValue;
+            } else if (fieldName === 'basemodel') {
+                currentModel.baseModel = newValue;
+                currentModel.json['base model'] = newValue;
+            } else if (fieldName === 'creator') {
+                currentModel.json['creator'] = newValue;
+            } else if (fieldName === 'nsfw') {
+                currentModel.json['nsfw'] = newValue.toString();
+            } else if (fieldName === 'version') {
+                currentModel.json['model version'] = newValue;
+            }
+
+            // Save to server
+            const response = await fetch('/save-model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(currentModel)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save changes');
+            }
+
+            // Update the display
+            if (fieldName === 'url') {
+                const urlLink = document.getElementById('model-url-link');
+                urlLink.href = newValue || '#';
+                urlLink.textContent = newValue || 'No URL';
+            } else if (fieldName === 'nsfw') {
+                staticDisplay.textContent = newValue ? 'Yes' : 'No';
+            } else {
+                staticDisplay.textContent = newValue;
+            }
+
+            // Toggle back to view mode
+            staticDisplay.style.display = 'inline';
+            if (fieldName === 'nsfw') {
+                editInput.parentElement.style.display = 'none';
+            } else {
+                editInput.style.display = 'none';
+            }
+            newEditBtn.style.display = 'inline-block';
+            newSaveBtn.style.display = 'none';
+            newCancelBtn.style.display = 'none';
+
+            // No need to refresh entire model list - we already updated currentModel
+
+        } catch (error) {
+            console.error('Error saving field:', error);
+            alert('Failed to save changes. Please try again.');
+        }
+    });
+}
+
+// ===== Generic Field Edit Functionality =====
+/**
+ * Setup edit/save/cancel functionality for any field type
+ * @param {string} fieldId - The ID of the field (without -display or -input suffix)
+ * @param {string} fieldType - Type: 'text', 'textarea', 'checkbox', 'range'
+ * @param {Function} saveCallback - Function to save the value: (newValue) => void
+ */
+function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
+    console.log(`Setting up generic field edit for: ${fieldId}`);
+
+    const editBtn = document.querySelector(`[data-field="${fieldId}"].field-edit-btn`);
+    const saveBtn = document.querySelector(`[data-field="${fieldId}"].field-save-btn`);
+    const cancelBtn = document.querySelector(`[data-field="${fieldId}"].field-cancel-btn`);
+    const display = document.getElementById(`${fieldId}-display`);
+    const input = document.getElementById(fieldId);
+
+    console.log(`Elements found - editBtn: ${!!editBtn}, saveBtn: ${!!saveBtn}, cancelBtn: ${!!cancelBtn}, display: ${!!display}, input: ${!!input}`);
+
+    if (!editBtn || !saveBtn || !cancelBtn || !display || !input) {
+        console.warn(`Generic field elements not found for: ${fieldId}`);
+        return;
+    }
+
+    // Remove old listeners by cloning
+    const newEditBtn = editBtn.cloneNode(true);
+    const newSaveBtn = saveBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+
+    editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    // Make display clickable to enter edit mode
+    display.style.cursor = 'pointer';
+    display.title = 'Click to edit';
+    display.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Trigger the edit button click
+        newEditBtn.click();
+    });
+
+    // Enter edit mode
+    newEditBtn.addEventListener('click', (e) => {
+        console.log(`Edit button clicked for ${fieldId}`);
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Get and set current value based on field type
+        if (fieldType === 'checkbox') {
+            // Checkbox: input is already set, just show it
+            display.style.display = 'none';
+            input.parentElement.style.display = 'flex';
+        } else if (fieldType === 'range') {
+            // Range slider: hide visual bar, show interactive slider
+            display.style.display = 'none';
+            document.getElementById('weight-visual-bar').style.display = 'none';
+            document.getElementById('weight-slider-container').style.display = 'block';
+        } else {
+            // Text or textarea
+            input.value = display.textContent.trim();
+            if (input.value === '(empty)') input.value = '';
+            display.style.display = 'none';
+            input.style.display = 'block';
+        }
+
+        // Toggle buttons
+        newEditBtn.style.display = 'none';
+        newSaveBtn.style.display = 'inline-block';
+        newCancelBtn.style.display = 'inline-block';
+
+        // Focus if not checkbox/range
+        if (fieldType !== 'checkbox' && fieldType !== 'range') {
+            setTimeout(() => input.focus(), 50);
+        }
+    });
+
+    // Cancel edit mode
+    newCancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Hide input, show display
+        if (fieldType === 'checkbox') {
+            input.parentElement.style.display = 'none';
+            display.style.display = 'inline';
+        } else if (fieldType === 'range') {
+            // Range slider: show visual bar, hide interactive slider
+            document.getElementById('weight-slider-container').style.display = 'none';
+            document.getElementById('weight-visual-bar').style.display = 'block';
+            display.style.display = 'inline';
+        } else {
+            input.style.display = 'none';
+            display.style.display = 'block';
+        }
+
+        // Reset buttons
+        newEditBtn.style.display = 'inline-block';
+        newSaveBtn.style.display = 'none';
+        newCancelBtn.style.display = 'none';
+    });
+
+    // Save changes
+    newSaveBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            // Get new value based on field type
+            let newValue;
+            if (fieldType === 'checkbox') {
+                newValue = input.checked;
+            } else if (fieldType === 'range') {
+                newValue = parseFloat(input.value);
+            } else {
+                newValue = input.value.trim();
+            }
+
+            // Call the save callback
+            await saveCallback(newValue);
+
+            // Update display
+            if (fieldType === 'checkbox') {
+                display.textContent = newValue ? 'Yes' : 'No';
+                input.parentElement.style.display = 'none';
+                display.style.display = 'inline';
+            } else if (fieldType === 'range') {
+                display.textContent = newValue.toFixed(1);
+                document.getElementById('weight-slider-container').style.display = 'none';
+                document.getElementById('weight-visual-bar').style.display = 'block';
+                display.style.display = 'inline';
+                // Update visual indicator position
+                updateWeightIndicator(newValue);
+            } else {
+                display.textContent = newValue || '';
+                input.style.display = 'none';
+                display.style.display = 'block';
+            }
+
+            // Reset buttons
+            newEditBtn.style.display = 'inline-block';
+            newSaveBtn.style.display = 'none';
+            newCancelBtn.style.display = 'none';
+
+            // No need to refresh entire model list - we already updated currentModel
+
+        } catch (error) {
+            console.error('Error saving field:', error);
+            alert('Failed to save changes. Please try again.');
+        }
+    });
+}
+
+// Helper function to save current model to server
+async function saveModel() {
+    if (!currentModel) {
+        throw new Error('No model selected');
+    }
+
+    // Sort the json object keys alphabetically for cleaner JSON files
+    if (currentModel.json) {
+        const sortedJson = {};
+        Object.keys(currentModel.json).sort().forEach(key => {
+            sortedJson[key] = currentModel.json[key];
+        });
+        currentModel.json = sortedJson;
+    }
+
+    const response = await fetch('/save-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(currentModel)
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to save model');
+    }
+}
+
+// Helper function to update weight indicator position
+function updateWeightIndicator(weight) {
+    const indicator = document.getElementById('weight-indicator');
+    if (!indicator) return;
+
+    // Convert weight (-4 to +4) to percentage (0% to 100%)
+    const percentage = ((weight + 4) / 8) * 100;
+    indicator.style.left = `${percentage}%`;
+}
+
+
 async function initApp() {
     // Show loading overlay
     showLoadingOverlay();
@@ -789,7 +1160,10 @@ async function saveSettings() {
             negativeWords: document.getElementById('col-negative').checked,
             authorsWords: document.getElementById('col-authors').checked,
             description: document.getElementById('col-description').checked,
-            notes: document.getElementById('col-notes')?.checked || false
+            notes: document.getElementById('col-notes')?.checked || false,
+            modelName: document.getElementById('col-modelName')?.checked || false,
+            modelVersion: document.getElementById('col-modelVersion')?.checked || false,
+            highLow: document.getElementById('col-highLow')?.checked || false
         },
         // Get column order from the sortable list
         columnOrder: Array.from(document.querySelectorAll('#sortable-columns li')).map(li => li.dataset.columnKey)
@@ -871,7 +1245,7 @@ function openModelDetails(model) {
         // Single or no image - simple display
         modalPreviewHTML = `
             <div class="preview-image-wrapper">
-                <img id="model-preview-image" src="${previewImages[0] || '/assets/placeholder.png'}" alt="${model.name}">
+                <img id="model-preview-image" src="${previewImages[0] || '/assets/placeholder.png'}" alt="${model.name}" class="preview-main-image">
                 <div class="drop-target-indicator">
                     <i class="fas fa-upload"></i>
                     <span>Drop image to add</span>
@@ -909,6 +1283,17 @@ function openModelDetails(model) {
     // Set model info
     // Remove the extension from the filename for the editable field
     modelFilename.value = model.filename.replace(/\.safetensors$/, '');
+
+    // Update read-only filename display
+    const filenameDisplay = document.getElementById('filename-display-text');
+    if (filenameDisplay) {
+        filenameDisplay.textContent = model.filename.replace(/\.safetensors$/, '');
+    }
+
+    // Reset File Management UI to default state
+    exitFilenameEditMode(false);
+    exitLocationEditMode();
+
     // Hide filename from path by getting directory path only
     const pathWithoutFilename = model.path.substring(0, model.path.lastIndexOf('\\'));
 
@@ -928,7 +1313,8 @@ function openModelDetails(model) {
         }
     }
 
-    modelPath.textContent = relativePath || 'Root';
+    // Show full directory path without filename
+    modelPath.textContent = pathWithoutFilename;
     modelSize.textContent = formatFileSize(model.size);
     modelDate.textContent = new Date(model.dateModified * 1000).toLocaleString();
 
@@ -946,42 +1332,183 @@ function openModelDetails(model) {
         associatedFilesElement.innerHTML = '<li>None</li>';
     }
 
-    // Set author and base model in static info section
+    // Set author, base model, creator in static info section
     document.getElementById('model-author-static').textContent = model.json?.['civitai name'] || '';
     document.getElementById('model-basemodel-static').textContent = model.baseModel || '';
+    document.getElementById('model-creator-static').textContent = model.json?.['creator'] || '';
 
-    // Set editable fields
-    document.getElementById('model-category').value = model.category || '';
-    document.getElementById('model-nsfw').checked = model.json?.['nsfw'] === 'true';
-    document.getElementById('model-positive').value = model.json?.['activation text'] || '';
-    document.getElementById('model-negative').value = model.json?.['negative text'] || '';
-    document.getElementById('model-authors').value = model.json?.['civitai text'] || '';
-    document.getElementById('model-description').value = model.json?.['description'] || '';
-    document.getElementById('model-notes').value = model.json?.['notes'] || '';
-    document.getElementById('model-subcategory').value = model.json?.['subcategory'] || '';
-    document.getElementById('model-creator').value = model.json?.['creator'] || '';
-    document.getElementById('model-example-prompt').value = model.json?.['example prompt'] || '';
-    document.getElementById('model-tags').value = model.json?.['tags'] || '';
+    // Set editable fields - Populate both inputs and displays
+
+    // Category
+    const categoryField = model.category || '';
+    document.getElementById('model-category').value = categoryField;
+    document.getElementById('model-category-display').textContent = categoryField || '';
+
+    // Positive Words
+    const positiveTextField = model.json?.['activation text'] || '';
+    document.getElementById('model-positive').value = positiveTextField;
+    document.getElementById('model-positive-display').textContent = positiveTextField || '';
+
+    // Negative Words
+    const negativeTextField = model.json?.['negative text'] || '';
+    document.getElementById('model-negative').value = negativeTextField;
+    document.getElementById('model-negative-display').textContent = negativeTextField || '';
+
+    // Civitai Words (Authors)
+    const civitaiTextField = model.json?.['civitai text'] || '';
+    document.getElementById('model-authors').value = civitaiTextField;
+    document.getElementById('model-authors-display').textContent = civitaiTextField || '';
+
+    // Description
+    const descriptionField = model.json?.['description'] || '';
+    document.getElementById('model-description').value = descriptionField;
+    document.getElementById('model-description-display').textContent = descriptionField || '';
+
+    // Notes
+    const notesField = model.json?.['notes'] || '';
+    document.getElementById('model-notes').value = notesField;
+    document.getElementById('model-notes-display').textContent = notesField || '';
+
+    // Subcategory
+    const subcategoryField = model.json?.['subcategory'] || '';
+    document.getElementById('model-subcategory').value = subcategoryField;
+    document.getElementById('model-subcategory-display').textContent = subcategoryField || '';
+
+    // Example Prompt
+    const examplePromptField = model.json?.['example prompt'] || '';
+    document.getElementById('model-example-prompt').value = examplePromptField;
+    document.getElementById('model-example-prompt-display').textContent = examplePromptField || '';
+
+    // Example Prompt 2
+    const examplePrompt2Field = model.json?.['example prompt 2'] || '';
+    document.getElementById('model-example-prompt-2').value = examplePrompt2Field;
+    document.getElementById('model-example-prompt-2-display').textContent = examplePrompt2Field || '';
+
+    // Tags
+    const tagsField = model.json?.['tags'] || '';
+    document.getElementById('model-tags').value = tagsField;
+    document.getElementById('model-tags-display').textContent = tagsField || '';
+
+    // Model Name - initially from json['name'] or Civitai name as fallback
+    const modelNameField = model.json?.['name'] || model.json?.['civitai name'] || '';
+    document.getElementById('model-name').value = modelNameField;
+    document.getElementById('model-name-display').textContent = modelNameField || '';
+
+    // Model Version
+    const modelVersionField = model.json?.['model version'] || '';
+    document.getElementById('model-version').value = modelVersionField;
+    document.getElementById('model-version-display').textContent = modelVersionField || '';
+
+    // High/Low toggle state
+    const highLowValue = model.json?.['high low'] || '';
+    const toggleBtn = document.getElementById('high-low-toggle');
+    if (toggleBtn) {
+        toggleBtn.setAttribute('data-value', highLowValue);
+        const label = highLowValue || 'None';
+        toggleBtn.querySelector('.toggle-label').textContent = label;
+    }
+
+    // NSFW toggle state
+    const nsfwValue = model.json?.['nsfw'] === 'true' || model.json?.['nsfw'] === true;
+    const nsfwToggleBtn = document.getElementById('nsfw-toggle');
+    if (nsfwToggleBtn) {
+        nsfwToggleBtn.setAttribute('data-value', nsfwValue.toString());
+        const nsfwLabel = nsfwValue ? 'Yes' : 'No';
+        nsfwToggleBtn.querySelector('.toggle-label').textContent = nsfwLabel;
+    }
 
     // Set preferred weight slider
-    const preferredWeight = parseFloat(model.json?.['preferred weight']) || 0;
-    preferredWeightSlider.value = preferredWeight;
-    preferredWeightValue.textContent = preferredWeight.toFixed(1);
+    const preferredWeightField = parseFloat(model.json?.['preferred weight']) || 0;
+    document.getElementById('model-preferred-weight').value = preferredWeightField;
+    document.getElementById('model-preferred-weight-display').textContent = preferredWeightField.toFixed(1);
+    updateWeightIndicator(preferredWeightField);
 
     // Populate file location dropdown
     populateFileLocationDropdown(relativePath || '');
 
-    // All fields are editable by default, no need to disable them
-    // Show save buttons
-    document.querySelectorAll('.save-btn').forEach(btn => btn.classList.remove('hidden'));
-
-    // Filename is always editable
-    saveFilenameBtn.classList.remove('hidden');
-
     // Load JSON data
     switchJsonType(currentJsonType);
 
-    // No need to attach event listeners to edit buttons as they no longer exist
+    // Initialize static field edit functionality
+    setupStaticFieldEdit('url');
+    setupStaticFieldEdit('author');
+    setupStaticFieldEdit('basemodel');
+    setupStaticFieldEdit('creator');
+
+    // Initialize generic field edit handlers for all converted fields
+    setupGenericFieldEdit('model-category', 'text', async (val) => {
+        currentModel.category = val;
+        currentModel.json['category'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-subcategory', 'text', async (val) => {
+        currentModel.json['subcategory'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-tags', 'text', async (val) => {
+        currentModel.json['tags'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-name', 'text', async (val) => {
+        currentModel.json['name'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-version', 'text', async (val) => {
+        currentModel.json['model version'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-positive', 'textarea', async (val) => {
+        currentModel.json['activation text'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-negative', 'textarea', async (val) => {
+        currentModel.json['negative text'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-authors', 'textarea', async (val) => {
+        currentModel.json['civitai text'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-description', 'textarea', async (val) => {
+        currentModel.json['description'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-notes', 'textarea', async (val) => {
+        currentModel.json['notes'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-example-prompt', 'textarea', async (val) => {
+        currentModel.json['example prompt'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-example-prompt-2', 'textarea', async (val) => {
+        currentModel.json['example prompt 2'] = val;
+        await saveModel();
+    });
+
+    setupGenericFieldEdit('model-preferred-weight', 'range', async (val) => {
+        currentModel.json['preferred weight'] = val;
+        await saveModel();
+    });
+
+    // Initialize High/Low toggle handler
+    initHighLowToggle();
+
+    // Initialize NSFW toggle handler
+    initNSFWToggle();
+
+    // Old save button event listeners are no longer needed
 
     // Attach event listeners to save buttons in the modal
     modelModal.querySelectorAll('.save-btn').forEach(btn => {
@@ -1055,6 +1582,12 @@ function openModelDetails(model) {
                     break;
                 case 'model-tags':
                     currentModel.json['tags'] = value;
+                    break;
+                case 'model-name':
+                    currentModel.json['name'] = value;
+                    break;
+                case 'model-version':
+                    currentModel.json['model version'] = value;
                     break;
                 case 'model-preferred-weight':
                     currentModel.json['preferred weight'] = parseFloat(value);
@@ -1244,9 +1777,148 @@ async function saveFilename() {
         // Update UI
         modalTitle.textContent = newName;
 
+        // Exit filename edit mode and update display
+        exitFilenameEditMode(false);
+
     } catch (error) {
         alert(error.message);
     }
+}
+
+// ===== File Management Progressive Disclosure Functions =====
+
+function enterFilenameEditMode() {
+    // Hide read-only display
+    document.getElementById('filename-display-container').style.display = 'none';
+
+    // Show edit container
+    document.getElementById('filename-edit-container').style.display = 'block';
+
+    // Hide "Modify Name" button
+    document.getElementById('file-mgmt-actions-default').style.display = 'none';
+    document.getElementById('file-mgmt-actions-edit').style.display = 'flex';
+
+    // Ensure location section is hidden (mutually exclusive)
+    exitLocationEditMode();
+
+    // Focus on the filename input
+    document.getElementById('model-filename').focus();
+}
+
+function exitFilenameEditMode(cancelled = false) {
+    // If cancelled, restore original value
+    if (cancelled && currentModel) {
+        modelFilename.value = currentModel.filename.replace(/\.safetensors$/, '');
+    }
+
+    // Update read-only display
+    const filenameDisplay = document.getElementById('filename-display-text');
+    if (filenameDisplay && currentModel) {
+        filenameDisplay.textContent = currentModel.filename.replace(/\.safetensors$/, '');
+    }
+
+    // Show read-only display
+    document.getElementById('filename-display-container').style.display = 'block';
+
+    // Hide edit container
+    document.getElementById('filename-edit-container').style.display = 'none';
+
+    // Show default action buttons, hide edit action buttons
+    document.getElementById('file-mgmt-actions-default').style.display = 'flex';
+    document.getElementById('file-mgmt-actions-edit').style.display = 'none';
+}
+
+function enterLocationEditMode() {
+    // Show location edit container
+    document.getElementById('location-edit-container').style.display = 'block';
+
+    // Hide default action buttons, show move action buttons
+    document.getElementById('file-mgmt-actions-default').style.display = 'none';
+    document.getElementById('file-mgmt-actions-move').style.display = 'flex';
+
+    // Ensure filename section is hidden (mutually exclusive)
+    if (document.getElementById('filename-edit-container').style.display === 'block') {
+        exitFilenameEditMode(true);
+    }
+}
+
+function exitLocationEditMode() {
+    // Hide location edit container
+    document.getElementById('location-edit-container').style.display = 'none';
+
+    // Only show default action buttons if not in filename edit mode
+    const isInFilenameEditMode = document.getElementById('filename-edit-container').style.display === 'block';
+    if (!isInFilenameEditMode) {
+        document.getElementById('file-mgmt-actions-default').style.display = 'flex';
+    }
+    document.getElementById('file-mgmt-actions-move').style.display = 'none';
+}
+
+
+// ===== High/Low Toggle Handler =====
+
+function initHighLowToggle() {
+    const toggleBtn = document.getElementById('high-low-toggle');
+    if (!toggleBtn) return;
+
+    // Remove existing listener to prevent duplicates
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+    newToggleBtn.addEventListener('click', async () => {
+        const currentValue = newToggleBtn.getAttribute('data-value') || '';
+        let newValue = '';
+        let label = 'None';
+
+        // Cycle through states: '' -> 'High' -> 'Low' -> ''
+        if (currentValue === '') {
+            newValue = 'High';
+            label = 'High';
+        } else if (currentValue === 'High') {
+            newValue = 'Low';
+            label = 'Low';
+        } else if (currentValue === 'Low') {
+            newValue = '';
+            label = 'None';
+        }
+
+        // Update button
+        newToggleBtn.setAttribute('data-value', newValue);
+        newToggleBtn.querySelector('.toggle-label').textContent = label;
+
+        // Save to JSON
+        if (!currentModel) return;
+        if (!currentModel.json) currentModel.json = {};
+        currentModel.json['high low'] = newValue;
+        await saveModel();
+    });
+}
+
+// ===== NSFW Toggle Handler =====
+
+function initNSFWToggle() {
+    const toggleBtn = document.getElementById('nsfw-toggle');
+    if (!toggleBtn) return;
+
+    // Remove existing listener to prevent duplicates
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+    newToggleBtn.addEventListener('click', async () => {
+        const currentValue = newToggleBtn.getAttribute('data-value') === 'true';
+        const newValue = !currentValue;
+        const label = newValue ? 'Yes' : 'No';
+
+        // Update button
+        newToggleBtn.setAttribute('data-value', newValue.toString());
+        newToggleBtn.querySelector('.toggle-label').textContent = label;
+
+        // Save to JSON
+        if (!currentModel) return;
+        if (!currentModel.json) currentModel.json = {};
+        currentModel.json['nsfw'] = newValue.toString();
+        await saveModel();
+    });
 }
 
 async function saveJsonMetadata() {
@@ -1364,23 +2036,41 @@ function handleCleanFilename() {
 
     let filename = modelFilename.value;
 
-    // 1. Replace underscores with spaces
+    // 1. Replace forward slashes with dashes
+    filename = filename.replace(/\//g, ' - ');
+
+    // 2. Remove characters not allowed in filenames: \ : * ? " < > |
+    filename = filename.replace(/[\\:*?"<>|]/g, '');
+
+    // 3. Replace underscores with spaces
     filename = filename.replace(/_/g, ' ');
 
-    // 2. Add leading and trailing space to dashes/hyphens
+    // 4. Add leading and trailing space to dashes/hyphens (normalize spacing)
     filename = filename.replace(/-/g, ' - ');
 
-    // 3. Replace multiple spaces with single space
+    // 5. Replace multiple spaces with single space
     filename = filename.replace(/\s+/g, ' ');
 
-    // 4. Replace multiple dashes with single dash
+    // 6. Replace multiple dashes with single dash
     filename = filename.replace(/-+/g, '-');
 
-    // 5. Remove leading and trailing spaces
+    // 7. Remove leading and trailing spaces
     filename = filename.trim();
 
-    // 6. Capitalize first letter of each word
-    filename = filename.replace(/\b\w/g, char => char.toUpperCase());
+    // 8. Convert ALL CAPS words to Title Case, while preserving mixed case
+    filename = filename.replace(/\b([A-Z]{2,})\b/g, (match) => {
+        // Convert ALL CAPS to Title Case (first letter upper, rest lower)
+        return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+    });
+
+    // 9. Capitalize first letter of each word (for lowercase words)
+    filename = filename.replace(/\b[a-z]/g, char => char.toUpperCase());
+
+    // 10. Clean up any resulting issues
+    filename = filename.replace(/\s*-\s*-\s*/g, ' - '); // Fix double dashes
+    filename = filename.replace(/^\s*-\s*/, ''); // Remove leading dash
+    filename = filename.replace(/\s*-\s*$/, ''); // Remove trailing dash
+    filename = filename.trim();
 
     // Update the filename field
     modelFilename.value = filename;
@@ -1552,10 +2242,10 @@ async function populateFileLocationDropdown(currentLocation) {
 
 // Attach event handler to the Move button
 function attachMoveButtonHandler() {
-    const moveButton = document.getElementById('move-file-location-btn');
+    const moveButton = document.getElementById('execute-move-btn');
 
     if (!moveButton) {
-        console.error('Move button not found');
+        // Button may not exist yet - this is normal
         return;
     }
 
@@ -1607,9 +2297,11 @@ async function handleMoveModel() {
     }
 
     // Disable button during operation
-    const moveButton = document.getElementById('move-file-location-btn');
-    moveButton.disabled = true;
-    moveButton.textContent = 'Moving...';
+    const moveButton = document.getElementById('execute-move-btn');
+    if (moveButton) {
+        moveButton.disabled = true;
+        moveButton.textContent = 'Moving...';
+    }
 
     try {
         // Send move request to server
@@ -1634,6 +2326,9 @@ async function handleMoveModel() {
         if (data.status === 'success') {
             alert(`Success! Moved ${data.filesMoved} file(s) to ${targetLocationDisplay}`);
 
+            // Exit location edit mode
+            exitLocationEditMode();
+
             // Close modal
             closeModelModal();
 
@@ -1648,7 +2343,380 @@ async function handleMoveModel() {
         alert(`Error moving model: ${error.message}`);
     } finally {
         // Re-enable button
-        moveButton.disabled = false;
-        moveButton.textContent = 'Move';
+        if (moveButton) {
+            moveButton.disabled = false;
+            moveButton.textContent = 'Move';
+        }
+    }
+}
+
+// ===== New Filename Helper Buttons =====
+
+// DOM Elements for new filename helper buttons
+const useModelNameBtn = document.getElementById('use-model-name-btn');
+const recommendedFilenameBtn = document.getElementById('recommended-filename-btn');
+
+// Event listener for Use Model Name button
+useModelNameBtn?.addEventListener('click', handleUseModelName);
+
+// Function to populate filename with Model Name field value
+function handleUseModelName() {
+    if (!currentModel) return;
+
+    // Get the model name from the model name field or json
+    const modelNameField = document.getElementById('model-name');
+    const modelName = modelNameField?.value ||
+        currentModel.json?.['name'] ||
+        currentModel.name ||
+        '';
+
+    if (modelName) {
+        // Populate the filename field (without extension)
+        modelFilename.value = modelName;
+        console.log(`Populated filename with Model Name: ${modelName}`);
+    } else {
+        alert('No Model Name available');
+    }
+}
+
+// Event listener for Recommended Filename button
+recommendedFilenameBtn?.addEventListener('click', handleRecommendedFilename);
+
+// Function to generate recommended filename based on model type
+function handleRecommendedFilename() {
+    if (!currentModel) return;
+
+    // Get model name and version
+    const modelNameField = document.getElementById('model-name');
+    const modelVersionField = document.getElementById('model-version');
+
+    const modelName = modelNameField?.value ||
+        currentModel.json?.['name'] ||
+        currentModel.name ||
+        '';
+
+    const version = modelVersionField?.value ||
+        currentModel.json?.['model version'] ||
+        '';
+
+    if (!modelName) {
+        alert('Model Name is required to generate a recommended filename');
+        return;
+    }
+
+    const baseModel = currentModel.baseModel || '';
+    let recommendedName = '';
+
+    // Get High/Low toggle value for Wan 2.2 models
+    const highLowToggle = document.getElementById('high-low-toggle');
+    const highLowValue = highLowToggle?.getAttribute('data-value') || '';
+
+    // Build base name: [Model Name] [version]
+    const baseName = version ? `${modelName} ${version}` : modelName;
+
+    // Check for Prefix models (Pony, SDXL, Illustrious, ZImageTurbo)
+    const prefixMap = {
+        'Pony': '[P]',
+        'SDXL 1.0': '[X]',
+        'Illustrious': '[I]',
+        'ZImageTurbo': '[Z]'
+    };
+
+    // Check for Wan Video models with suffixes
+    const wanSuffixMap = {
+        'Wan Video 14B t2v': '- T2V - Wan21 14B',
+        'Wan Video 14B i2v 720p': '- I2v 720p - Wan21 14b',
+        'Wan Video': '- Wan21 14B'
+    };
+
+    // Check for Wan 2.2 models (need High/Low toggle)
+    const wan22Models = {
+        'Wan Video 2.2 I2V-A14B': { high: '- High I2v - Wan22 14b', low: '- Low I2v - Wan22 14b' },
+        'Wan Video 2.2 T2V-A14B': { high: '- High T2v - Wan22 14b', low: '- Low T2v - Wan22 14b' }
+    };
+
+    // Determine the filename based on base model type
+    if (prefixMap[baseModel]) {
+        // Prefix models: [Prefix] [Model Name] [version]
+        recommendedName = `${prefixMap[baseModel]} ${baseName}`;
+    } else if (wan22Models[baseModel]) {
+        // Wan 2.2 models: check High/Low toggle
+        if (highLowValue === 'High') {
+            recommendedName = `${baseName} ${wan22Models[baseModel].high}`;
+        } else if (highLowValue === 'Low') {
+            recommendedName = `${baseName} ${wan22Models[baseModel].low}`;
+        } else {
+            // If no High/Low selected, prompt user
+            alert('Please set the High/Low toggle for Wan 2.2 models before generating a recommended filename.');
+            return;
+        }
+    } else if (wanSuffixMap[baseModel]) {
+        // Other Wan Video models: [Model Name] [version] - suffix
+        recommendedName = `${baseName} ${wanSuffixMap[baseModel]}`;
+    } else {
+        // Default: [Model Name] [version]
+        recommendedName = baseName;
+    }
+
+    // Set the filename
+    modelFilename.value = recommendedName;
+    console.log(`Generated recommended filename: ${recommendedName}`);
+}
+
+// ===== Model Name Helper Buttons =====
+
+// DOM Elements for Model Name helper buttons
+const modelNameCivitaiBtn = document.getElementById('model-name-civitai-btn');
+const modelNameCleanBtn = document.getElementById('model-name-clean-btn');
+
+// Event listener for Model Name Civitai button
+modelNameCivitaiBtn?.addEventListener('click', handleModelNameCivitai);
+
+// Function to populate Model Name with Civitai Name
+function handleModelNameCivitai() {
+    if (!currentModel) return;
+
+    // Get the Civitai name from the model's civitai info
+    const civitaiName = currentModel.civitaiInfo?.model?.name ||
+        currentModel.json?.['civitai name'] ||
+        '';
+
+    if (civitaiName) {
+        // Populate the model name field
+        const modelNameField = document.getElementById('model-name');
+        if (modelNameField) {
+            modelNameField.value = civitaiName;
+            console.log(`Populated Model Name with Civitai name: ${civitaiName}`);
+        }
+    } else {
+        alert('No Civitai name available for this model');
+    }
+}
+
+// Event listener for Model Name Clean button
+modelNameCleanBtn?.addEventListener('click', handleModelNameClean);
+
+// Function to clean and format Model Name
+function handleModelNameClean() {
+    if (!currentModel) return;
+
+    const modelNameField = document.getElementById('model-name');
+    if (!modelNameField) return;
+
+    let modelName = modelNameField.value;
+
+    // Apply same cleaning logic as filename clean
+    // 1. Replace underscores with spaces
+    modelName = modelName.replace(/_/g, ' ');
+
+    // 2. Add leading and trailing space to dashes/hyphens
+    modelName = modelName.replace(/-/g, ' - ');
+
+    // 3. Replace multiple spaces with single space
+    modelName = modelName.replace(/\s+/g, ' ');
+
+    // 4. Replace multiple dashes with single dash
+    modelName = modelName.replace(/-+/g, '-');
+
+    // 5. Remove leading and trailing spaces
+    modelName = modelName.trim();
+
+    // 6. Capitalize first letter of each word
+    modelName = modelName.replace(/\b\w/g, char => char.toUpperCase());
+
+    // Update the model name field
+    modelNameField.value = modelName;
+
+    console.log('Cleaned Model Name:', modelName);
+}
+
+// ===== Model Name Helper Buttons Visibility =====
+
+// Show/hide model name helper buttons when entering/exiting edit mode
+function setupModelNameHelperButtons() {
+    const helperButtonsContainer = document.querySelector('.model-name-helper-buttons');
+    if (!helperButtonsContainer) return;
+
+    // Watch for changes to the model-name input display
+    const modelNameInput = document.getElementById('model-name');
+    const modelNameDisplay = document.getElementById('model-name-display');
+
+    if (!modelNameInput || !modelNameDisplay) return;
+
+    // Create a MutationObserver to watch for display changes on the input
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'style') {
+                const inputVisible = modelNameInput.style.display === 'block';
+                helperButtonsContainer.style.display = inputVisible ? 'flex' : 'none';
+            }
+        });
+    });
+
+    // Observe changes to the input's style attribute
+    observer.observe(modelNameInput, { attributes: true });
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Delay to ensure other setup has completed
+    setTimeout(setupModelNameHelperButtons, 100);
+});
+
+// ===== Trim Name Button (Placeholder) =====
+const modelNameTrimBtn = document.getElementById('model-name-trim-btn');
+modelNameTrimBtn?.addEventListener('click', handleModelNameTrim);
+
+function handleModelNameTrim() {
+    if (!currentModel) return;
+
+    const modelNameField = document.getElementById('model-name');
+    if (!modelNameField) return;
+
+    let modelName = modelNameField.value;
+    const originalName = modelName;
+
+    // List of base model names/prefixes to remove (case-insensitive)
+    // Includes full names, abbreviations, and bracket notations
+    const baseModelPrefixes = [
+        // Pony variants
+        'Pony', 'PXL', '[P]', '[Pony]', '[PXL]',
+        // SDXL variants
+        'SDXL', 'SDXL 1.0', 'SDXL1.0', '[X]', '[SDXL]',
+        // SD 1.x variants
+        'SD', 'SD 1.5', 'SD1.5', 'SD 1.4', 'SD1.4', 'SD1', '[SD]',
+        // SD 2.x variants
+        'SD 2.0', 'SD2.0', 'SD 2.1', 'SD2.1', 'SD2',
+        // Illustrious variants
+        'Illustrious', 'Ill', '[I]', '[Ill]', '[Illustrious]',
+        // NoobAI variants
+        'Noob', 'NoobAI', 'Noob AI', '[Noob]', '[N]',
+        // ZImageTurbo variants
+        'ZImageTurbo', 'Zit', 'ZIT', '[Z]', '[Zit]', '[ZIT]', 'Z Turbo', 'Z-Image', 'ZImage',
+        // Flux variants
+        'Flux', 'Flux.1', 'Flux 1', '[Flux]', '[F]',
+        // Wan Video variants
+        'Wan', 'Wan21', 'Wan 2.1', 'Wan2.1', 'Wan22', 'Wan 2.2', 'Wan2.2',
+        'Wan Video', 'Wan Video 14B', 'WanVideo', '[Wan]', '[W]',
+        'T2V', 'I2V', 'I2v', 'T2v', '14B', '14b', '[WAN 2.2 I2V]',
+        // Hunyuan variants
+        'Hunyuan', 'HunyuanVideo', 'Hunyuan Video', '[Hunyuan]', '[H]',
+        // CogVideo variants
+        'CogVideo', 'Cog', 'CogVideoX', '[Cog]', '[CogVideo]',
+        // Mochi variants
+        'Mochi', '[Mochi]', '[M]',
+        // LTX variants
+        'LTX', 'LTX Video', 'LTXVideo', '[LTX]', '[L]',
+        // Common model type indicators
+        'LoRA', 'Lora', 'lora', 'LORA',
+        'Checkpoint', 'checkpoint', 'ckpt', 'CKPT',
+        'Embedding', 'embedding', 'TI', 'Textual Inversion',
+        // Quality/resolution indicators often in names
+        'High', 'Low', '720p', '1080p', '4K',
+        // Other common terms to trim
+        'XL', 'Turbo', 'Lightning', 'LCM', 'Hyper', 'for'
+    ];
+
+    // Helper function to escape special regex characters
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Create regex patterns for each prefix (as whole words, at start or anywhere)
+    baseModelPrefixes.forEach(prefix => {
+        const escapedPrefix = escapeRegex(prefix);
+
+        // Remove prefix at the start of the string
+        const startPattern = new RegExp(`^${escapedPrefix}\\s*[-_]?\\s*`, 'i');
+        modelName = modelName.replace(startPattern, '');
+
+        // Remove prefix at the end of the string
+        const endPattern = new RegExp(`\\s*[-_]?\\s*${escapedPrefix}$`, 'i');
+        modelName = modelName.replace(endPattern, '');
+
+        // Remove prefix surrounded by spaces/dashes
+        const middlePattern = new RegExp(`\\s+${escapedPrefix}\\s+`, 'gi');
+        modelName = modelName.replace(middlePattern, ' ');
+    });
+
+    // Remove version patterns like v1, v2, V1.0, version 3, etc.
+    // At the end of the string
+    modelName = modelName.replace(/\s*[-_]?\s*v(?:ersion)?\s*[\d.]+\s*$/i, '');
+    // In the middle (with surrounding separators)
+    modelName = modelName.replace(/\s*[-_]\s*v(?:ersion)?\s*[\d.]+\s*[-_]\s*/gi, ' - ');
+
+    // Remove common suffixes like LoRA, Lora, checkpoint, etc.
+    const commonSuffixes = ['LoRA', 'Lora', 'lora', 'Checkpoint', 'checkpoint', 'ckpt'];
+    commonSuffixes.forEach(suffix => {
+        const suffixPattern = new RegExp(`\\s*[-_]?\\s*${suffix}\\s*$`, 'i');
+        modelName = modelName.replace(suffixPattern, '');
+    });
+
+    // Remove bracket prefixes like [P], [X], [I], etc.
+    modelName = modelName.replace(/^\[[A-Z]\]\s*/i, '');
+
+    // Clean up multiple spaces and dashes
+    modelName = modelName.replace(/\s+/g, ' ');
+    modelName = modelName.replace(/\s*-\s*-\s*/g, ' - ');
+    modelName = modelName.replace(/^\s*[-_]\s*/, '');
+    modelName = modelName.replace(/\s*[-_]\s*$/, '');
+    modelName = modelName.trim();
+
+    // Update the field
+    if (modelName !== originalName) {
+        modelNameField.value = modelName;
+        console.log(`Trimmed model name: "${originalName}" -> "${modelName}"`);
+    } else {
+        console.log('No changes made to model name');
+    }
+}
+
+// ===== Creator Suffix Button (Placeholder) =====
+const creatorSuffixBtn = document.getElementById('creator-suffix-btn');
+creatorSuffixBtn?.addEventListener('click', handleCreatorSuffix);
+
+function handleCreatorSuffix() {
+    if (!currentModel) return;
+
+    // Get the creator name from the model
+    const creatorName = currentModel.json?.['creator'] ||
+        currentModel.civitaiInfo?.creator?.username ||
+        '';
+
+    if (!creatorName) {
+        alert('No creator name available for this model');
+        return;
+    }
+
+    // Get current filename
+    const currentFilename = modelFilename.value;
+
+    // Check if the creator suffix already exists
+    const suffixPattern = new RegExp(`\\s*-\\s*${creatorName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    if (suffixPattern.test(currentFilename)) {
+        alert(`Creator suffix "- ${creatorName}" already exists in the filename`);
+        return;
+    }
+
+    // Append the creator suffix
+    const newFilename = `${currentFilename} - ${creatorName}`;
+    modelFilename.value = newFilename;
+    console.log(`Added creator suffix: ${currentFilename} -> ${newFilename}`);
+}
+
+// ===== Use Recommended Button =====
+const useRecommendedBtn = document.getElementById('use-recommended-btn');
+useRecommendedBtn?.addEventListener('click', handleUseRecommended);
+
+function handleUseRecommended() {
+    if (!currentModel) return;
+
+    // Generate the recommended filename
+    handleRecommendedFilename();
+
+    // Only enter edit mode if handleRecommendedFilename didn't show an alert (meaning it succeeded)
+    // Check if the filename field was actually updated
+    const currentValue = modelFilename.value;
+    if (currentValue && currentValue !== '' && !currentValue.includes('Placeholder')) {
+        // Enter filename edit mode with the recommended name ready to save
+        enterFilenameEditMode();
     }
 }
