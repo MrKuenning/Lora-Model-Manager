@@ -14,7 +14,11 @@
     <div class="app-container">
         <header>
             <div class="header-top">
-                <h1>Civitai Scan</h1>
+                <h1 id="page-title">Civitai Scan</h1>
+                <div class="location-toggle">
+                    <a href="?location=loras" id="loras-tab" class="location-tab active">LoRAs</a>
+                    <a href="?location=checkpoints" id="checkpoints-tab" class="location-tab">Checkpoints</a>
+                </div>
                 <div class="header-top-controls">
                     <button id="backButton" class="btn btn-medium btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Manager

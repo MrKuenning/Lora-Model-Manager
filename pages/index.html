@@ -20,10 +20,14 @@
         <header>
             <div class="header-top">
                 <div class="header-left">
-                    <h1>Lora Model Manager</h1>
-                    <div class="view-controls">
-                        <button id="grid-view-btn" class="btn btn-medium btn-primary active">Grid View</button>
-                        <button id="table-view-btn" class="btn btn-medium btn-secondary">Table View</button>
+                    <h1 id="page-title">Lora Model Manager</h1>
+                    <div class="location-toggle">
+                        <a href="?location=loras" id="loras-tab" class="location-tab active">LoRAs</a>
+                        <a href="?location=checkpoints" id="checkpoints-tab" class="location-tab">Checkpoints</a>
+                    </div>
+                    <div class="view-toggle">
+                        <a href="#" id="grid-view-btn" class="view-tab active">Grid View</a>
+                        <a href="#" id="table-view-btn" class="view-tab">Table View</a>
                     </div>
                 </div>
                 <div class="header-top-controls">
@@ -879,11 +883,18 @@
             <div class="modal-content settings-modal-content">
                 <span class="close-modal">&times;</span>
                 <h3>Settings</h3>
-                <div class="setting-group">
+                <div class="setting-group directory-setting">
                     <label for="modelsDirectoryInput">Lora Models Directory:</label>
                     <div class="directory-input-container">
-                        <input type="text" id="modelsDirectoryInput" />
-                        <button id="browse-directory" class="btn btn-small btn-primary">Browse</button>
+                        <input type="text" id="modelsDirectoryInput" placeholder="Enter path or use Browse" />
+                        <button id="browse-loras-directory" class="btn btn-small btn-secondary">Browse</button>
+                    </div>
+                </div>
+                <div class="setting-group directory-setting">
+                    <label for="checkpointsDirectoryInput">Checkpoints Directory:</label>
+                    <div class="directory-input-container">
+                        <input type="text" id="checkpointsDirectoryInput" placeholder="Enter path or use Browse" />
+                        <button id="browse-checkpoints-directory" class="btn btn-small btn-secondary">Browse</button>
                     </div>
                 </div>
                 <div class="setting-group">

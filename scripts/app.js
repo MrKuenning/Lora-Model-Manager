@@ -8,6 +8,7 @@ import { displayGroupedGridView } from './grid-group-view.js';
 import { filterModelsByQuery } from './search-parser.js';
 import { initializeImageDropZone, handleImageDrop } from './drop-zone-functions.js';
 import { showLoadingOverlay, hideLoadingOverlay } from './ui-utils.js';
+import { showToast } from './toast.js';
 import * as ModelOps from './model-operations.js';
 import * as CivitaiAPI from './civitai-api.js';
 import { initializeCopyButtons } from './clipboard-utils.js';
@@ -58,6 +59,13 @@ let currentModelFilter = 'all'; // Default to show all models
 let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
 let selectedThumbnailIndex = 0; // Currently selected thumbnail (0-based for preview-thumb elements)
+let currentLocation = 'loras'; // 'loras' or 'checkpoints'
+
+// Helper function to get location from URL
+function getLocationFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('location') || 'loras';
+}
 
 // Initialize settings
 const settingsManager = appSettings;
@@ -87,8 +95,8 @@ if (clearSearchBtn) {
 sortSelect.addEventListener('change', handleSort);
 groupSelect.addEventListener('change', handleGroupChange);
 modelFilterSelect.addEventListener('change', handleModelFilterChange);
-gridViewBtn.addEventListener('click', () => switchView('grid'));
-tableViewBtn.addEventListener('click', () => switchView('table'));
+gridViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('grid'); });
+tableViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
 refreshBtn.addEventListener('click', refreshModels);
 closeModal.addEventListener('click', closeModelModal);
 
@@ -228,7 +236,7 @@ document.querySelectorAll('.save-btn').forEach(btn => {
 
         } catch (error) {
             console.error('Error saving changes:', error);
-            alert('Failed to save changes. Please try again.');
+            showToast('Failed to save changes. Please try again.', 'error');
         }
     });
 });
@@ -238,7 +246,7 @@ settingsBtn.addEventListener('click', openSettingsModal);
 
 // Civitai Scan button event listener
 civitaiScanBtn.addEventListener('click', () => {
-    window.location.href = 'civitai-scan.html';
+    window.location.href = `civitai-scan.html?location=${currentLocation}`;
 });
 
 // Close settings modal when clicking the X
@@ -249,6 +257,35 @@ settingsModal.addEventListener('click', function (event) {
     // Check if the click is directly on the modal background (not on modal content)
     if (event.target === settingsModal) {
         closeSettingsModal();
+    }
+});
+
+// Browse button event handlers
+// Note: Web browsers can't natively access file system dialogs for folders
+// These handlers show a prompt to help users enter the path
+document.getElementById('browse-loras-directory')?.addEventListener('click', () => {
+    const currentPath = document.getElementById('modelsDirectoryInput').value;
+    const newPath = prompt(
+        'Enter the full path to your LoRA models directory:\n\n' +
+        'Example: E:\\AI\\MODELS\\LoRA\n\n' +
+        'Tip: You can copy the path from Windows Explorer\'s address bar.',
+        currentPath
+    );
+    if (newPath !== null) {
+        document.getElementById('modelsDirectoryInput').value = newPath;
+    }
+});
+
+document.getElementById('browse-checkpoints-directory')?.addEventListener('click', () => {
+    const currentPath = document.getElementById('checkpointsDirectoryInput').value;
+    const newPath = prompt(
+        'Enter the full path to your Checkpoints directory:\n\n' +
+        'Example: E:\\AI\\MODELS\\Stable-Diffusion\n\n' +
+        'Tip: You can copy the path from Windows Explorer\'s address bar.',
+        currentPath
+    );
+    if (newPath !== null) {
+        document.getElementById('checkpointsDirectoryInput').value = newPath;
     }
 });
 
@@ -328,6 +365,12 @@ async function openSettingsModal() {
 
     // Models directory
     modelsDirectoryInput.value = settings.modelsDirectory || '';
+
+    // Checkpoints directory
+    const checkpointsInput = document.getElementById('checkpointsDirectoryInput');
+    if (checkpointsInput) {
+        checkpointsInput.value = settings.checkpointsDirectory || '';
+    }
 
     // Theme
     document.getElementById('theme-' + (settings.theme || 'dark')).checked = true;
@@ -522,7 +565,7 @@ function setupStaticFieldEdit(fieldName) {
         e.stopPropagation();
 
         if (!currentModel) {
-            alert('No model selected');
+            showToast('No model selected', 'warning');
             return;
         }
         let newValue;
@@ -588,7 +631,7 @@ function setupStaticFieldEdit(fieldName) {
 
         } catch (error) {
             console.error('Error saving field:', error);
-            alert('Failed to save changes. Please try again.');
+            showToast('Failed to save changes. Please try again.', 'error');
         }
     });
 }
@@ -741,7 +784,7 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
 
         } catch (error) {
             console.error('Error saving field:', error);
-            alert('Failed to save changes. Please try again.');
+            showToast('Failed to save changes. Please try again.', 'error');
         }
     });
 }
@@ -792,6 +835,13 @@ async function initApp() {
     // Wait for settings to be fully loaded from server
     await ensureSettingsInitialized();
 
+    // Get current location from URL
+    currentLocation = getLocationFromUrl();
+    console.log('Current location:', currentLocation);
+
+    // Update location tabs UI
+    updateLocationTabs();
+
     // Update current view and sort from settings after they're loaded
     currentView = settingsManager.getSetting('defaultView');
     currentSort = settingsManager.getSetting('defaultSort');
@@ -808,13 +858,35 @@ async function initApp() {
 
     closeSettingsModal();
 
-    // Check if we have a saved directory path and load models
-    const savedDirPath = settingsManager.getSetting('modelsDirectory');
-    if (savedDirPath) {
-        await loadModelsFromDirectory(savedDirPath);
+    // Get the appropriate directory based on current location
+    const dirPath = currentLocation === 'checkpoints'
+        ? settingsManager.getSetting('checkpointsDirectory')
+        : settingsManager.getSetting('modelsDirectory');
+
+    if (dirPath) {
+        await loadModelsFromDirectory(dirPath);
     } else {
         // Hide loading overlay if no directory is set
         hideLoadingOverlay();
+    }
+}
+
+// Update the location tab UI states
+function updateLocationTabs() {
+    const lorasTab = document.getElementById('loras-tab');
+    const checkpointsTab = document.getElementById('checkpoints-tab');
+    const pageTitle = document.getElementById('page-title');
+
+    if (lorasTab && checkpointsTab) {
+        if (currentLocation === 'checkpoints') {
+            lorasTab.classList.remove('active');
+            checkpointsTab.classList.add('active');
+            if (pageTitle) pageTitle.textContent = 'Checkpoint Manager';
+        } else {
+            lorasTab.classList.add('active');
+            checkpointsTab.classList.remove('active');
+            if (pageTitle) pageTitle.textContent = 'Lora Model Manager';
+        }
     }
 }
 
@@ -835,17 +907,19 @@ async function ensureSettingsInitialized() {
 }
 
 // Load models from the specified directory (wrapper for ModelOps)
-async function loadModelsFromDirectory(dirPath) {
+async function loadModelsFromDirectory(dirPath, location = null) {
+    // Use provided location or fall back to currentLocation
+    const loc = location || currentLocation;
     try {
-        models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer);
+        models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer, loc);
         displayModels();
     } catch (error) {
-        // Error already handled in  ModelOps
+        // Error already handled in ModelOps
     }
 }
 // Refresh models (wrapper for ModelOps)
 async function refreshModels() {
-    await ModelOps.refreshModels(settingsManager, loadModelsFromDirectory, openSettingsModal);
+    await ModelOps.refreshModels(settingsManager, loadModelsFromDirectory, openSettingsModal, currentLocation);
 }
 
 // Display models based on current view, sort, and search
@@ -1133,9 +1207,13 @@ function switchView(view, savePreference = true) {
 
 // Save settings (new implementation)
 async function saveSettings() {
+    // Get checkpoints directory input
+    const checkpointsInput = document.getElementById('checkpointsDirectoryInput');
+
     // Get all settings from form
     const newSettings = {
         modelsDirectory: modelsDirectoryInput.value,
+        checkpointsDirectory: checkpointsInput ? checkpointsInput.value : '',
         theme: document.querySelector('input[name="theme"]:checked').value,
         defaultView: document.querySelector('input[name="defaultView"]:checked').value,
         defaultSort: document.getElementById('default-sort-select').value,
@@ -1190,9 +1268,12 @@ async function saveSettings() {
         currentSort = newSettings.defaultSort;
         sortSelect.value = currentSort;
 
-        // Reload models if directory changed
-        if (newSettings.modelsDirectory) {
-            loadModelsFromDirectory(newSettings.modelsDirectory);
+        // Reload models for current location after settings change
+        const dirPath = currentLocation === 'checkpoints'
+            ? newSettings.checkpointsDirectory
+            : newSettings.modelsDirectory;
+        if (dirPath) {
+            loadModelsFromDirectory(dirPath);
         }
     } else {
         console.log('Error saving settings');
@@ -1615,7 +1696,7 @@ function openModelDetails(model) {
 
             } catch (error) {
                 console.error('Error saving changes:', error);
-                alert('Failed to save changes. Please try again.');
+                showToast('Failed to save changes. Please try again.', 'error');
             }
         });
     });
@@ -1690,7 +1771,8 @@ function openModelDetails(model) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             modelName: currentModel.name,
-                            thumbnailIndex: thumbnailNumber
+                            thumbnailIndex: thumbnailNumber,
+                            location: currentLocation
                         })
                     });
 
@@ -1703,7 +1785,7 @@ function openModelDetails(model) {
                     }
                 } catch (error) {
                     console.error('Error deleting thumbnail:', error);
-                    alert('Failed to delete thumbnail');
+                    showToast('Failed to delete thumbnail', 'error');
                 }
             });
         }
@@ -1736,7 +1818,8 @@ function openModelDetails(model) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             modelName: currentModel.name,
-                            newOrder: newOrder
+                            newOrder: newOrder,
+                            location: currentLocation
                         })
                     });
 
@@ -1749,14 +1832,14 @@ function openModelDetails(model) {
                     }
                 } catch (error) {
                     console.error('Error reordering thumbnails:', error);
-                    alert('Failed to set thumbnail as default');
+                    showToast('Failed to set thumbnail as default', 'error');
                 }
             });
         }
     }
 
     // Initialize image drop zone functionality
-    initializeImageDropZone(() => currentModel, refreshModelData);
+    initializeImageDropZone(() => currentModel, refreshModelData, () => currentLocation);
 }
 
 function closeModelModal() {
@@ -1781,7 +1864,7 @@ async function saveFilename() {
         exitFilenameEditMode(false);
 
     } catch (error) {
-        alert(error.message);
+        showToast(error.message, 'error');
     }
 }
 
@@ -1927,9 +2010,9 @@ async function saveJsonMetadata() {
     try {
         const jsonContent = jsonEditor.value;
         await ModelOps.saveJsonMetadata(currentModel, jsonContent, currentJsonType);
-        alert('JSON metadata saved successfully!');
+        showToast('JSON metadata saved successfully!', 'success');
     } catch (error) {
-        alert(error.message || 'Error saving JSON metadata. Please try again.');
+        showToast(error.message || 'Error saving JSON metadata. Please try again.', 'error');
     }
 }
 
@@ -1961,7 +2044,8 @@ export async function refreshModelData() {
             (model) => {
                 currentModel = model;
                 openModelDetails(currentModel);
-            }
+            },
+            currentLocation
         );
 
         // Update models array with fresh data
@@ -1969,7 +2053,7 @@ export async function refreshModelData() {
             models = result.updatedModels;
         }
     } catch (error) {
-        alert(error.message || 'Error refreshing model data. Please try again.');
+        showToast(error.message || 'Error refreshing model data. Please try again.', 'error');
     }
 }
 
@@ -2023,7 +2107,7 @@ function handleUseCivitaiName() {
         modelFilename.value = civitaiName;
         console.log(`Populated filename with Civitai name: ${civitaiName}`);
     } else {
-        alert('No Civitai name available for this model');
+        showToast('No Civitai name available for this model', 'warning');
     }
 }
 
@@ -2095,7 +2179,7 @@ function handleWanHighLow() {
         // Replace "Low" with "High" (case-insensitive, but replace with capitalized "High")
         newFilename = currentFilename.replace(/\blow\b/i, 'High');
     } else {
-        alert('Filename does not contain "High" or "Low" to swap');
+        showToast('Filename does not contain "High" or "Low" to swap', 'warning');
         return;
     }
 
@@ -2125,19 +2209,13 @@ function handleAppendPrefix() {
     const prefix = prefixMap[baseModel];
 
     if (!prefix) {
-        alert(`No prefix mapping found for base model: "${baseModel}"
-
-Supported models:
-- Pony ? [P]
-- SDXL 1.0 ? [X]
-- Illustrious ? [I]
-- ZImageTurbo ? [Z]`);
+        showToast(`No prefix mapping found for base model: "${baseModel}". Supported: Pony, SDXL 1.0, Illustrious, ZImageTurbo`, 'warning');
         return;
     }
 
     // Check if prefix already exists at the start
     if (currentFilename.startsWith(prefix)) {
-        alert(`Prefix "${prefix}" already exists at the beginning of the filename`);
+        showToast(`Prefix "${prefix}" already exists at the beginning of the filename`, 'info');
         return;
     }
 
@@ -2170,14 +2248,7 @@ function handleAppendSuffix() {
     const suffix = suffixMap[baseModel];
 
     if (!suffix) {
-        alert(`No suffix mapping found for base model: "${baseModel}"
-
-Supported models:
-- Wan Video 2.2 I2V-A14B
-- Wan Video 2.2 T2V-A14B
-- Wan Video 14B t2v
-- Wan Video 14B i2v 720p
-- Wan Video`);
+        showToast(`No suffix mapping found for base model: "${baseModel}". Supported: Wan Video 2.2 models`, 'warning');
         return;
     }
 
@@ -2204,8 +2275,8 @@ async function populateFileLocationDropdown(currentLocation) {
     }
 
     try {
-        // Fetch available folders from server
-        const response = await fetch('/get-folders');
+        // Fetch available folders from server for current location
+        const response = await fetch(`/get-folders?location=${encodeURIComponent(currentLocation)}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -2281,7 +2352,7 @@ async function handleMoveModel() {
     // Check if target is different from current location
     if (targetFolder === currentFolder ||
         (targetFolder === '' && currentFolder === '')) {
-        alert('Model is already in the selected location');
+        showToast('Model is already in the selected location', 'info');
         return;
     }
 
@@ -2324,7 +2395,7 @@ async function handleMoveModel() {
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(`Success! Moved ${data.filesMoved} file(s) to ${targetLocationDisplay}`);
+            showToast(`Success! Moved ${data.filesMoved} file(s) to ${targetLocationDisplay}`, 'success');
 
             // Exit location edit mode
             exitLocationEditMode();
@@ -2340,7 +2411,7 @@ async function handleMoveModel() {
 
     } catch (error) {
         console.error('Error moving model:', error);
-        alert(`Error moving model: ${error.message}`);
+        showToast(`Error moving model: ${error.message}`, 'error');
     } finally {
         // Re-enable button
         if (moveButton) {
@@ -2375,7 +2446,7 @@ function handleUseModelName() {
         modelFilename.value = modelName;
         console.log(`Populated filename with Model Name: ${modelName}`);
     } else {
-        alert('No Model Name available');
+        showToast('No Model Name available', 'warning');
     }
 }
 
@@ -2400,7 +2471,7 @@ function handleRecommendedFilename() {
         '';
 
     if (!modelName) {
-        alert('Model Name is required to generate a recommended filename');
+        showToast('Model Name is required to generate a recommended filename', 'warning');
         return;
     }
 
@@ -2447,7 +2518,7 @@ function handleRecommendedFilename() {
             recommendedName = `${baseName} ${wan22Models[baseModel].low}`;
         } else {
             // If no High/Low selected, prompt user
-            alert('Please set the High/Low toggle for Wan 2.2 models before generating a recommended filename.');
+            showToast('Please set the High/Low toggle for Wan 2.2 models before generating a recommended filename.', 'warning');
             return;
         }
     } else if (wanSuffixMap[baseModel]) {
@@ -2489,7 +2560,7 @@ function handleModelNameCivitai() {
             console.log(`Populated Model Name with Civitai name: ${civitaiName}`);
         }
     } else {
-        alert('No Civitai name available for this model');
+        showToast('No Civitai name available for this model', 'warning');
     }
 }
 
@@ -2682,7 +2753,7 @@ function handleCreatorSuffix() {
         '';
 
     if (!creatorName) {
-        alert('No creator name available for this model');
+        showToast('No creator name available for this model', 'warning');
         return;
     }
 
@@ -2692,7 +2763,7 @@ function handleCreatorSuffix() {
     // Check if the creator suffix already exists
     const suffixPattern = new RegExp(`\\s*-\\s*${creatorName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
     if (suffixPattern.test(currentFilename)) {
-        alert(`Creator suffix "- ${creatorName}" already exists in the filename`);
+        showToast(`Creator suffix "- ${creatorName}" already exists in the filename`, 'info');
         return;
     }
 

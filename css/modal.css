@@ -191,21 +191,20 @@
 }
 
 /* Organize settings in logical layout:
-   Row 1: Directory (full width)
-   Row 2: Theme | Default View (two columns)
-   Row 3: Default Sort | View Options (two columns)  
-   Row 4: Table Columns (full width)
+   Row 1-2: Directory settings (full width each)
+   Row 3: Theme | Default View (two columns)
+   Row 4: Default Sort | View Options (two columns)  
+   Row 5: Table Columns (full width)
 */
 
-/* Full width items */
-#settingsModal .setting-group:nth-of-type(1) {
+/* Directory settings - full width */
+#settingsModal .setting-group.directory-setting {
     grid-column: 1 / -1;
-    /* Directory */
 }
 
-#settingsModal .setting-group:nth-of-type(6) {
+/* Table Columns - full width (now the 7th setting group) */
+#settingsModal .setting-group:nth-of-type(7) {
     grid-column: 1 / -1;
-    /* Table Columns */
 }
 
 .setting-group {

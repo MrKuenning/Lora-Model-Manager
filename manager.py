@@ -69,8 +69,17 @@ print("Lora path = " + lora_path)
 class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         web_app_directory = os.path.dirname(os.path.abspath(__file__))
-        self.lora_data_cache = None  # Initialize cache variable before calling super()
+        self.lora_data_cache = None  # Initialize cache for loras
+        self.checkpoints_data_cache = None  # Initialize cache for checkpoints
         super().__init__(*args, directory=web_app_directory, **kwargs)
+    
+    def get_path_for_location(self, location_type):
+        """Get the directory path for the given location type."""
+        settings = self.load_settings()
+        if location_type == 'checkpoints':
+            return settings.get('checkpointsDirectory', '')
+        else:
+            return settings.get('modelsDirectory', '')
         
     def end_headers(self):
         # Add CORS headers to allow JavaScript modules to load properly
@@ -108,13 +117,20 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
         # Check if the request is for a model file (like preview images) vs a web app file
         # Web app files should be served from the web app directory, model files from the models directory
         if parsed_url.path.startswith('/') and not parsed_url.path.startswith('/load-') and not parsed_url.path.startswith('/edit-') and parsed_url.path != '/' and not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), parsed_url.path.lstrip('/'))):
-            # Try to serve the file from the models directory
-            if lora_path:
+            # Try to serve the file from either the loras or checkpoints directory
+            settings = self.load_settings()
+            directories_to_check = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
+            
+            for models_dir in directories_to_check:
+                if not models_dir:
+                    continue
+                    
                 # URL decode the path to handle spaces and special characters
                 decoded_path = urllib.parse.unquote(parsed_url.path.lstrip('/'))
-                file_path = os.path.join(lora_path, decoded_path)
-                
-                #print(f"Looking for file in models directory: {file_path}")
+                file_path = os.path.join(models_dir, decoded_path)
                 
                 if os.path.exists(file_path) and os.path.isfile(file_path):
                     print(f"Serving file from models directory: {file_path}")
@@ -133,29 +149,47 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                         shutil.copyfileobj(file, self.wfile)
                     return
 
-        # Use global lora_path
+        # Load models based on location parameter
         if parsed_url.path == '/load-loras':
-            print("Lora path = " + lora_path)
-            if not lora_path:
-                self.send_error(400, "Missing 'path' parameter")
+            # Get location from query params (defaults to 'loras')
+            location = query_params.get('location', ['loras'])[0]
+            models_path = self.get_path_for_location(location)
+            
+            print(f"Loading models for location '{location}': {models_path}")
+            
+            if not models_path:
+                self.send_error(400, f"Directory not set for location: {location}")
                 return
-            print("loading path: " + lora_path)  # Debug print
+            
+            if not os.path.exists(models_path):
+                self.send_error(400, f"Directory does not exist: {models_path}")
+                return
 
             # Check if we need to refresh the cache
             refresh = query_params.get('refresh', ['false'])[0].lower() == 'true'
             
-            # Use cached data if available and no refresh requested
-            if self.lora_data_cache is None or refresh:
-                print("Building lora data cache...")
-                self.lora_data_cache = self.get_lora_data(lora_path)
-                print(f"Cache built with {len(self.lora_data_cache)} items")
+            # Use appropriate cache based on location
+            if location == 'checkpoints':
+                if self.checkpoints_data_cache is None or refresh:
+                    print("Building checkpoints data cache...")
+                    self.checkpoints_data_cache = self.get_lora_data(models_path)
+                    print(f"Checkpoints cache built with {len(self.checkpoints_data_cache)} items")
+                else:
+                    print(f"Using cached checkpoints data with {len(self.checkpoints_data_cache)} items")
+                data_cache = self.checkpoints_data_cache
             else:
-                print(f"Using cached data with {len(self.lora_data_cache)} items")
+                if self.lora_data_cache is None or refresh:
+                    print("Building lora data cache...")
+                    self.lora_data_cache = self.get_lora_data(models_path)
+                    print(f"Lora cache built with {len(self.lora_data_cache)} items")
+                else:
+                    print(f"Using cached lora data with {len(self.lora_data_cache)} items")
+                data_cache = self.lora_data_cache
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps(self.lora_data_cache).encode())
+            self.wfile.write(json.dumps(data_cache).encode())
         
         elif parsed_url.path == '/load-settings':
             settings = self.load_settings()
@@ -166,9 +200,12 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             
         elif parsed_url.path == '/get-folders':
             # Get list of all subdirectories in models directory
-            loraPath = self.load_settings().get('modelsDirectory', "")
+            # Get location from query params (defaults to 'loras')
+            location = query_params.get('location', ['loras'])[0]
+            loraPath = self.get_path_for_location(location)
+            
             if not loraPath or not os.path.exists(loraPath):
-                self.send_error(400, "Models directory not set or does not exist")
+                self.send_error(400, f"Directory not set or does not exist for location: {location}")
                 return
             
             folders = []
@@ -196,7 +233,22 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             if not name:
                 self.send_error(400, "Missing 'name' parameter")
                 return
-            file_path = self.find_file_path(self.load_settings().get('modelsDirectory', ""), name + ".json")
+            
+            # Check both directories for the JSON file
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
+            
+            file_path = None
+            for directory in directories:
+                if not directory:
+                    continue
+                file_path = self.find_file_path(directory, name + ".json")
+                if file_path:
+                    break
+            
             if not file_path:
                 self.send_error(404, "JSON File not found")
                 return
@@ -289,8 +341,21 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Missing 'name' parameter")
                 return
             
-            loraPath = self.load_settings().get('modelsDirectory', "")
-            file_path = self.find_file_path(loraPath, name + ".json")
+            # Check both directories for the JSON file
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
+            
+            file_path = None
+            for directory in directories:
+                if not directory:
+                    continue
+                file_path = self.find_file_path(directory, name + ".json")
+                if file_path:
+                    break
+            
             if not file_path:
                 self.send_error(404, "JSON File not found")
                 return
@@ -305,9 +370,10 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 with open(file_path, 'w') as file:
                     json.dump(json_data, file, indent=4)
                 
-                # Invalidate cache after JSON edit
+                # Invalidate both caches after JSON edit
                 self.lora_data_cache = None
-                print("Cache invalidated due to JSON edit")
+                self.checkpoints_data_cache = None
+                print("Caches invalidated due to JSON edit")
             except Exception as e:
                 self.send_error(500, f"Error saving JSON: {e}")
                 return
@@ -324,8 +390,21 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Missing 'name' parameter")
                 return
             
-            loraPath = self.load_settings().get('modelsDirectory', "")
-            file_path = self.find_file_path(loraPath, name + ".civitai.info")
+            # Check both directories for the civitai.info file
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
+            
+            file_path = None
+            for directory in directories:
+                if not directory:
+                    continue
+                file_path = self.find_file_path(directory, name + ".civitai.info")
+                if file_path:
+                    break
+            
             if not file_path:
                 self.send_error(404, "Civitai Info File not found")
                 return
@@ -354,30 +433,50 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             if not model_name:
                 self.send_error(400, "Missing 'name' parameter")
                 return
-                
-            loraPath = self.load_settings().get('modelsDirectory', "")
-            json_path = self.find_file_path(loraPath, model_name + ".json")
             
-            # If JSON doesn't exist, create it in the same directory as the model file
-            if not json_path:
-                # Find the model file to determine where to create the JSON
-                model_path = self.find_file_path(loraPath, model_name + ".safetensors")
-                if not model_path:
-                    self.send_error(404, "Model file not found")
-                    return
-                
-                # Create JSON path in the same directory as the model
+            # Check both directories for the model
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
+            
+            json_path = None
+            model_path = None
+            found_directory = None
+            
+            for directory in directories:
+                if not directory:
+                    continue
+                # Try to find existing JSON
+                json_path = self.find_file_path(directory, model_name + ".json")
+                if json_path:
+                    found_directory = directory
+                    break
+                # Try to find model file
+                model_path = self.find_file_path(directory, model_name + ".safetensors")
+                if model_path:
+                    found_directory = directory
+                    break
+            
+            # If JSON doesn't exist but model file does, create JSON in same directory
+            if not json_path and model_path:
                 json_path = os.path.splitext(model_path)[0] + ".json"
                 print(f"Creating new JSON file at: {json_path}")
+            
+            if not json_path:
+                self.send_error(404, "Model file not found in any configured directory")
+                return
                 
             try:
                 # Update the JSON file with the model's json data
                 with open(json_path, 'w') as file:
                     json.dump(data.get('json', {}), file, indent=4)
                     
-                # Invalidate cache after model edit
+                # Invalidate appropriate cache after model edit
                 self.lora_data_cache = None
-                print("Cache invalidated due to model edit")
+                self.checkpoints_data_cache = None
+                print("Caches invalidated due to model edit")
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -396,15 +495,32 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Missing 'oldName' or 'newName' parameter")
                 return
             
-            loraPath = self.load_settings().get('modelsDirectory', "")
+            # Check both directories for the model
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
             
+            # Find the model file in either directory
+            found_directory = None
+            old_model_path = None
+            for directory in directories:
+                if not directory:
+                    continue
+                old_model_path = self.find_file_path(directory, old_name + ".safetensors")
+                if old_model_path:
+                    found_directory = directory
+                    break
             
+            if not found_directory:
+                self.send_error(404, "Model file not found in any configured directory")
+                return
             
-            # Find the original files with case-insensitive search
-            old_model_path = self.find_file_path(loraPath, old_name + ".safetensors")
-            old_preview_path = self.find_file_path(loraPath, old_name + ".preview.png")
-            old_json_path = self.find_file_path(loraPath, old_name + ".json")
-            old_civitai_path = self.find_file_path(loraPath, old_name + ".civitai.info")
+            # Find the original files with case-insensitive search in the found directory
+            old_preview_path = self.find_file_path(found_directory, old_name + ".preview.png")
+            old_json_path = self.find_file_path(found_directory, old_name + ".json")
+            old_civitai_path = self.find_file_path(found_directory, old_name + ".civitai.info")
             
             # Find extra preview files (preview2, preview3, preview4)
             old_preview_paths = []
@@ -412,7 +528,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 old_preview_paths.append((old_preview_path, ".preview.png"))
             
             for i in range(2, 5):  # Check preview2, preview3, preview4
-                extra_preview = self.find_file_path(loraPath, f"{old_name}.preview{i}.png")
+                extra_preview = self.find_file_path(found_directory, f"{old_name}.preview{i}.png")
                 if extra_preview:
                     old_preview_paths.append((extra_preview, f".preview{i}.png"))
             
@@ -472,25 +588,36 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Missing 'modelName' parameter")
                 return
             
-            loraPath = self.load_settings().get('modelsDirectory', "")
-            if not loraPath:
-                self.send_error(400, "Models directory not set")
-                return
+            # Check both directories for the model
+            settings = self.load_settings()
+            directories = [
+                settings.get('modelsDirectory', ''),
+                settings.get('checkpointsDirectory', '')
+            ]
             
-            # Find all associated files for this model
-            model_file = self.find_file_path(loraPath, model_name + ".safetensors")
+            # Find which directory contains the model
+            base_path = None
+            model_file = None
+            for directory in directories:
+                if not directory:
+                    continue
+                model_file = self.find_file_path(directory, model_name + ".safetensors")
+                if model_file:
+                    base_path = directory
+                    break
+            
             if not model_file:
-                self.send_error(404, "Model file not found")
+                self.send_error(404, "Model file not found in any configured directory")
                 return
             
             # Get the current directory of the model
             current_dir = os.path.dirname(model_file)
             
-            # Determine target directory
+            # Determine target directory (within the same base directory)
             if target_folder:
-                target_dir = os.path.join(loraPath, target_folder)
+                target_dir = os.path.join(base_path, target_folder)
             else:
-                target_dir = loraPath
+                target_dir = base_path
             
             # Create target directory if it doesn't exist
             if not os.path.exists(target_dir):
@@ -513,7 +640,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             ]
             
             for ext in extensions:
-                file_path = self.find_file_path(loraPath, model_name + ext)
+                file_path = self.find_file_path(base_path, model_name + ext)
                 if file_path and os.path.exists(file_path):
                     files_to_move.append(file_path)
             
@@ -531,9 +658,10 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     shutil.move(file_path, new_path)
                     print(f"Moved: {file_path} -> {new_path}")
                 
-                # Invalidate cache after successful move
+                # Invalidate both caches after successful move
                 self.lora_data_cache = None
-                print("Cache invalidated due to model move")
+                self.checkpoints_data_cache = None
+                print("Caches invalidated due to model move")
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -551,12 +679,16 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
         elif parsed_url.path == '/civitai/scan-models':
             # Scan models directory and return list with status
             try:
-                loraPath = self.load_settings().get('modelsDirectory', "")
-                if not loraPath:
-                    self.send_error(400, "Models directory not set")
+                # Get location from query params (defaults to 'loras')
+                query_params = urllib.parse.parse_qs(parsed_url.query)
+                location = query_params.get('location', ['loras'])[0]
+                models_path = self.get_path_for_location(location)
+                
+                if not models_path:
+                    self.send_error(400, f"Directory not set for location: {location}")
                     return
                 
-                models = civitai_handler.scan_models_directory(loraPath)
+                models = civitai_handler.scan_models_directory(models_path)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -837,9 +969,10 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     }
                 )
                 
-                # Get model name and image file
+                # Get model name, image file, and location
                 model_name = form.getvalue('modelName')
                 image_file = form['imageFile']
+                location = form.getvalue('location', 'loras')
                 
                 if not model_name or not image_file.file:
                     self.send_error(400, "Missing modelName or imageFile")
@@ -852,15 +985,16 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_error(400, "Empty image file")
                     return
                 
-                loraPath = self.load_settings().get('modelsDirectory', "")
-                if not loraPath:
-                    self.send_error(400, "Models directory not set")
+                # Get the appropriate directory based on location
+                base_path = self.get_path_for_location(location)
+                if not base_path:
+                    self.send_error(400, f"Directory not set for location: {location}")
                     return
                 
                 # Find the model file to get its directory
-                model_file = self.find_file_path(loraPath, model_name + ".safetensors")
+                model_file = self.find_file_path(base_path, model_name + ".safetensors")
                 if not model_file:
-                    self.send_error(404, "Model not found")
+                    self.send_error(404, f"Model not found in {location} directory")
                     return
                 
                 model_dir = os.path.dirname(model_file)
@@ -883,8 +1017,9 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
                 print(f"Saved preview image: {preview_path}")
                 
-                # Invalidate cache
+                # Invalidate both caches
                 self.lora_data_cache = None
+                self.checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -907,14 +1042,16 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 data = json.loads(post_data)
                 model_name = data.get('modelName')
                 thumbnail_index = data.get('thumbnailIndex')  # 1-based index (1, 2, 3, 4)
+                location = data.get('location', 'loras')
                 
                 if not model_name or thumbnail_index is None:
                     self.send_error(400, "Missing modelName or thumbnailIndex")
                     return
                 
-                loraPath = self.load_settings().get('modelsDirectory', "")
-                if not loraPath:
-                    self.send_error(400, "Models directory not set")
+                # Get the appropriate directory based on location
+                base_path = self.get_path_for_location(location)
+                if not base_path:
+                    self.send_error(400, f"Directory not set for location: {location}")
                     return
                 
                 # Determine the filename for the thumbnail to delete
@@ -924,7 +1061,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     thumb_filename = f"{model_name}.preview{thumbnail_index}.png"
                 
                 # Find and delete the file
-                thumb_path = self.find_file_path(loraPath, thumb_filename)
+                thumb_path = self.find_file_path(base_path, thumb_filename)
                 if not thumb_path or not os.path.exists(thumb_path):
                     self.send_error(404, f"Thumbnail not found: {thumb_filename}")
                     return
@@ -972,8 +1109,9 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     os.rename(temp_path, final_path)
                     print(f"Final rename: {temp_path} -> {final_path}")
                 
-                # Invalidate cache
+                # Invalidate both caches
                 self.lora_data_cache = None
+                self.checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -995,20 +1133,22 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 data = json.loads(post_data)
                 model_name = data.get('modelName')
                 new_order = data.get('newOrder')  # e.g., [2, 1, 3, 4] means preview2 becomes preview
+                location = data.get('location', 'loras')
                 
                 if not model_name or not new_order:
                     self.send_error(400, "Missing modelName or newOrder")
                     return
                 
-                loraPath = self.load_settings().get('modelsDirectory', "")
-                if not loraPath:
-                    self.send_error(400, "Models directory not set")
+                # Get the appropriate directory based on location
+                base_path = self.get_path_for_location(location)
+                if not base_path:
+                    self.send_error(400, f"Directory not set for location: {location}")
                     return
                 
                 # Find the model file to get the directory
-                model_file = self.find_file_path(loraPath, f"{model_name}.safetensors")
+                model_file = self.find_file_path(base_path, f"{model_name}.safetensors")
                 if not model_file:
-                    self.send_error(404, "Model file not found")
+                    self.send_error(404, f"Model file not found in {location} directory")
                     return
                 
                 base_dir = os.path.dirname(model_file)
@@ -1040,8 +1180,9 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     os.rename(temp_path, final_path)
                     print(f"Final rename: {temp_path} -> {final_path}")
                 
-                # Invalidate cache
+                # Invalidate both caches
                 self.lora_data_cache = None
+                self.checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')

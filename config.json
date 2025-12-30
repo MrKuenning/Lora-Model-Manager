@@ -1,8 +1,9 @@
 {
   "modelsDirectory": "E:\\AI\\MODELS\\LoRA",
+  "checkpointsDirectory": "E:\\AI\\MODELS\\Stable-Diffusion",
   "theme": "dark",
   "defaultView": "grid",
-  "defaultSort": "name-asc",
+  "defaultSort": "date-newest",
   "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,

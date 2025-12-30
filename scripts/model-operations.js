@@ -2,16 +2,18 @@
 // Handles all model CRUD operations and server interactions
 
 import { showLoadingOverlay, hideLoadingOverlay } from './ui-utils.js';
+import { showToast } from './toast.js';
 
 /**
  * Load models from the specified directory
  * @param {string} dirPath - Path to models directory
  * @param {HTMLElement} modelsContainer - Container element for displaying models
+ * @param {string} location - Location type ('loras' or 'checkpoints')
  * @returns {Promise<Array>} Array of model objects
  */
-export async function loadModelsFromDirectory(dirPath, modelsContainer) {
+export async function loadModelsFromDirectory(dirPath, modelsContainer, location = 'loras') {
     try {
-        const response = await fetch('/load-loras?path=' + encodeURIComponent(dirPath));
+        const response = await fetch(`/load-loras?location=${encodeURIComponent(location)}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || `HTTP error! status: ${response.status}`);
@@ -19,7 +21,7 @@ export async function loadModelsFromDirectory(dirPath, modelsContainer) {
         const models = await response.json();
         return models;
     } catch (error) {
-        console.error('Error loading Lora data:', error);
+        console.error('Error loading model data:', error);
         if (modelsContainer) {
             modelsContainer.innerHTML = `
                 <div class="placeholder-message">
@@ -38,14 +40,18 @@ export async function loadModelsFromDirectory(dirPath, modelsContainer) {
  * @param {Object} settingsManager - Settings manager instance
  * @param {Function} loadCallback - Callback to load and display models
  * @param {Function} openSettingsCallback - Callback to open settings modal
+ * @param {string} location - Location type ('loras' or 'checkpoints')
  */
-export async function refreshModels(settingsManager, loadCallback, openSettingsCallback) {
-    const dirPath = settingsManager.getSetting('modelsDirectory');
+export async function refreshModels(settingsManager, loadCallback, openSettingsCallback, location = 'loras') {
+    const settingKey = location === 'checkpoints' ? 'checkpointsDirectory' : 'modelsDirectory';
+    const dirPath = settingsManager.getSetting(settingKey);
+
     if (dirPath) {
         showLoadingOverlay();
-        await loadCallback(dirPath);
+        await loadCallback(dirPath, location);
     } else {
-        alert('No models directory set. Please set a directory in Settings.');
+        const locName = location === 'checkpoints' ? 'checkpoints' : 'LoRAs';
+        showToast(`No ${locName} directory set. Please set a directory in Settings.`, 'warning');
         openSettingsCallback();
     }
 }
@@ -144,16 +150,17 @@ export async function saveJsonMetadata(currentModel, jsonContent, jsonType = 'mo
  * @param {Object} currentModel - Current model object  
  * @param {Array} models - Array of all models
  * @param {Function} updateCallback - Callback to update UI with refreshed model
+ * @param {string} location - Location type ('loras' or 'checkpoints')
  * @returns {Promise<Object>} Updated current model
  */
-export async function refreshModelData(currentModel, models, updateCallback) {
+export async function refreshModelData(currentModel, models, updateCallback, location = 'loras') {
     if (!currentModel) {
         throw new Error('No model selected');
     }
 
     try {
-        // Fetch the latest data for all models
-        const response = await fetch('/load-loras?refresh=true');
+        // Fetch the latest data for the specified location
+        const response = await fetch(`/load-loras?refresh=true&location=${encodeURIComponent(location)}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

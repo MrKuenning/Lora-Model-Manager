@@ -4,6 +4,7 @@ class Settings {
     constructor() {
         this.defaultSettings = {
             modelsDirectory: '', // Removed hardcoded path
+            checkpointsDirectory: '', // Checkpoint models directory
             theme: 'dark',
             defaultView: 'grid',
             defaultSort: 'name-asc',

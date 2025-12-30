@@ -3,6 +3,7 @@
 
 let models = [];
 let currentOperation = null;
+let currentLocation = 'loras';
 
 // DOM Elements
 const backButton = document.getElementById('backButton');
@@ -29,10 +30,38 @@ const modelsWithoutInfoSpan = document.getElementById('modelsWithoutInfo');
 const modelsMissingJsonSpan = document.getElementById('modelsMissingJson');
 const resultsLog = document.getElementById('resultsLog');
 
+// Get location from URL query parameters
+function getLocationFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('location') || 'loras';
+}
+
+// Update the location tabs UI based on currentLocation
+function updateLocationTabs() {
+    const lorasTab = document.getElementById('loras-tab');
+    const checkpointsTab = document.getElementById('checkpoints-tab');
+    const pageTitle = document.getElementById('page-title');
+
+    if (currentLocation === 'checkpoints') {
+        lorasTab?.classList.remove('active');
+        checkpointsTab?.classList.add('active');
+        if (pageTitle) pageTitle.textContent = 'Civitai Scan - Checkpoints';
+    } else {
+        lorasTab?.classList.add('active');
+        checkpointsTab?.classList.remove('active');
+        if (pageTitle) pageTitle.textContent = 'Civitai Scan - LoRAs';
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Get location from URL
+    currentLocation = getLocationFromUrl();
+    updateLocationTabs();
+
     backButton.addEventListener('click', () => {
-        window.location.href = 'index.html';
+        // Go back to main page with same location
+        window.location.href = `index.html?location=${currentLocation}`;
     });
 
     scanModelsBtn.addEventListener('click', scanAllModels);
@@ -49,9 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load models from server
 async function loadModels() {
     try {
-        addLog('info', 'Loading model list...');
+        addLog('info', `Loading ${currentLocation} model list...`);
 
-        const response = await fetch('/civitai/scan-models', {
+        const response = await fetch(`/civitai/scan-models?location=${encodeURIComponent(currentLocation)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
@@ -65,7 +94,7 @@ async function loadModels() {
         models = data.models || [];
 
         updateSummary();
-        addLog('success', `Loaded ${models.length} models`);
+        addLog('success', `Loaded ${models.length} models from ${currentLocation}`);
 
     } catch (error) {
         addLog('error', `Failed to load models: ${error.message}`);

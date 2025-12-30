@@ -1,8 +1,10 @@
 
 // ===== Image Drop Zone Functions =====
 
+import { showToast } from './toast.js';
+
 // Initialize drag-and-drop for image upload
-export function initializeImageDropZone(getCurrentModel, getRefreshModelData) {
+export function initializeImageDropZone(getCurrentModel, getRefreshModelData, getLocation) {
     const dropZone = document.getElementById('image-drop-zone');
     const imageWrapper = document.querySelector('.preview-image-wrapper');
 
@@ -50,29 +52,30 @@ export function initializeImageDropZone(getCurrentModel, getRefreshModelData) {
         const files = dt.files;
 
         if (files.length > 0) {
-            handleImageDrop(files[0], getCurrentModel(), getRefreshModelData);
+            const location = getLocation ? getLocation() : 'loras';
+            handleImageDrop(files[0], getCurrentModel(), getRefreshModelData, location);
         }
     }, false);
 }
 
 // Handle the dropped image file
-export async function handleImageDrop(file, currentModel, refreshModelData) {
+export async function handleImageDrop(file, currentModel, refreshModelData, location = 'loras') {
     if (!currentModel) {
-        alert('No model selected');
+        showToast('No model selected', 'warning');
         return;
     }
 
     // Validate file type
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
-        alert('Please drop a valid image file (PNG or JPEG)');
+        showToast('Please drop a valid image file (PNG or JPEG)', 'warning');
         return;
     }
 
     // Check file size (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-        alert('Image file is too large. Maximum size is 10MB');
+        showToast('Image file is too large. Maximum size is 10MB', 'warning');
         return;
     }
 
@@ -81,6 +84,7 @@ export async function handleImageDrop(file, currentModel, refreshModelData) {
         const formData = new FormData();
         formData.append('modelName', currentModel.name);
         formData.append('imageFile', file);
+        formData.append('location', location);
 
         // Show loading state
         const dropZone = document.getElementById('image-drop-zone');
@@ -103,7 +107,7 @@ export async function handleImageDrop(file, currentModel, refreshModelData) {
 
         if (data.status === 'success') {
             // Success! Refresh the modal to show the new preview
-            alert(`Successfully added thumbnail: ${data.filename}`);
+            showToast(`Successfully added thumbnail: ${data.filename}`, 'success');
 
             // Refresh model data to get updated preview list
             await refreshModelData();
@@ -117,11 +121,12 @@ export async function handleImageDrop(file, currentModel, refreshModelData) {
 
     } catch (error) {
         console.error('Error uploading image:', error);
-        alert(`Error uploading image: ${error.message}`);
+        showToast(`Error uploading image: ${error.message}`, 'error');
 
-        // Reset drop zone
+        // Reset drop zone without reloading page
         const dropZone = document.getElementById('image-drop-zone');
-        dropZone.classList.remove('drag-over');
-        location.reload(); // Simple way to reset the drop zone content
+        if (dropZone) {
+            dropZone.classList.remove('drag-over');
+        }
     }
 }
