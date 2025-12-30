@@ -772,6 +772,99 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"Error in get-model-info: {e}")
                 self.send_error(500, f"Error: {e}")
                 
+        elif parsed_url.path == '/civitai/get-model-info-by-url':
+            # Fetch model info from Civitai using a manually provided URL
+            try:
+                data = json.loads(post_data)
+                model_path = data.get('modelPath')
+                civitai_url = data.get('civitaiUrl')
+                
+                if not model_path:
+                    self.send_error(400, "Missing modelPath parameter")
+                    return
+                    
+                if not civitai_url:
+                    self.send_error(400, "Missing civitaiUrl parameter")
+                    return
+                
+                # Parse the URL to get model/version IDs
+                print(f"Parsing Civitai URL: {civitai_url}")
+                model_id, version_id = civitai_handler.parse_civitai_url(civitai_url)
+                
+                if not version_id and not model_id:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'Could not parse model or version ID from URL. Please include modelVersionId parameter.'
+                    }).encode())
+                    return
+                
+                # Prefer version ID if available (gives exact version info)
+                if version_id:
+                    print(f"Fetching model version info for version ID: {version_id}")
+                    model_info = civitai_handler.fetch_model_info_by_version_id(version_id)
+                else:
+                    # Fall back to model ID (gives latest version)
+                    print(f"Fetching model info for model ID: {model_id}")
+                    model_info = civitai_handler.fetch_model_info_by_id(model_id)
+                    # Extract latest version from model info
+                    if model_info and 'modelVersions' in model_info and model_info['modelVersions']:
+                        model_info = model_info['modelVersions'][0]
+                
+                if model_info is None:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'Failed to connect to Civitai API'
+                    }).encode())
+                    return
+                
+                if not model_info:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'not_found',
+                        'message': 'Model/version not found on Civitai'
+                    }).encode())
+                    return
+                
+                # Save civitai info file
+                success = civitai_handler.save_civitai_info(model_path, model_info)
+                
+                if not success:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'Failed to save civitai info file'
+                    }).encode())
+                    return
+                
+                # Invalidate caches
+                self.lora_data_cache = None
+                self.checkpoints_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'message': 'Model info saved successfully from URL',
+                    'modelInfo': model_info
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in get-model-info-by-url: {e}")
+                import traceback
+                traceback.print_exc()
+                self.send_error(500, f"Error: {e}")
+                
         elif parsed_url.path == '/civitai/download-preview':
             # Download preview image for a model
             try:

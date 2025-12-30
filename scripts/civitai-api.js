@@ -56,23 +56,79 @@ export async function getCivitaiData(model, refreshCallback) {
             showCivitaiStatus('✓ Civitai data saved successfully!', 'success');
             if (refreshCallback) await refreshCallback();
         } else if (data.status === 'not_found') {
-            // Ask user if they want to create a dummy file
-            const createDummy = confirm(
-                `Model not found on Civitai.\n\n` +
-                `Would you like to create an empty info file to prevent checking this model again?`
+            // Ask user for options: enter URL or create dummy file
+            const userChoice = prompt(
+                `Model not found on Civitai via hash lookup.\n\n` +
+                `Options:\n` +
+                `• Enter a Civitai URL to match manually\n` +
+                `• Leave empty and click OK to create a dummy file\n` +
+                `• Click Cancel to do nothing\n\n` +
+                `Civitai URL (include modelVersionId if possible):`
             );
 
-            if (createDummy) {
+            if (userChoice === null) {
+                // User clicked Cancel
+                showCivitaiStatus('⚠ Model not found on Civitai - no action taken', 'error');
+            } else if (userChoice.trim() === '') {
+                // User wants to create dummy file
                 showCivitaiStatus('Creating dummy info file...', 'info');
                 await createDummyInfoFile(model, refreshCallback);
             } else {
-                showCivitaiStatus('⚠ Model not found on Civitai', 'error');
+                // User provided a URL
+                showCivitaiStatus('Fetching from URL...', 'info');
+                await fetchCivitaiByUrl(model, userChoice.trim(), refreshCallback);
             }
         } else {
             showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
         }
     } catch (error) {
         console.error('Error fetching Civitai data:', error);
+        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
+        throw error;
+    } finally {
+        disableCivitaiButtons(false);
+    }
+}
+
+/**
+ * Fetch Civitai data using a manually provided URL
+ * @param {Object} model - Model object
+ * @param {string} civitaiUrl - Civitai URL 
+ * @param {Function} refreshCallback - Callback to refresh model data
+ */
+export async function fetchCivitaiByUrl(model, civitaiUrl, refreshCallback) {
+    if (!model) throw new Error('No model provided');
+    if (!civitaiUrl) throw new Error('No URL provided');
+
+    disableCivitaiButtons(true);
+    showCivitaiStatus(`Fetching from URL for ${model.name}...`, 'info');
+
+    try {
+        const response = await fetch('/civitai/get-model-info-by-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                modelPath: model.path,
+                civitaiUrl: civitaiUrl
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showCivitaiStatus('✓ Civitai data saved from URL!', 'success');
+            if (refreshCallback) await refreshCallback();
+        } else if (data.status === 'not_found') {
+            showCivitaiStatus('⚠ Model/version not found at that URL', 'error');
+        } else {
+            showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error fetching Civitai data by URL:', error);
         showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
         throw error;
     } finally {

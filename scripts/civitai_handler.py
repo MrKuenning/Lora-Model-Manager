@@ -103,6 +103,74 @@ def fetch_model_info_by_id(model_id):
         return None
 
 
+def fetch_model_info_by_version_id(version_id):
+    """
+    Fetch model version info from Civitai using version ID
+    
+    Args:
+        version_id: Civitai model version ID
+        
+    Returns:
+        Model version info dict (same format as hash lookup), or None on error
+    """
+    try:
+        url = f"{CIVITAI_API_URLS['model_version_id']}{version_id}"
+        print(f"Fetching model version from: {url}")
+        response = requests.get(url, headers=DEFAULT_HEADERS, timeout=30)
+        
+        if response.status_code == 404:
+            print(f"Model version not found on Civitai: {version_id}")
+            return {}
+        elif not response.ok:
+            print(f"Civitai API error {response.status_code}: {response.text}")
+            return None
+            
+        return response.json()
+    except Exception as e:
+        print(f"Error fetching model info by version ID: {e}")
+        return None
+
+
+def parse_civitai_url(url):
+    """
+    Parse Civitai URL to extract model ID and version ID
+    
+    Supports URLs like:
+    - https://civitai.com/models/402800?modelVersionId=1473181
+    - https://civitai.com/models/402800/model-name?modelVersionId=1473181
+    - https://civitai.com/models/402800
+    
+    Args:
+        url: Civitai URL string
+        
+    Returns:
+        tuple: (model_id, version_id) - version_id may be None
+    """
+    if not url:
+        return (None, None)
+    
+    model_id = None
+    version_id = None
+    
+    try:
+        # Extract modelVersionId from query params
+        if 'modelVersionId=' in url:
+            match = re.search(r'modelVersionId=(\d+)', url)
+            if match:
+                version_id = match.group(1)
+        
+        # Extract model ID from path
+        # Pattern: /models/{id} or /models/{id}/slug
+        match = re.search(r'/models/(\d+)', url)
+        if match:
+            model_id = match.group(1)
+            
+    except Exception as e:
+        print(f"Error parsing Civitai URL: {e}")
+    
+    return (model_id, version_id)
+
+
 def save_civitai_info(model_path, model_info):
     """
     Save model info as .civitai.info file

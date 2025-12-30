@@ -188,16 +188,85 @@ async function scanAllModels() {
     updateProgress('Scan complete', modelsToScan.length, modelsToScan.length);
     addLog('info', `Scan complete: ${successCount} success, ${notFoundModels.length} not found, ${errorCount} errors`);
 
-    // If any models were not found, ask if user wants to create dummy files
+    // If any models were not found, offer options for each
     if (notFoundModels.length > 0) {
-        const createDummies = confirm(
-            `${notFoundModels.length} model(s) were not found on Civitai.\n\n` +
-            `Would you like to create empty info files for these models to prevent checking them again in future scans?`
-        );
+        console.log('Not found models to process:', notFoundModels.length, notFoundModels);
+        addLog('info', `Processing ${notFoundModels.length} unmatched models...`);
 
-        if (createDummies) {
-            await createDummyFilesForModels(notFoundModels);
+        let urlMatchedCount = 0;
+        let dummyCreatedCount = 0;
+        let skippedCount = 0;
+
+        for (const model of notFoundModels) {
+            console.log('Prompting for model:', model.name);
+            const userChoice = prompt(
+                `Model not found: ${model.name}\n\n` +
+                `Options:\n` +
+                `• Enter a Civitai URL to match manually\n` +
+                `• Leave empty and click OK to create a dummy file\n` +
+                `• Click Cancel to skip this model\n\n` +
+                `Civitai URL (include modelVersionId if possible):`
+            );
+            console.log('User choice for', model.name, ':', userChoice);
+
+            if (userChoice === null) {
+                // User clicked Cancel - skip this model
+                addLog('info', `⊝ ${model.name}: Skipped`);
+                skippedCount++;
+            } else if (userChoice.trim() === '') {
+                // Create dummy file
+                try {
+                    const response = await fetch('/civitai/create-dummy-info', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ modelPath: model.path })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            addLog('success', `✓ ${model.name}: Dummy file created`);
+                            model.has_info = true;
+                            dummyCreatedCount++;
+                        }
+                    }
+                } catch (error) {
+                    addLog('error', `✗ ${model.name}: Failed to create dummy - ${error.message}`);
+                }
+            } else {
+                // Try to fetch by URL
+                try {
+                    const response = await fetch('/civitai/get-model-info-by-url', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            modelPath: model.path,
+                            civitaiUrl: userChoice.trim()
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            addLog('success', `✓ ${model.name}: Matched from URL!`);
+                            model.has_info = true;
+                            urlMatchedCount++;
+                        } else {
+                            addLog('error', `✗ ${model.name}: ${data.message}`);
+                            skippedCount++;
+                        }
+                    }
+                } catch (error) {
+                    addLog('error', `✗ ${model.name}: URL fetch failed - ${error.message}`);
+                    skippedCount++;
+                }
+            }
         }
+
+        updateSummary();
+        addLog('info', `Unmatched processing complete: ${urlMatchedCount} URL matched, ${dummyCreatedCount} dummy files, ${skippedCount} skipped`);
+    } else {
+        console.log('No not found models to process');
     }
 
     currentOperation = null;

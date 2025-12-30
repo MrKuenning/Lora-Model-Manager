@@ -2266,7 +2266,7 @@ function handleAppendSuffix() {
 // ===== File Location Dropdown Functions =====
 
 // Populate file location dropdown with available folders
-async function populateFileLocationDropdown(currentLocation) {
+async function populateFileLocationDropdown(modelRelativePath) {
     const fileLocationSelect = document.getElementById('model-file-location');
 
     if (!fileLocationSelect) {
@@ -2275,7 +2275,7 @@ async function populateFileLocationDropdown(currentLocation) {
     }
 
     try {
-        // Fetch available folders from server for current location
+        // Fetch available folders from server using the global currentLocation (loras/checkpoints)
         const response = await fetch(`/get-folders?location=${encodeURIComponent(currentLocation)}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -2293,9 +2293,9 @@ async function populateFileLocationDropdown(currentLocation) {
             option.value = folder.path;
             option.textContent = folder.name;
 
-            // Select the current location
-            if (folder.path === currentLocation ||
-                (folder.path === '' && currentLocation === '')) {
+            // Select the current location based on model's relative path
+            if (folder.path === modelRelativePath ||
+                (folder.path === '' && modelRelativePath === '')) {
                 option.selected = true;
             }
 
