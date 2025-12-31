@@ -506,7 +506,12 @@
 }
 
 .field-display-textarea {
-    min-height: 96px;
+    /* View mode: shrink to fit content, max ~20 lines with scrollbar */
+    min-height: 24px;
+    /* Single line minimum */
+    max-height: 400px;
+    /* About 20 lines at 1.4 line-height */
+    overflow-y: auto;
 }
 
 .field-display:empty::before {
@@ -536,11 +541,12 @@
 }
 
 textarea.field-input {
-    min-height: 96px;
-    max-height: 200px;
-    /* Limit height to about 10-12 lines */
-    overflow-y: auto;
-    /* Add scrollbar when content exceeds max-height */
+    /* Edit mode: expand to fit content, min 3 lines for multiline feel */
+    min-height: 72px;
+    /* About 3 lines */
+    max-height: none;
+    /* No limit in edit mode - show all content */
+    overflow-y: visible;
     resize: vertical;
     line-height: 1.4;
 }
@@ -606,6 +612,26 @@ textarea.field-input {
 #weight-slider-container {
     margin-top: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
+}
+
+/* Override default .field-input display: none for the weight slider */
+#weight-slider-container .weight-slider {
+    display: block;
+}
+
+/* Live value display above slider */
+.slider-value-row {
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.slider-live-value {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-bg-tertiary);
+    padding: 4px 12px;
+    border-radius: var(--border-radius-sm);
 }
 
 .weight-slider {
@@ -1376,76 +1402,6 @@ textarea.editable-field {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
     margin: 0;
-}
-
-.weight-value {
-    font-weight: bold;
-    font-size: var(--font-size-md);
-    color: var(--color-text-link);
-    min-width: 40px;
-    text-align: center;
-}
-
-.weight-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(to right,
-            #f85149 0%,
-            #f85149 10%,
-            #58a6ff 50%,
-            #2ea043 90%,
-            #2ea043 100%);
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-    margin: var(--spacing-sm) 0;
-}
-
-.weight-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--color-text);
-    cursor: pointer;
-    border: 3px solid var(--color-bg-secondary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
-}
-
-.weight-slider::-webkit-slider-thumb:hover {
-    background: var(--color-text-link);
-    transform: scale(1.1);
-}
-
-.weight-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--color-text);
-    cursor: pointer;
-    border: 3px solid var(--color-bg-secondary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
-}
-
-.weight-slider::-moz-range-thumb:hover {
-    background: var(--color-text-link);
-    transform: scale(1.1);
-}
-
-.slider-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: var(--spacing-xs);
-}
-
-.slider-labels span {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    user-select: none;
 }
 
 /* Preview Management Buttons - below thumbnails */

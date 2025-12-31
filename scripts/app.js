@@ -47,7 +47,7 @@ const refreshJsonBtn = document.getElementById('refresh-json-btn');
 const modelJsonBtn = document.getElementById('model-json-btn');
 const civitaiJsonBtn = document.getElementById('civitai-json-btn');
 const preferredWeightSlider = document.getElementById('model-preferred-weight');
-const preferredWeightValue = document.getElementById('preferred-weight-value');
+const preferredWeightValue = document.getElementById('model-preferred-weight-display');
 
 // Application State
 let models = [];
@@ -153,7 +153,13 @@ document.getElementById('toggle-json-editor').addEventListener('click', () => {
 
 // Preferred Weight slider event listener to update display value
 preferredWeightSlider.addEventListener('input', function () {
-    preferredWeightValue.textContent = parseFloat(this.value).toFixed(1);
+    const value = parseFloat(this.value).toFixed(1);
+    preferredWeightValue.textContent = value;
+    // Also update the live value display in edit mode
+    const liveValue = document.getElementById('weight-slider-value');
+    if (liveValue) {
+        liveValue.textContent = value;
+    }
 });
 
 // No need for edit button event listeners as fields are always editable
@@ -636,6 +642,19 @@ function setupStaticFieldEdit(fieldName) {
     });
 }
 
+// ===== Textarea Auto-Resize =====
+/**
+ * Auto-resize a textarea to fit its content
+ * @param {HTMLTextAreaElement} textarea - The textarea element to resize
+ */
+function autoResizeTextarea(textarea) {
+    if (!textarea) return;
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    // Set height to scrollHeight to show all content
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
 // ===== Generic Field Edit Functionality =====
 /**
  * Setup edit/save/cancel functionality for any field type
@@ -694,12 +713,24 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             display.style.display = 'none';
             document.getElementById('weight-visual-bar').style.display = 'none';
             document.getElementById('weight-slider-container').style.display = 'block';
+            // Initialize the live value display with current slider value
+            const liveValue = document.getElementById('weight-slider-value');
+            if (liveValue) {
+                liveValue.textContent = parseFloat(input.value).toFixed(1);
+            }
         } else {
             // Text or textarea
             input.value = display.textContent.trim();
             if (input.value === '(empty)') input.value = '';
             display.style.display = 'none';
             input.style.display = 'block';
+
+            // Auto-resize textarea to fit content
+            if (input.tagName === 'TEXTAREA') {
+                autoResizeTextarea(input);
+                // Add resize listener for typing
+                input.addEventListener('input', () => autoResizeTextarea(input));
+            }
         }
 
         // Toggle buttons
