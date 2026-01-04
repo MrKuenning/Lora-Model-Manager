@@ -263,7 +263,7 @@
     overflow: hidden;
     /* Crop image to fit ratio */
     background-color: var(--color-bg-image);
-    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    border-radius: var(--border-radius-md);
     flex-shrink: 0;
     /* Prevent shrinking */
 }
@@ -710,6 +710,20 @@ textarea.field-input {
     flex-direction: column;
     gap: var(--spacing-sm);
     /* Reduced from lg */
+}
+
+/* Two-column layout for Model Version and High/Low */
+.version-highlow-row {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.version-highlow-row .info-row:first-child {
+    flex: 7;
+}
+
+.version-highlow-row .info-row:last-child {
+    flex: 3;
 }
 
 .info-row {
@@ -1352,7 +1366,6 @@ textarea.editable-field {
     justify-content: space-between;
     align-items: flex-start;
     padding: 30px 40px 20px;
-    border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);
 }
 

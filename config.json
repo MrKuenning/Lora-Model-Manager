@@ -4,7 +4,7 @@
   "theme": "dark",
   "defaultView": "grid",
   "defaultSort": "date-newest",
-  "hideNSFW": true,
+  "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,
     "filename": true,

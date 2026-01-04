@@ -397,37 +397,40 @@
                                         </div>
                                     </div>
 
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>Model Version:</label>
-                                            <div class="field-edit-buttons">
-                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
-                                                    data-field="model-version">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-success field-save-btn"
-                                                    data-field="model-version" style="display: none;">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
-                                                    data-field="model-version" style="display: none;">
-                                                    <i class="fas fa-times"></i>
+                                    <!-- Model Version and High/Low side by side -->
+                                    <div class="version-highlow-row">
+                                        <div class="info-row">
+                                            <div class="info-row-header">
+                                                <label>Model Version:</label>
+                                                <div class="field-edit-buttons">
+                                                    <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                        data-field="model-version">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-tiny btn-success field-save-btn"
+                                                        data-field="model-version" style="display: none;">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                        data-field="model-version" style="display: none;">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <span class="field-display" id="model-version-display"></span>
+                                            <input type="text" id="model-version" class="field-input">
+                                        </div>
+
+                                        <!-- High/Low Toggle -->
+                                        <div class="info-row">
+                                            <div class="info-row-header">
+                                                <label>High/Low:</label>
+                                            </div>
+                                            <div class="high-low-toggle-container">
+                                                <button id="high-low-toggle" class="high-low-toggle-btn" data-value="">
+                                                    <span class="toggle-label">None</span>
                                                 </button>
                                             </div>
-                                        </div>
-                                        <span class="field-display" id="model-version-display"></span>
-                                        <input type="text" id="model-version" class="field-input">
-                                    </div>
-
-                                    <!-- High/Low Toggle (moved from Categorization) -->
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>High/Low:</label>
-                                        </div>
-                                        <div class="high-low-toggle-container">
-                                            <button id="high-low-toggle" class="high-low-toggle-btn" data-value="">
-                                                <span class="toggle-label">None</span>
-                                            </button>
                                         </div>
                                     </div>
                                 </div>

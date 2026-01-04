@@ -4,110 +4,231 @@
 
 ### 12/31/2025
 
-**Textarea Auto-Resize**  
-View mode: shrinks to fit content (max 20 lines with scrollbar). Edit mode: expands to show all content.
+**Added**
+- None
+
+**Changed**
+- **Textarea Auto-Resize**  
+  View mode shrinks to fit content (max 20 lines with scrollbar); edit mode expands to show all.
+- **Changelog Format**  
+  Migrated changelog from TXT to Markdown format with improved structure.
+
+**Fixed**
+- **Text Spacing**  
+  Fixed spacing issues in UI text elements.
+- **Model Weight Display**  
+  Corrected model weight rendering in the interface.
 
 ---
 
 ### 12/30/2025
 
-**Manual Civitai URL Matching**  
-When hash matching fails, prompts for manual URL entry or dummy file creation.
+**Added**
+- **Manual Civitai URL Matching**  
+  Prompts for manual URL entry when hash matching fails, or creates dummy file.
 
-**Move Location Fix**  
-Fixed dropdown to show correct folders for LoRAs vs Checkpoints.
+**Changed**
+- None
 
-**Preferred Weight Slider Fix**  
-Fixed slider display and value updates in edit mode.
+**Fixed**
+- **Move Location Dropdown**  
+  Fixed dropdown to show correct folders for LoRAs vs Checkpoints.
+- **Preferred Weight Slider**  
+  Fixed slider display and value updates in edit mode.
 
 ---
 
 ### 12/29/2025
 
-**Checkpoint Model Support**  
-Added second model location for Checkpoints with separate UI tab.
+**Added**
+- **Checkpoint Model Support**  
+  Added second model location for Checkpoints with separate UI tab.
 
-**Checkpoint Civitai Scan**  
-Fixed scanning and matching for Checkpoint models.
+**Changed**
+- None
+
+**Fixed**
+- **Checkpoint Move Function**  
+  Fixed file moving for Checkpoint models.
+- **Checkpoint Civitai Scan**  
+  Fixed scanning and matching for Checkpoint models.
 
 ---
 
 ### 12/28/2025
 
-**Creator Suffix Button**  
-Appends " - [creator name]" to proposed filename.
+**Added**
+- **Creator Suffix Button**  
+  Appends " - [creator name]" to proposed filename.
+- **Trim Name Button**  
+  Removes base model and version suffixes from model name.
 
-**Move/Rename UI Cleanup**  
-Improved visibility toggles, added recommended button outside edit mode.
+**Changed**
+- **Move/Rename UI**  
+  Improved visibility toggles, added recommended button outside edit mode.
+- **Civitai2JSON Script**  
+  Writes Civitai name to Model Name field; preserves existing Model Name, High/Low, and Version when updating.
 
-**Trim Name Button**  
-Removes base model and version suffixes from model name.
-
-**Civitai2JSON Script Update**  
-Writes Civitai name to Model Name field; preserves existing Model Name, High/Low, and Version when updating.
+**Fixed**
+- None
 
 ---
 
 ### 12/27/2025
 
-**Naming Buttons Reorganization**  
-Moved Civitai Name and Clean buttons under Model Name field.
+**Added**
+- **Filename Helper Buttons**  
+  Model Name button copies to filename; Recommended builds filename from metadata.
 
-**Filename Helper Buttons**  
-- Model Name: Copies model name to filename
-- Recommended: Builds filename from model name, type, and version
+**Changed**
+- **Naming Buttons Reorganization**  
+  Moved Civitai Name and Clean buttons under Model Name field.
+
+**Fixed**
+- None
 
 ---
 
 ### 12/26/2025
 
-**Model Name Field**  
-New field to store display name (separate from filename), auto-populated from Civitai.
+**Added**
+- **Model Name Field**  
+  New field to store display name (separate from filename), auto-populated from Civitai.
+- **High/Low Toggle**  
+  Toggle for Wan2.2 model variants (High or Low).
 
-**High/Low Toggle**  
-Toggle for Wan2.2 model variants (High or Low).
+**Changed**
+- **Split Info Panels**  
+  Separated read-only area into File Info and File Data sections.
 
-**Split Info Panels**  
-Separated read-only area into File Info and File Data sections.
+**Fixed**
+- None
 
 ---
 
 ### 12/25/2025
 
-**Thumbnail Aspect Ratio**  
-Thumbnails now use consistent 3:4 aspect ratio with cover fit.
+**Added**
+- **Version in Title Bar**  
+  Displays model version in popup title when available.
+- **Description Section**  
+  Added organized section for Notes and Description fields.
 
-**Recommended Name Button**  
-Generates suggested filename based on model type and metadata.
+**Changed**
+- **Thumbnail Aspect Ratio**  
+  Thumbnails now use consistent 3:4 aspect ratio with cover fit.
+- **Recommended Name Button**  
+  Generates suggested filename based on model type and metadata.
+- **File Management Overhaul**  
+  Redesigned file operations area for better usability.
 
-**Version in Title Bar**  
-Displays model version in popup title when available.
+**Fixed**
+- None
 
-**Description Section**  
-Added organized section for Notes and Description fields.
+---
 
-**File Management Overhaul**  
-Redesigned file operations area for better usability.
+### 12/24/2025
+
+**Added**
+- **Settings and Model JSON Handling**  
+  Improved model JSON handling and new settings options.
+- **Civitai Integration**  
+  Initial Civitai API integration for model metadata.
+
+**Changed**
+- **.gitignore Update**  
+  Added Python cache directories to .gitignore.
+
+**Fixed**
+- **Deleted File Cleanup**  
+  Removed stale deleted file references from the project.
 
 ---
 
 ### 12/15/2025
 
-**Auto-Create JSON Files**  
-Creates model JSON file automatically when a field is populated.
+**Added**
+- **Loading Indicator**  
+  Visual loading indicator while models are being scanned.
+- **Search and Filter**  
+  Search bar and filter options for model browsing.
+- **Sorting Options**  
+  Sort models by various criteria.
+- **Auto-Create JSON Files**  
+  Creates model JSON file automatically when a field is populated.
+- **Dummy Civitai Info Files**  
+  Prompts to create placeholder file when no Civitai match is found.
+- **Copy Prompt Button**  
+  Added clipboard copy button for prompt text boxes.
+- **New JSON Fields**  
+  Added Example Prompt 2 and Model Version fields.
+- **Comprehensive Styling**  
+  New CSS files for general, model, and settings modals plus components and layout.
 
-**Dummy Civitai Info Files**  
-Prompts to create placeholder file when no Civitai match is found.
+**Changed**
+- **Renamed Fields**  
+  Positive Words → Triggerwords for WebUI; Negative Words → Negative Words for WebUI; Civitai Words → All Triggerwords.
+- **Default Application Port**  
+  Set default port for the application.
 
-**Copy Prompt Button**  
-Added clipboard copy button for prompt text boxes.
+**Fixed**
+- **Thumbnail Mouseover**  
+  Fixed thumbnail mouseover functionality in grid view.
 
-**New JSON Fields**  
-Added Example Prompt 2 and Model Version fields.
+---
 
-**Renamed Fields**  
-- Positive Words → Triggerwords for WebUI
-- Negative Words → Negative Words for WebUI  
-- Civitai Words → All Triggerwords
+### 12/14/2025
+
+**Added**
+- **Civitai Integration**  
+  Civitai API integration for model information and preview images.
+- **Civitai Scan UI**  
+  UI for scanning models against Civitai database.
+- **Direct Preview Upload**  
+  Upload preview images directly from the UI.
+
+**Changed**
+- None
+
+**Fixed**
+- None
+
+---
+
+### 12/13/2025
+
+**Added**
+- **Multi-Image Preview Carousel**  
+  Carousel with side navigation and indicator for model cards.
+
+**Changed**
+- None
+
+**Fixed**
+- None
+
+---
+
+### 12/12/2025
+
+**Added**
+- **Initial Web UI**  
+  Lora model management interface with grid/table views.
+- **Backend Endpoints**  
+  API endpoints for folder listing and model moving.
+- **Civitai Metadata Parser**  
+  Script to generate JSON files from Civitai metadata.
+- **Model Details Modal**  
+  Popup modal for viewing detailed model information.
+- **Search & Filters**  
+  Search, filter, and sort functionality for models.
+- **README Documentation**  
+  Comprehensive README detailing features, installation, and usage.
+
+**Changed**
+- None
+
+**Fixed**
+- None
 
 ---
