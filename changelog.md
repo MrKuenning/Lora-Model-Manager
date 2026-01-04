@@ -26,9 +26,6 @@
 
 ### 12/31/2025
 
-**Added**
-- None
-
 **Changed**
 - **Textarea Auto-Resize**  
   View mode shrinks to fit content (max 20 lines with scrollbar); edit mode expands to show all.
@@ -49,9 +46,6 @@
 - **Manual Civitai URL Matching**  
   Prompts for manual URL entry when hash matching fails, or creates dummy file.
 
-**Changed**
-- None
-
 **Fixed**
 - **Move Location Dropdown**  
   Fixed dropdown to show correct folders for LoRAs vs Checkpoints.
@@ -65,9 +59,6 @@
 **Added**
 - **Checkpoint Model Support**  
   Added second model location for Checkpoints with separate UI tab.
-
-**Changed**
-- None
 
 **Fixed**
 - **Checkpoint Move Function**  
@@ -91,9 +82,6 @@
 - **Civitai2JSON Script**  
   Writes Civitai name to Model Name field; preserves existing Model Name, High/Low, and Version when updating.
 
-**Fixed**
-- None
-
 ---
 
 ### 12/27/2025
@@ -105,9 +93,6 @@
 **Changed**
 - **Naming Buttons Reorganization**  
   Moved Civitai Name and Clean buttons under Model Name field.
-
-**Fixed**
-- None
 
 ---
 
@@ -122,9 +107,6 @@
 **Changed**
 - **Split Info Panels**  
   Separated read-only area into File Info and File Data sections.
-
-**Fixed**
-- None
 
 ---
 
@@ -143,9 +125,6 @@
   Generates suggested filename based on model type and metadata.
 - **File Management Overhaul**  
   Redesigned file operations area for better usability.
-
-**Fixed**
-- None
 
 ---
 
@@ -209,12 +188,6 @@
 - **Direct Preview Upload**  
   Upload preview images directly from the UI.
 
-**Changed**
-- None
-
-**Fixed**
-- None
-
 ---
 
 ### 12/13/2025
@@ -222,12 +195,6 @@
 **Added**
 - **Multi-Image Preview Carousel**  
   Carousel with side navigation and indicator for model cards.
-
-**Changed**
-- None
-
-**Fixed**
-- None
 
 ---
 
@@ -246,11 +213,5 @@
   Search, filter, and sort functionality for models.
 - **README Documentation**  
   Comprehensive README detailing features, installation, and usage.
-
-**Changed**
-- None
-
-**Fixed**
-- None
 
 ---

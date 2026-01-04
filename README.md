@@ -6,6 +6,12 @@ A web-based application for organizing and managing thousands of AI Lora and Che
 
 The AI Lora Model Manager is a powerful tool designed to help you organize, search, and manage large collections of Lora and Checkpoint models. It provides an intuitive interface for viewing model metadata, editing information, and syncing with Civitai.
 
+## Changelog
+
+See the full changelog at [CHANGELOG.md](CHANGELOG.md)
+
+---
+
 ## Features
 
 ### 📊 Multiple View Modes
@@ -312,7 +318,7 @@ App1/
 
 ## Changelog
 
-See the full changelog at [changelog.md](changelog.md)
+See the full changelog at [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
