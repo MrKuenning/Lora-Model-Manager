@@ -2,6 +2,28 @@
 
 ---
 
+### 01/03/2026
+
+**Changed**
+- **Model Identity Layout**  
+  Model Version and High/Low toggle now display side by side (70/30 split).
+
+---
+
+### 01/01/2026
+
+**Changed**
+- **Modal Title Styling**  
+  Moved horizontal rule to directly under title text instead of full header width.
+
+**Fixed**
+- **Duplicate Horizontal Rules**  
+  Removed duplicate HR styling that caused two lines to appear under modal title.
+- **Thumbnail Border Radius**  
+  Fixed thumbnail corners to be rounded on all sides, not just top.
+
+---
+
 ### 12/31/2025
 
 **Added**
