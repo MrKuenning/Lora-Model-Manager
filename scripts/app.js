@@ -12,6 +12,7 @@ import { showToast } from './toast.js';
 import * as ModelOps from './model-operations.js';
 import * as CivitaiAPI from './civitai-api.js';
 import { initializeCopyButtons } from './clipboard-utils.js';
+import { TagInput } from './tag-input.js';
 
 // DOM Elements
 const modelsContainer = document.getElementById('models-container');
@@ -60,6 +61,9 @@ let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
 let selectedThumbnailIndex = 0; // Currently selected thumbnail (0-based for preview-thumb elements)
 let currentLocation = 'loras'; // 'loras' or 'checkpoints'
+let currentFilteredModels = []; // Track filtered models for modal navigation
+let currentModelIndex = -1; // Track current model index in filtered list
+let tagsInput = null; // TagInput component instance
 
 // Helper function to get location from URL
 function getLocationFromUrl() {
@@ -733,6 +737,12 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             }
         }
 
+        // Show field helper buttons if applicable (category/subcategory fields)
+        const helperButtons = document.querySelector(`.field-helper-buttons[data-field="${fieldId}"]`);
+        if (helperButtons) {
+            helperButtons.style.display = 'flex';
+        }
+
         // Toggle buttons
         newEditBtn.style.display = 'none';
         newSaveBtn.style.display = 'inline-block';
@@ -761,6 +771,12 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
         } else {
             input.style.display = 'none';
             display.style.display = 'block';
+        }
+
+        // Hide field helper buttons if present
+        const helperButtons = document.querySelector(`.field-helper-buttons[data-field="${fieldId}"]`);
+        if (helperButtons) {
+            helperButtons.style.display = 'none';
         }
 
         // Reset buttons
@@ -811,6 +827,12 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             newSaveBtn.style.display = 'none';
             newCancelBtn.style.display = 'none';
 
+            // Hide field helper buttons if present
+            const helperButtons = document.querySelector(`.field-helper-buttons[data-field="${fieldId}"]`);
+            if (helperButtons) {
+                helperButtons.style.display = 'none';
+            }
+
             // No need to refresh entire model list - we already updated currentModel
 
         } catch (error) {
@@ -818,6 +840,29 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             showToast('Failed to save changes. Please try again.', 'error');
         }
     });
+
+    // Set up use-folder button click handler if present
+    const useFolderBtn = document.querySelector(`[data-field="${fieldId}"].use-folder-btn`);
+    if (useFolderBtn) {
+        const newUseFolderBtn = useFolderBtn.cloneNode(true);
+        useFolderBtn.parentNode.replaceChild(newUseFolderBtn, useFolderBtn);
+
+        newUseFolderBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Extract folder name from model path
+            if (currentModel && currentModel.path) {
+                const path = currentModel.path.replace(/\\/g, '/');
+                const parts = path.split('/');
+                // Get the parent folder (second to last part, since last is filename)
+                if (parts.length >= 2) {
+                    const folderName = parts[parts.length - 2];
+                    input.value = folderName;
+                }
+            }
+        });
+    }
 }
 
 // Helper function to save current model to server
@@ -990,11 +1035,13 @@ function displayModels() {
         } else {
             // Use simple search for better performance when no special operators are used
             const searchLower = searchTerm.toLowerCase();
-            filteredModels = filteredModels.filter(model =>
-                model.name.toLowerCase().includes(searchLower) ||
-                model.filename.toLowerCase().includes(searchLower) ||
-                model.category.toLowerCase().includes(searchLower)
-            );
+            filteredModels = filteredModels.filter(model => {
+                const tags = (model.json?.['tags'] || '').toLowerCase();
+                return model.name.toLowerCase().includes(searchLower) ||
+                    model.filename.toLowerCase().includes(searchLower) ||
+                    model.category.toLowerCase().includes(searchLower) ||
+                    tags.includes(searchLower);
+            });
         }
     }
 
@@ -1010,6 +1057,9 @@ function displayModels() {
 
     // Sort models
     filteredModels = sortModels(filteredModels, currentSort);
+
+    // Store for modal navigation
+    currentFilteredModels = filteredModels;
 
     // Display models based on current view using imported modules
     if (currentView === 'grid') {
@@ -1311,10 +1361,75 @@ async function saveSettings() {
     }
 }
 
+// Modal Navigation Functions
+function updateNavButtonStates() {
+    const prevBtn = document.getElementById('modal-prev-btn');
+    const nextBtn = document.getElementById('modal-next-btn');
+
+    if (prevBtn) {
+        prevBtn.disabled = currentModelIndex <= 0;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentModelIndex >= currentFilteredModels.length - 1;
+    }
+}
+
+function navigateModel(direction) {
+    const newIndex = currentModelIndex + direction;
+
+    if (newIndex >= 0 && newIndex < currentFilteredModels.length) {
+        const model = currentFilteredModels[newIndex];
+        openModelDetails(model);
+    }
+}
+
+// Modal navigation event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const prevBtn = document.getElementById('modal-prev-btn');
+    const nextBtn = document.getElementById('modal-next-btn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateModel(-1);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateModel(1);
+        });
+    }
+
+    // Keyboard navigation when modal is open
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('model-modal');
+        if (modal && modal.style.display === 'block') {
+            // Don't navigate if user is typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                navigateModel(-1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                navigateModel(1);
+            }
+        }
+    });
+});
+
 // Model Details Functions
 function openModelDetails(model) {
     console.log('Open model details:', model);
     currentModel = model;
+
+    // Track current model index for navigation
+    currentModelIndex = currentFilteredModels.findIndex(m => m.path === model.path);
+    updateNavButtonStates();
 
     // Get preview images array
     const previewImages = model.previewImages || (model.previewUrl ? [model.previewUrl] : []);
@@ -1496,10 +1611,17 @@ function openModelDetails(model) {
     document.getElementById('model-example-prompt-2').value = examplePrompt2Field;
     document.getElementById('model-example-prompt-2-display').textContent = examplePrompt2Field || '';
 
-    // Tags
+    // Tags - using TagInput component
     const tagsField = model.json?.['tags'] || '';
-    document.getElementById('model-tags').value = tagsField;
-    document.getElementById('model-tags-display').textContent = tagsField || '';
+    if (!tagsInput) {
+        tagsInput = new TagInput('tags-container', 'model-tags', {
+            onChange: async (value) => {
+                currentModel.json['tags'] = value;
+                await saveModel();
+            }
+        });
+    }
+    tagsInput.setTags(tagsField);
 
     // Model Name - initially from json['name'] or Civitai name as fallback
     const modelNameField = model.json?.['name'] || model.json?.['civitai name'] || '';
@@ -1559,10 +1681,7 @@ function openModelDetails(model) {
         await saveModel();
     });
 
-    setupGenericFieldEdit('model-tags', 'text', async (val) => {
-        currentModel.json['tags'] = val;
-        await saveModel();
-    });
+    // Note: model-tags is handled by TagInput component with its own onChange handler
 
     setupGenericFieldEdit('model-name', 'text', async (val) => {
         currentModel.json['name'] = val;

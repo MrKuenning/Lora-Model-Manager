@@ -50,9 +50,18 @@ class Settings {
                 'authorsWords',
                 'description',
                 'notes',
-                'modelName',
                 'modelVersion',
                 'highLow'
+            ],
+            filenameFormats: [
+                { baseModel: 'Default', format: '{modelname} {version}' },
+                { baseModel: 'Pony', format: '[P] {modelname} {version}' },
+                { baseModel: 'SDXL 1.0', format: '[X] {modelname} {version}' },
+                { baseModel: 'Illustrious', format: '[I] {modelname} {version}' },
+                { baseModel: 'ZImageTurbo', format: '[Z] {modelname} {version}' },
+                { baseModel: 'Wan Video 14B t2v', format: '{modelname} {version} - {highlow} T2V - Wan21 14B' },
+                { baseModel: 'Wan Video 14B i2v 720p', format: '{modelname} {version} - {highlow} I2v 720p - Wan21 14b' },
+                { baseModel: 'Wan Video', format: '{modelname} {version} - {highlow} Wan21 14B' }
             ]
         };
 

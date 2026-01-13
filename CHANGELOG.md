@@ -7,10 +7,22 @@
 **Added**
 - **Favicon**  
   Added application favicon in assets folder.
+- **Modal Navigation Arrows**  
+  Previous/next buttons in model popup header to navigate between models. Keyboard shortcuts: Left/Right arrow keys.
+- **Modern Tag Input**  
+  Pill-style tag input component for the Tags field. Type and press Enter to add, click X to remove.
+- **Use Folder Button**  
+  When editing Category or Subcategory, a "Use Folder" button appears to populate the field with the model's current folder name.
+- **Search by Tags**  
+  Search now includes tags in addition to name, filename, and category.
 
 **Changed**
 - **Header Button Text**  
   Shortened button labels: "Grid View" → "Grid", "Table View" → "Table", "Civitai Scan" → "Civitai".
+- **Categorization Section Reorganized**  
+  Category/Subcategory now on left, Tags on right. Improved modal header button spacing.
+- **Modal UI Cleanup**  
+  Consistent spacing and dark theme colors in left column. Larger nav/refresh/close icons.
 
 ---
 

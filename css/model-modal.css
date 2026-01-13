@@ -234,7 +234,7 @@
 .model-details-left {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
     grid-row: 1 / -1;
     /* Span all rows */
 }
@@ -250,7 +250,6 @@
     justify-content: center;
     overflow: visible;
     border-radius: var(--border-radius-md);
-    margin-bottom: var(--spacing-lg);
     border: 1px solid var(--color-border);
 }
 
@@ -301,10 +300,9 @@
 /* Static info section in left column */
 .model-static-info {
     background-color: #333333;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     border-radius: var(--border-radius-md);
     border: 1px solid var(--color-border);
-    margin-bottom: var(--spacing-lg);
 }
 
 .static-section-title {
@@ -1354,9 +1352,8 @@ textarea.editable-field {
 
 /* Preferred Weight Slider Styles */
 .preferred-weight-container {
-    margin-top: var(--spacing-lg);
     padding: var(--spacing-md);
-    background-color: var(--color-bg-secondary);
+    background-color: #333333;
     border-radius: var(--border-radius-md);
     border: 1px solid var(--color-border);
 }
@@ -1384,8 +1381,8 @@ textarea.editable-field {
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    padding: 8px;
-    font-size: 18px;
+    padding: 10px;
+    font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1401,6 +1398,41 @@ textarea.editable-field {
 
 .modal-btn.refresh-btn:active {
     transform: rotate(180deg) scale(0.95);
+}
+
+/* Navigation button styles */
+.modal-btn.nav-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 10px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.modal-btn.nav-btn:hover {
+    color: var(--color-text-link);
+    background: var(--color-bg-hover);
+}
+
+.modal-btn.nav-btn:active {
+    transform: scale(0.95);
+}
+
+.modal-btn.nav-btn:disabled {
+    color: var(--color-text-secondary);
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.modal-btn.nav-btn:disabled:hover {
+    background: none;
+    color: var(--color-text-secondary);
 }
 
 .slider-header {
@@ -1490,4 +1522,108 @@ textarea.editable-field {
 #model-modal .preview-thumb:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Field Helper Buttons - displayed below input during edit */
+.field-helper-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.use-folder-btn {
+    white-space: nowrap;
+}
+
+/* Tag Input Component Styles */
+.tag-input-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    min-height: 42px;
+    cursor: text;
+    transition: border-color 0.2s ease;
+}
+
+.tag-input-container:focus-within {
+    border-color: var(--color-text-link);
+}
+
+.tag-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, var(--color-btn-primary), var(--color-btn-primary-hover));
+    color: white;
+    border-radius: 16px;
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    animation: tagFadeIn 0.2s ease;
+}
+
+@keyframes tagFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.tag-text {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.tag-remove:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.tag-input-field {
+    flex: 1;
+    min-width: 120px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    outline: none;
+}
+
+.tag-input-field::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
 }

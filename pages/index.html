@@ -169,10 +169,18 @@
                         <p id="modal-subtitle" class="modal-subtitle"></p>
                     </div>
                     <div class="modal-header-buttons">
+                        <button id="modal-prev-btn" class="modal-btn nav-btn" title="Previous model">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="modal-next-btn" class="modal-btn nav-btn" title="Next model">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                         <button id="refresh-model-btn" class="modal-btn refresh-btn" title="Refresh model data">
                             <i class="fas fa-sync-alt"></i>
                         </button>
-                        <span class="close-modal">&times;</span>
+                        <button class="modal-btn close-modal" title="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="model-details">
@@ -187,23 +195,6 @@
                                         <i class="fas fa-image"></i>
                                         <p>Drop image here to add thumbnail</p>
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- File Info Section -->
-                            <div class="model-static-info">
-                                <!-- Read-Only File Fields -->
-                                <div class="static-info-row">
-                                    <label>PATH:</label>
-                                    <span id="model-path"></span>
-                                </div>
-                                <div class="static-info-row">
-                                    <label>SIZE:</label>
-                                    <span id="model-size"></span>
-                                </div>
-                                <div class="static-info-row">
-                                    <label>DATE:</label>
-                                    <span id="model-date"></span>
                                 </div>
                             </div>
 
@@ -350,6 +341,23 @@
                                         <span>0.0</span>
                                         <span>4.0</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- File Info Section -->
+                            <div class="model-static-info">
+                                <!-- Read-Only File Fields -->
+                                <div class="static-info-row">
+                                    <label>PATH:</label>
+                                    <span id="model-path"></span>
+                                </div>
+                                <div class="static-info-row">
+                                    <label>SIZE:</label>
+                                    <span id="model-size"></span>
+                                </div>
+                                <div class="static-info-row">
+                                    <label>DATE:</label>
+                                    <span id="model-date"></span>
                                 </div>
                             </div>
                         </div>
@@ -541,35 +549,10 @@
                                 </div>
                             </div>
 
-                            <!-- Section 2: Tags, Creator, Category, Subcategory -->
+                            <!-- Section 2: Category, Subcategory, Tags -->
                             <h3 class="section-title">Categorization</h3>
                             <div class="field-section">
-                                <!-- Column 2 -->
-                                <div class="model-basic-info">
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>Tags:</label>
-                                            <div class="field-edit-buttons">
-                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
-                                                    data-field="model-tags">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-success field-save-btn"
-                                                    data-field="model-tags" style="display: none;">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
-                                                    data-field="model-tags" style="display: none;">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <span class="field-display" id="model-tags-display"></span>
-                                        <input type="text" id="model-tags" class="field-input">
-                                    </div>
-                                </div>
-
-                                <!-- Column 3 -->
+                                <!-- Column 1: Category and Subcategory -->
                                 <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
@@ -591,6 +574,13 @@
                                         </div>
                                         <span class="field-display" id="model-category-display"></span>
                                         <input type="text" id="model-category" class="field-input">
+                                        <div class="field-helper-buttons" data-field="model-category"
+                                            style="display: none;">
+                                            <button class="btn btn-small btn-secondary use-folder-btn"
+                                                data-field="model-category" title="Use current folder">
+                                                <i class="fas fa-folder"></i> Use Folder
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="info-row">
@@ -613,8 +603,29 @@
                                         </div>
                                         <span class="field-display" id="model-subcategory-display"></span>
                                         <input type="text" id="model-subcategory" class="field-input">
+                                        <div class="field-helper-buttons" data-field="model-subcategory"
+                                            style="display: none;">
+                                            <button class="btn btn-small btn-secondary use-folder-btn"
+                                                data-field="model-subcategory" title="Use current folder">
+                                                <i class="fas fa-folder"></i> Use Folder
+                                            </button>
+                                        </div>
                                     </div>
+                                </div>
 
+                                <!-- Column 2: Tags -->
+                                <div class="model-basic-info">
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>Tags:</label>
+                                        </div>
+                                        <div class="tag-input-container" id="tags-container">
+                                            <div class="tag-pills" id="tag-pills"></div>
+                                            <input type="text" class="tag-input-field" id="tag-input-field"
+                                                placeholder="Type and press Enter to add tag...">
+                                        </div>
+                                        <input type="hidden" id="model-tags">
+                                    </div>
                                 </div>
                             </div>
 
@@ -971,192 +982,206 @@
                         <option value="column:High/Low:desc">High/Low (Z-A)</option>
                     </select>
                 </div>
-                <div class="setting-group">
-                    <label>View Options:</label>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" id="hideNSFW"> Hide NSFW Content</label>
-                    </div>
+            </div>
+            <!-- Filename Formatting Section -->
+            <div class="setting-group filename-formats-group">
+                <div class="group-header"
+                    style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <label>Filename Formatting:</label>
+                    <small style="color: var(--color-text-secondary);">Variables: {modelname}, {version}, {highlow},
+                        {category}, {subcategory}</small>
                 </div>
-                <div class="setting-group">
-                    <label>Table Columns:</label>
-                    <div class="columns-container">
-                        <div class="columns-header">
-                            <span>Visibility</span>
-                            <span>Column Name</span>
-                            <span>Order</span>
-                        </div>
-                        <ul id="sortable-columns" class="sortable-columns">
-                            <li data-column-key="thumbnail">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-thumbnail"></div>
-                                    <div class="column-name">Thumbnail</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="filename">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-filename"></div>
-                                    <div class="column-name">Filename</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="authorName">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-author"></div>
-                                    <div class="column-name">Civitai Name</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="baseModel">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-basemodel"></div>
-                                    <div class="column-name">Base Model</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="category">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-category"></div>
-                                    <div class="column-name">Category</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="folder">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-folder"></div>
-                                    <div class="column-name">Folder</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="subcategory">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-subcategory"></div>
-                                    <div class="column-name">Subcategory</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="creator">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-creator"></div>
-                                    <div class="column-name">Creator</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="examplePrompt">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-examplePrompt">
-                                    </div>
-                                    <div class="column-name">Example Prompt</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="tags">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-tags"></div>
-                                    <div class="column-name">Tags</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="path">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-path"></div>
-                                    <div class="column-name">Path</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="size">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-size"></div>
-                                    <div class="column-name">Size</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="date">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-date"></div>
-                                    <div class="column-name">Date</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="url">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-url"></div>
-                                    <div class="column-name">URL</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="nsfw">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-nsfw"></div>
-                                    <div class="column-name">NSFW</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="positiveWords">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-positive"></div>
-                                    <div class="column-name">Positive Words</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="negativeWords">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-negative"></div>
-                                    <div class="column-name">Negative Words</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="authorsWords">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-authors"></div>
-                                    <div class="column-name">Civitai Words</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="description">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-description"></div>
-                                    <div class="column-name">Description</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="notes">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-notes"></div>
-                                    <div class="column-name">Notes</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="modelName">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-modelName"></div>
-                                    <div class="column-name">Model Name</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="modelVersion">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-modelVersion"></div>
-                                    <div class="column-name">Model Version</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                            <li data-column-key="highLow">
-                                <div class="column-item">
-                                    <div class="column-checkbox"><input type="checkbox" id="col-highLow"></div>
-                                    <div class="column-name">High/Low</div>
-                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="filename-format-list" id="filename-format-list"
+                    style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <!-- Rows will be injected here by JS -->
                 </div>
-                <div class="modal-buttons">
-                    <button id="save-settings" class="btn btn-small btn-success">Save</button>
-                    <button id="cancel-settings" class="btn btn-small btn-secondary">Cancel</button>
+                <div class="add-format-row">
+                    <button id="add-filename-format-btn" class="btn btn-small btn-secondary_custom"
+                        style="width: 100%;">
+                        <i class="fas fa-plus"></i> Add Format Rule
+                    </button>
                 </div>
             </div>
+            <div class="setting-group">
+                <label>Table Columns:</label>
+                <div class="columns-container">
+                    <div class="columns-header">
+                        <span>Visibility</span>
+                        <span>Column Name</span>
+                        <span>Order</span>
+                    </div>
+                    <ul id="sortable-columns" class="sortable-columns">
+                        <li data-column-key="thumbnail">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-thumbnail"></div>
+                                <div class="column-name">Thumbnail</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="filename">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-filename"></div>
+                                <div class="column-name">Filename</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="authorName">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-author"></div>
+                                <div class="column-name">Civitai Name</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="baseModel">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-basemodel"></div>
+                                <div class="column-name">Base Model</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="category">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-category"></div>
+                                <div class="column-name">Category</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="folder">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-folder"></div>
+                                <div class="column-name">Folder</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="subcategory">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-subcategory"></div>
+                                <div class="column-name">Subcategory</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="creator">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-creator"></div>
+                                <div class="column-name">Creator</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="examplePrompt">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-examplePrompt">
+                                </div>
+                                <div class="column-name">Example Prompt</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="tags">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-tags"></div>
+                                <div class="column-name">Tags</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="path">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-path"></div>
+                                <div class="column-name">Path</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="size">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-size"></div>
+                                <div class="column-name">Size</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="date">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-date"></div>
+                                <div class="column-name">Date</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="url">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-url"></div>
+                                <div class="column-name">URL</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="nsfw">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-nsfw"></div>
+                                <div class="column-name">NSFW</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="positiveWords">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-positive"></div>
+                                <div class="column-name">Positive Words</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="negativeWords">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-negative"></div>
+                                <div class="column-name">Negative Words</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="authorsWords">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-authors"></div>
+                                <div class="column-name">Civitai Words</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="description">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-description"></div>
+                                <div class="column-name">Description</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="notes">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-notes"></div>
+                                <div class="column-name">Notes</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="modelName">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-modelName"></div>
+                                <div class="column-name">Model Name</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="modelVersion">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-modelVersion"></div>
+                                <div class="column-name">Model Version</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                        <li data-column-key="highLow">
+                            <div class="column-item">
+                                <div class="column-checkbox"><input type="checkbox" id="col-highLow"></div>
+                                <div class="column-name">High/Low</div>
+                                <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="save-settings" class="btn btn-small btn-success">Save</button>
+                <button id="cancel-settings" class="btn btn-small btn-secondary">Cancel</button>
+            </div>
         </div>
+    </div>
     </div>
 
     <script type="module" src="../scripts/app.js"></script>

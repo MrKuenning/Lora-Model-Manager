@@ -26,17 +26,22 @@
 }
 
 .close-modal {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: var(--font-size-xl);
-    cursor: pointer;
+    background: none;
+    border: none;
     color: var(--color-text-secondary);
-    transition: color 0.2s ease;
+    cursor: pointer;
+    padding: 10px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
 }
 
 .close-modal:hover {
-    color: white;
+    color: #ff6b6b;
+    background: var(--color-bg-hover);
 }
 
 /* Modal Title Container */
