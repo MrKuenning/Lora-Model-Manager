@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     scanModelsBtn.addEventListener('click', scanAllModels);
-    downloadPreviewsBtn.addEventListener('click', downloadAllPreviews);
+    downloadPreviewsBtn.addEventListener('click', downloadMissingPreviews);
+    document.getElementById('downloadAllPreviewsBtn')?.addEventListener('click', downloadAllPreviews);
     convertToJsonBtn.addEventListener('click', convertAllToJson);
     convertMissingJsonBtn.addEventListener('click', convertMissingToJson);
     fixThumbnailsBtn.addEventListener('click', fixThumbnailNames);
@@ -273,8 +274,8 @@ async function scanAllModels() {
     enableButtons();
 }
 
-// Download all previews
-async function downloadAllPreviews() {
+// Download previews for models without any preview (missing only)
+async function downloadMissingPreviews() {
     if (currentOperation) {
         addLog('warning', 'An operation is already in progress');
         return;
@@ -284,18 +285,18 @@ async function downloadAllPreviews() {
     const skipNsfw = skipNsfwPreviewCheckbox.checked;
     const delay = parseFloat(delayInput.value) * 1000;
 
-    // Only download for models with .civitai.info files
+    // Only download for models with .civitai.info files AND no preview
     const modelsToDownload = models.filter(m => m.has_info && !m.has_preview);
 
     if (modelsToDownload.length === 0) {
-        addLog('info', 'No previews to download');
+        addLog('info', 'No models missing previews');
         return;
     }
 
     currentOperation = 'download';
     disableButtons();
 
-    addLog('info', `Starting download of ${modelsToDownload.length} previews...`);
+    addLog('info', `Starting download for ${modelsToDownload.length} models missing previews...`);
 
     let successCount = 0;
     let skippedCount = 0;
@@ -325,6 +326,84 @@ async function downloadAllPreviews() {
 
             if (data.status === 'success') {
                 addLog('success', `✓ ${model.name}: Preview downloaded`);
+                successCount++;
+                model.has_preview = true;
+            } else {
+                addLog('info', `⊝ ${model.name}: ${data.message}`);
+                skippedCount++;
+            }
+
+        } catch (error) {
+            addLog('error', `✗ ${model.name}: ${error.message}`);
+            errorCount++;
+        }
+
+        // Delay between requests
+        if (i < modelsToDownload.length - 1 && delay > 0) {
+            await sleep(delay);
+        }
+    }
+
+    updateProgress('Download complete', modelsToDownload.length, modelsToDownload.length);
+    addLog('info', `Preview download complete: ${successCount} success, ${skippedCount} skipped, ${errorCount} errors`);
+
+    currentOperation = null;
+    enableButtons();
+}
+
+// Download previews for ALL models (try to get 2 images each)
+async function downloadAllPreviews() {
+    if (currentOperation) {
+        addLog('warning', 'An operation is already in progress');
+        return;
+    }
+
+    const maxSize = maxSizePreviewCheckbox.checked;
+    const skipNsfw = skipNsfwPreviewCheckbox.checked;
+    const delay = parseFloat(delayInput.value) * 1000;
+
+    // Process ALL models with .civitai.info files
+    const modelsToDownload = models.filter(m => m.has_info);
+
+    if (modelsToDownload.length === 0) {
+        addLog('info', 'No models with Civitai info to process');
+        return;
+    }
+
+    currentOperation = 'download';
+    disableButtons();
+
+    addLog('info', `Starting download for ALL ${modelsToDownload.length} models (trying to get 2 images each)...`);
+
+    let successCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < modelsToDownload.length; i++) {
+        const model = modelsToDownload[i];
+
+        updateProgress(`Downloading previews: ${model.name}`, i + 1, modelsToDownload.length);
+
+        try {
+            const response = await fetch('/civitai/download-preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    modelPath: model.path,
+                    maxSize: maxSize,
+                    skipNsfw: skipNsfw,
+                    forceAdditional: true  // Always try to download more
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                addLog('success', `✓ ${model.name}: Previews downloaded`);
                 successCount++;
                 model.has_preview = true;
             } else {
@@ -603,6 +682,7 @@ function clearLog() {
 function disableButtons() {
     scanModelsBtn.disabled = true;
     downloadPreviewsBtn.disabled = true;
+    document.getElementById('downloadAllPreviewsBtn').disabled = true;
     convertToJsonBtn.disabled = true;
     convertMissingJsonBtn.disabled = true;
     fixThumbnailsBtn.disabled = true;
@@ -612,6 +692,7 @@ function disableButtons() {
 function enableButtons() {
     scanModelsBtn.disabled = false;
     downloadPreviewsBtn.disabled = false;
+    document.getElementById('downloadAllPreviewsBtn').disabled = false;
     convertToJsonBtn.disabled = false;
     convertMissingJsonBtn.disabled = false;
     fixThumbnailsBtn.disabled = false;

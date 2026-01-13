@@ -2,6 +2,36 @@
 
 ---
 
+### 01/13/2026
+
+**Added**
+- **Favicon**  
+  Added application favicon in assets folder.
+
+**Changed**
+- **Header Button Text**  
+  Shortened button labels: "Grid View" → "Grid", "Table View" → "Table", "Civitai Scan" → "Civitai".
+
+---
+
+### 01/08/2026
+
+**Added**
+- **Video Thumbnail Extraction**  
+  Extracts first and last frames from Civitai video previews using FFmpeg when no images are available.
+- **Multi-Image Downloads**  
+  Thumbnail download now fetches up to 2 images per model (`.preview.png` and `.preview2.png`).
+- **Download Thumbnails - All Button**  
+  New button on Civitai Scan page to download/update thumbnails for ALL models, not just missing ones.
+- **Requirements File**  
+  Added `requirements.txt` with Python dependencies and FFmpeg installation notes.
+
+**Changed**
+- **Smart Thumbnail Filling**  
+  Download Thumbnail button now fills empty preview slots without re-downloading existing images.
+
+---
+
 ### 01/03/2026
 
 **Changed**

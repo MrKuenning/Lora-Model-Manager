@@ -1,0 +1,11 @@
+# Lora Model Manager - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Required
+requests>=2.28.0
+
+# Optional System Dependencies (not pip installable):
+# - FFmpeg: Required for extracting thumbnails from video previews
+#   Windows: Download from https://ffmpeg.org/download.html or use: winget install ffmpeg
+#   Linux: sudo apt install ffmpeg
+#   macOS: brew install ffmpeg

@@ -872,13 +872,14 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 model_path = data.get('modelPath')
                 max_size = data.get('maxSize', False)
                 skip_nsfw = data.get('skipNsfw', True)
+                force_additional = data.get('forceAdditional', False)
                 
                 if not model_path:
                     self.send_error(400, "Missing modelPath parameter")
                     return
                 
                 print(f"Downloading preview for: {model_path}")
-                success = civitai_handler.download_preview_image(model_path, max_size, skip_nsfw)
+                success = civitai_handler.download_preview_image(model_path, max_size, skip_nsfw, force_additional)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')

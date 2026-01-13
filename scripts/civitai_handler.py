@@ -9,6 +9,9 @@ import hashlib
 import json
 import requests
 import re
+import subprocess
+import tempfile
+import shutil
 from pathlib import Path
 
 # Civitai API endpoints
@@ -235,7 +238,94 @@ def get_full_size_image_url(image_url, width):
     return re.sub(r'/width=\d+/', f'/width={width}/', image_url)
 
 
-def download_preview_image(model_path, max_size=False, skip_nsfw=True):
+def check_ffmpeg_available():
+    """
+    Check if FFmpeg is available on the system
+    
+    Returns:
+        True if FFmpeg is available, False otherwise
+    """
+    try:
+        result = subprocess.run(
+            ['ffmpeg', '-version'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=5
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        return False
+
+
+def extract_video_frames(video_path, output_base_path):
+    """
+    Extract first and last frames from video using FFmpeg
+    
+    Args:
+        video_path: Path to the video file
+        output_base_path: Base path for output files (without extension)
+        
+    Returns:
+        tuple: (success, message)
+    """
+    if not check_ffmpeg_available():
+        return (False, "FFmpeg not available on system")
+    
+    try:
+        preview_path = f"{output_base_path}{PREVIEW_EXTENSION}"
+        preview2_path = f"{output_base_path}.preview2.png"
+        
+        # Extract first frame
+        first_frame_cmd = [
+            'ffmpeg', '-y',
+            '-i', video_path,
+            '-vf', 'select=eq(n\\,0)',
+            '-vframes', '1',
+            '-q:v', '2',
+            preview_path
+        ]
+        
+        result = subprocess.run(
+            first_frame_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            return (False, f"FFmpeg error extracting first frame: {result.stderr.decode()[:200]}")
+        
+        # Extract last frame using reverse filter
+        last_frame_cmd = [
+            'ffmpeg', '-y',
+            '-i', video_path,
+            '-vf', 'reverse',
+            '-vframes', '1',
+            '-q:v', '2',
+            preview2_path
+        ]
+        
+        result = subprocess.run(
+            last_frame_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            # First frame succeeded, just log warning for second
+            print(f"Warning: Could not extract last frame: {result.stderr.decode()[:200]}")
+            return (True, f"Extracted first frame (last frame failed)")
+        
+        return (True, f"Extracted first and last frames")
+        
+    except subprocess.TimeoutExpired:
+        return (False, "FFmpeg timeout - video too long or complex")
+    except Exception as e:
+        return (False, f"Error extracting frames: {str(e)}")
+
+
+def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_additional=False):
     """
     Download preview image for a model from its .civitai.info file
     
@@ -243,6 +333,7 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True):
         model_path: Path to the model file
         max_size: Download full size image if True
         skip_nsfw: Skip NSFW images if True
+        force_additional: If True, try to download additional images even if some exist
         
     Returns:
         True on success, False on error or skip
@@ -251,10 +342,27 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True):
         base_path = os.path.splitext(model_path)[0]
         info_path = f"{base_path}{INFO_EXTENSION}"
         preview_path = f"{base_path}{PREVIEW_EXTENSION}"
+        preview2_path = f"{base_path}.preview2.png"
         
-        # Check if preview already exists
-        if os.path.exists(preview_path):
-            print(f"Preview already exists: {preview_path}")
+        # Check which preview slots are available
+        has_preview1 = os.path.exists(preview_path)
+        has_preview2 = os.path.exists(preview2_path)
+        
+        # Count how many we still need to download
+        slots_needed = 0
+        if not has_preview1:
+            slots_needed += 1
+        if not has_preview2:
+            slots_needed += 1
+        
+        # In force mode, always try to fill empty slots even if some are filled
+        if not force_additional and slots_needed == 0:
+            print(f"All preview slots filled: {preview_path}")
+            return True
+        
+        # In normal mode, skip if no slots needed
+        if not force_additional and has_preview1 and slots_needed == 0:
+            print(f"Preview exists (use force mode to add more): {preview_path}")
             return True
         
         # Load civitai info
@@ -271,37 +379,133 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True):
             print(f"No images found in civitai info")
             return False
         
-        # Find first suitable image
+        # Track if we found any video to try as fallback
+        video_to_try = None
+        
+        # Collect suitable images
+        # We need to skip images for slots that are already filled
+        # If preview1 exists, skip 1 image. If both exist, skip 2.
+        images_to_skip = 0
+        if has_preview1:
+            images_to_skip += 1
+        if has_preview2:
+            images_to_skip += 1
+        
+        suitable_images = []
+        skipped_count = 0
+        
         for img in images:
             # Skip if NSFW and skip_nsfw is True
             if skip_nsfw and img.get('nsfw') and img.get('nsfw') != 'None':
-                print(f"Skipping NSFW image")
+                print(f"Skipping NSFW item")
                 continue
             
-            # Skip if not an image type
-            if img.get('type') != 'image':
-                continue
-            
-            # Get image URL
+            img_type = img.get('type', 'image')
             img_url = img.get('url')
+            
             if not img_url:
                 continue
             
-            # Use max size if requested
-            if max_size and img.get('width'):
-                img_url = get_full_size_image_url(img_url, img['width'])
-            
-            # Download image
-            response = requests.get(img_url, headers=DEFAULT_HEADERS, timeout=30)
-            if response.ok:
-                with open(preview_path, 'wb') as f:
-                    f.write(response.content)
-                print(f"Downloaded preview: {preview_path}")
-                return True
-            else:
-                print(f"Failed to download image: {response.status_code}")
+            # Collect image URLs
+            if img_type == 'image':
+                # Skip images for already-filled slots
+                if skipped_count < images_to_skip:
+                    skipped_count += 1
+                    continue
                 
-        print(f"No suitable preview image found")
+                # Use max size if requested
+                if max_size and img.get('width'):
+                    img_url = get_full_size_image_url(img_url, img['width'])
+                suitable_images.append(img_url)
+                
+                # Stop after collecting enough images for empty slots
+                if len(suitable_images) >= slots_needed:
+                    break
+            
+            # Save first video URL for fallback
+            elif img_type == 'video' and video_to_try is None:
+                video_to_try = img_url
+        
+        # Download collected images to empty slots
+        if suitable_images:
+            downloaded_count = 0
+            image_index = 0
+            
+            # Download to first slot if empty
+            if not has_preview1 and image_index < len(suitable_images):
+                try:
+                    response = requests.get(suitable_images[image_index], headers=DEFAULT_HEADERS, timeout=30)
+                    if response.ok:
+                        with open(preview_path, 'wb') as f:
+                            f.write(response.content)
+                        print(f"Downloaded preview: {preview_path}")
+                        downloaded_count += 1
+                        image_index += 1
+                    else:
+                        print(f"Failed to download first image: {response.status_code}")
+                except Exception as e:
+                    print(f"Error downloading first image: {e}")
+            
+            # Download to second slot if empty
+            if not has_preview2 and image_index < len(suitable_images):
+                try:
+                    response = requests.get(suitable_images[image_index], headers=DEFAULT_HEADERS, timeout=30)
+                    if response.ok:
+                        with open(preview2_path, 'wb') as f:
+                            f.write(response.content)
+                        print(f"Downloaded preview2: {preview2_path}")
+                        downloaded_count += 1
+                    else:
+                        print(f"Failed to download second image: {response.status_code}")
+                except Exception as e:
+                    print(f"Error downloading second image: {e}")
+            
+            if downloaded_count > 0:
+                return True
+        
+        # If no image found but we have a video, try to extract frames
+        if video_to_try:
+            print(f"No suitable image found, trying to extract frames from video...")
+            
+            if not check_ffmpeg_available():
+                print("FFmpeg not available - cannot extract video frames")
+                print("Install FFmpeg to enable video thumbnail extraction")
+                return False
+            
+            # Download video to temp file
+            try:
+                response = requests.get(video_to_try, headers=DEFAULT_HEADERS, timeout=60, stream=True)
+                if not response.ok:
+                    print(f"Failed to download video: {response.status_code}")
+                    return False
+                
+                # Create temp file with video extension
+                with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp_video:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        tmp_video.write(chunk)
+                    tmp_video_path = tmp_video.name
+                
+                # Extract frames
+                success, message = extract_video_frames(tmp_video_path, base_path)
+                
+                # Cleanup temp video
+                try:
+                    os.unlink(tmp_video_path)
+                except:
+                    pass
+                
+                if success:
+                    print(f"Video frame extraction: {message}")
+                    return True
+                else:
+                    print(f"Video frame extraction failed: {message}")
+                    return False
+                    
+            except Exception as e:
+                print(f"Error processing video: {e}")
+                return False
+                
+        print(f"No suitable preview image or video found")
         return False
         
     except Exception as e:
