@@ -24,8 +24,12 @@
   - **Bulk Move**: Move all selected models to a different folder
   - **Bulk Edit**: Update Category, Subcategory, Version, and High/Low for all selected models
   - **Bulk Rename**: Preview and apply recommended filenames to selected models
+- **Guess Version Button**  
+  When editing Model Version, a button appears to auto-detect version numbers from the model name or filename (e.g., "v2.0" → "2").
 
 **Changed**
+- **Keywords Section Reorganized**  
+  Trigger words (positive, negative, all) now on the left, Example Prompts on the right. Section renamed to "Keywords & Prompts".
 - **Settings Modal Tabs**  
   Organized settings into tabs (General, Table Columns, Filename Formatting) for better navigation.
 - **Header Button Text**  

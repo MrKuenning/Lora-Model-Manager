@@ -2962,10 +2962,122 @@ function setupModelNameHelperButtons() {
     observer.observe(modelNameInput, { attributes: true });
 }
 
+// ===== Model Version Helper Buttons =====
+
+// DOM Element for Guess Version button
+const guessVersionBtn = document.getElementById('guess-version-btn');
+guessVersionBtn?.addEventListener('click', handleGuessVersion);
+
+/**
+ * Guess version number from model name or filename
+ * Looks for patterns like "v2.0", "v1.4", "12", etc.
+ */
+function handleGuessVersion() {
+    if (!currentModel) return;
+
+    const versionField = document.getElementById('model-version');
+    if (!versionField) return;
+
+    // Get potential sources for version info
+    const modelName = currentModel.json?.['name'] || '';
+    const filename = currentModel.name || currentModel.filename || '';
+    const civitaiName = currentModel.json?.['civitai name'] || '';
+
+    // Combine all sources to search
+    const searchTexts = [modelName, filename, civitaiName];
+
+    let bestVersion = null;
+
+    for (const text of searchTexts) {
+        if (!text) continue;
+
+        // Priority 1: Look for "v" followed by a number (e.g., "v2.0", "v1.4", "v12")
+        // Match the LAST occurrence of v-number pattern (most likely to be the version)
+        const vMatches = text.match(/v(\d+(?:\.\d+)?)/gi);
+        if (vMatches && vMatches.length > 0) {
+            // Take the last match as it's usually the version
+            const lastMatch = vMatches[vMatches.length - 1];
+            const numMatch = lastMatch.match(/v(\d+(?:\.\d+)?)/i);
+            if (numMatch) {
+                bestVersion = formatVersionNumber(numMatch[1]);
+                break;
+            }
+        }
+    }
+
+    // If no v-prefixed version found, look for standalone numbers
+    if (!bestVersion) {
+        for (const text of searchTexts) {
+            if (!text) continue;
+
+            // Look for numbers that might be versions (standalone numbers at end of name)
+            // Avoid matching things like model IDs (usually larger numbers)
+            const matches = text.match(/\b(\d+(?:\.\d+)?)\b/g);
+            if (matches && matches.length > 0) {
+                // Take the last match, prefer smaller numbers (more likely to be versions)
+                for (let i = matches.length - 1; i >= 0; i--) {
+                    const num = parseFloat(matches[i]);
+                    // Versions are typically small numbers (< 100)
+                    if (num < 100) {
+                        bestVersion = formatVersionNumber(matches[i]);
+                        break;
+                    }
+                }
+                if (bestVersion) break;
+            }
+        }
+    }
+
+    if (bestVersion) {
+        versionField.value = bestVersion;
+        showToast(`Guessed version: ${bestVersion}`, 'success');
+    } else {
+        showToast('Could not detect version from name or filename', 'warning');
+    }
+}
+
+/**
+ * Format version number: 1.0 -> 1, 1.4 -> 1.4, 0.3 -> 0.3
+ */
+function formatVersionNumber(versionStr) {
+    const num = parseFloat(versionStr);
+    // If it's a whole number (1.0, 2.0), return just the integer
+    if (num === Math.floor(num)) {
+        return String(Math.floor(num));
+    }
+    // Otherwise keep the decimal
+    return String(num);
+}
+
+// Show/hide version helper buttons when entering/exiting edit mode
+function setupVersionHelperButtons() {
+    const helperButtonsContainer = document.querySelector('.version-helper-buttons');
+    if (!helperButtonsContainer) return;
+
+    const versionInput = document.getElementById('model-version');
+    const versionDisplay = document.getElementById('model-version-display');
+
+    if (!versionInput || !versionDisplay) return;
+
+    // Create a MutationObserver to watch for display changes on the input
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'style') {
+                const inputVisible = versionInput.style.display === 'block';
+                helperButtonsContainer.style.display = inputVisible ? 'flex' : 'none';
+            }
+        });
+    });
+
+    // Observe changes to the input's style attribute
+    observer.observe(versionInput, { attributes: true });
+}
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     // Delay to ensure other setup has completed
     setTimeout(setupModelNameHelperButtons, 100);
+    setTimeout(setupVersionHelperButtons, 100);
 });
 
 // ===== Trim Name Button (Placeholder) =====

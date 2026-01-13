@@ -453,6 +453,12 @@
                                             </div>
                                             <span class="field-display" id="model-version-display"></span>
                                             <input type="text" id="model-version" class="field-input">
+                                            <div class="version-helper-buttons" style="display: none;">
+                                                <button id="guess-version-btn" class="btn btn-small btn-secondary"
+                                                    title="Guess version from model name or filename">
+                                                    <i class="fas fa-magic"></i> Guess Version
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <!-- High/Low Toggle -->
@@ -655,13 +661,13 @@
                             </div>
 
                             <!-- Section 3: Textarea fields -->
-                            <h3 class="section-title">Keywords</h3>
+                            <h3 class="section-title">Keywords & Prompts</h3>
                             <div class="field-section">
-                                <!-- Column 2 -->
+                                <!-- Left Column: Trigger Words -->
                                 <div class="model-basic-info">
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Triggerwords for WebUI:</label>
+                                            <label>Trigger Words (Viewed in WebUI):</label>
                                             <div class="field-edit-buttons">
                                                 <button class="btn btn-tiny btn-secondary copy-field-btn"
                                                     data-copy-field="model-positive" title="Copy to clipboard">
@@ -688,7 +694,64 @@
 
                                     <div class="info-row">
                                         <div class="info-row-header">
-                                            <label>Example Prompt:</label>
+                                            <label>Negative Trigger Words (Viewed in WebUI):</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-negative" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-negative">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-negative" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-negative" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-negative-display"></span>
+                                        <textarea id="model-negative" class="field-input"></textarea>
+                                    </div>
+
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>All Trigger Words:</label>
+                                            <div class="field-edit-buttons">
+                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
+                                                    data-copy-field="model-authors" title="Copy to clipboard">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
+                                                    data-field="model-authors">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-success field-save-btn"
+                                                    data-field="model-authors" style="display: none;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
+                                                    data-field="model-authors" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span class="field-display field-display-textarea"
+                                            id="model-authors-display"></span>
+                                        <textarea id="model-authors" class="field-input"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Example Prompts -->
+                                <div class="model-basic-info">
+                                    <div class="info-row">
+                                        <div class="info-row-header">
+                                            <label>Example Prompt 1:</label>
                                             <div class="field-edit-buttons">
                                                 <button class="btn btn-tiny btn-secondary copy-field-btn"
                                                     data-copy-field="model-example-prompt" title="Copy to clipboard">
@@ -738,63 +801,6 @@
                                         <span class="field-display field-display-textarea"
                                             id="model-example-prompt-2-display"></span>
                                         <textarea id="model-example-prompt-2" class="field-input"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- Column 3 -->
-                                <div class="model-basic-info">
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>Negative Words for WebUI:</label>
-                                            <div class="field-edit-buttons">
-                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
-                                                    data-copy-field="model-negative" title="Copy to clipboard">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
-                                                    data-field="model-negative">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-success field-save-btn"
-                                                    data-field="model-negative" style="display: none;">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
-                                                    data-field="model-negative" style="display: none;">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <span class="field-display field-display-textarea"
-                                            id="model-negative-display"></span>
-                                        <textarea id="model-negative" class="field-input"></textarea>
-                                    </div>
-
-                                    <div class="info-row">
-                                        <div class="info-row-header">
-                                            <label>All Triggerwords:</label>
-                                            <div class="field-edit-buttons">
-                                                <button class="btn btn-tiny btn-secondary copy-field-btn"
-                                                    data-copy-field="model-authors" title="Copy to clipboard">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-edit-btn"
-                                                    data-field="model-authors">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-success field-save-btn"
-                                                    data-field="model-authors" style="display: none;">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button class="btn btn-tiny btn-secondary field-cancel-btn"
-                                                    data-field="model-authors" style="display: none;">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <span class="field-display field-display-textarea"
-                                            id="model-authors-display"></span>
-                                        <textarea id="model-authors" class="field-input"></textarea>
                                     </div>
                                 </div>
                             </div>

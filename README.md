@@ -250,6 +250,40 @@ Adds WAN Video model suffix to filename:
 - Wan Video 2.2 T2V-A14B → `- High T2v - Wan22 14b`
 - Other WAN variants supported
 
+## Custom Filename Formatting
+
+Configure custom "Recommended" filename formats per Base Model type in **Settings → Filename Formatting**.
+
+### Format Rules
+Each rule consists of:
+- **Base Model**: Which model type the rule applies to (e.g., "Pony", "SDXL 1.0", "Illustrious")
+- **Format String**: Template using variables to build the filename
+
+### Available Variables
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{modelname}` | Display name from Model Name field | `My Character` |
+| `{version}` | Model Version field | `2` |
+| `{highlow}` | High/Low toggle value | `High` |
+| `{category}` | Category field | `Character` |
+| `{subcategory}` | Subcategory field | `Anime` |
+
+### Example Formats
+- **Default**: `{modelname} {version}` → `My Character 2`
+- **With High/Low**: `{modelname} {highlow} {version}` → `My Character High 2`
+- **With Category**: `{category} - {modelname}` → `Character - My Character`
+
+### How It Works
+1. When you click **Recommended** on a model, the app finds a matching format rule by Base Model
+2. If no specific rule exists, it falls back to the **Default** rule
+3. Variables are replaced with actual values; empty values are omitted
+4. Extra spaces are automatically cleaned up
+
+### Managing Rules
+- The **Default** rule cannot be deleted (ensures fallback always exists)
+- When adding a new rule, a dropdown shows detected Base Models that don't yet have rules
+- Click the delete button to remove a rule (disabled for Default)
+
 ## Tips & Best Practices
 
 1. **Organize before you start**: Set up your folder structure first
