@@ -78,6 +78,16 @@ Four Civitai action buttons in the model popup for single-model operations:
 - Download thumbnail
 - Fix thumbnail name
 
+### 📦 Bulk Editing Mode
+Perform batch operations on multiple models at once:
+1. Click the **Bulk** button in the header to enter selection mode
+2. Click on model cards to select/deselect them
+3. Use the action buttons to perform operations:
+   - **Move**: Move all selected models to a different folder
+   - **Edit**: Update Category, Subcategory, Version, High/Low for all
+   - **Rename**: Preview and apply recommended filenames
+4. Click **Cancel** to exit bulk mode
+
 ### 📋 Smart Textarea Behavior
 - View mode: Textareas shrink to fit content (max 20 lines with scrollbar)
 - Edit mode: Textareas expand to show all content with auto-resize
@@ -253,6 +263,7 @@ Adds WAN Video model suffix to filename:
 ## Keyboard Shortcuts
 
 - **Escape**: Close open modals
+- **Left/Right Arrows**: Navigate between models in popup
 - **Ctrl+F5**: Hard refresh (useful after updates)
 
 ## Troubleshooting
@@ -304,6 +315,7 @@ App1/
 │   ├── grid-view.js         # Grid view rendering
 │   ├── table-view.js        # Table view rendering
 │   ├── grid-group-view.js   # Grouped view rendering
+│   ├── bulk-operations.js   # Bulk edit mode operations
 │   ├── search-parser.js     # Search functionality
 │   ├── civitai-scan.js      # Scan page logic
 │   ├── civitai-api.js       # Civitai API functions

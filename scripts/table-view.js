@@ -2,6 +2,7 @@
 
 // Import settings manager
 import appSettings from './settings.js';
+import { isBulkModeActive, toggleModelSelection, getSelectedModels } from './bulk-operations.js';
 
 // Function to display models in table view
 
@@ -126,6 +127,7 @@ export function displayTableView(models, container, openModelDetails, settings) 
         return;
     }
     container.className = 'table-view-container';
+    const bulkMode = isBulkModeActive();
 
     if (!Array.isArray(models)) {
         console.error('Models must be an array');
@@ -213,6 +215,15 @@ export function displayTableView(models, container, openModelDetails, settings) 
         return;
     }
 
+    // In bulk mode, add checkbox column at the beginning
+    if (bulkMode) {
+        const checkboxTh = document.createElement('th');
+        checkboxTh.textContent = '✓';
+        checkboxTh.style.width = '40px';
+        checkboxTh.style.textAlign = 'center';
+        headerRow.appendChild(checkboxTh);
+    }
+
     columns.forEach(column => {
         const th = document.createElement('th');
         th.innerHTML = `${column} <span class="sort-indicator"></span>`;
@@ -286,11 +297,11 @@ export function displayTableView(models, container, openModelDetails, settings) 
     container.appendChild(infoBox);
 
     // Initial table body
-    displayTableBody(models, table, openModelDetails, columns);
+    displayTableBody(models, table, openModelDetails, columns, bulkMode);
     container.appendChild(table);
 }
 
-function displayTableBody(models, table, openModelDetails, columns) {
+function displayTableBody(models, table, openModelDetails, columns, bulkMode = false) {
     // Remove existing tbody if it exists
     const existingTbody = table.querySelector('tbody');
     if (existingTbody) {
@@ -323,6 +334,25 @@ function displayTableBody(models, table, openModelDetails, columns) {
     models.forEach(model => {
         const row = document.createElement('tr');
         row.dataset.id = model.id;
+
+        // In bulk mode, add checkbox cell at the beginning
+        if (bulkMode) {
+            const checkboxCell = document.createElement('td');
+            checkboxCell.style.textAlign = 'center';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'bulk-table-checkbox';
+            checkbox.checked = getSelectedModels().some(m => m.id === model.id);
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            checkbox.addEventListener('change', (e) => {
+                e.stopPropagation();
+                toggleModelSelection(model.id);
+            });
+            checkboxCell.appendChild(checkbox);
+            row.appendChild(checkboxCell);
+        }
 
         // Add cells based on visible columns
         columns.forEach(column => {
@@ -448,7 +478,20 @@ function displayTableBody(models, table, openModelDetails, columns) {
             row.appendChild(cell);
         });
 
-        row.addEventListener('click', () => openModelDetails(model));
+        // In bulk mode, clicking row toggles selection; otherwise opens details
+        if (bulkMode) {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', (e) => {
+                toggleModelSelection(model.id);
+                // Update checkbox visual
+                const checkbox = row.querySelector('.bulk-table-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                }
+            });
+        } else {
+            row.addEventListener('click', () => openModelDetails(model));
+        }
         tbody.appendChild(row);
     });
 

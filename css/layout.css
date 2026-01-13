@@ -456,3 +456,229 @@ main {
         font-size: var(--font-size-xs);
     }
 }
+
+/* ========== Bulk Edit Mode Styles ========== */
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--color-btn-primary), #5a9fd4);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius-sm);
+    margin-top: var(--spacing-md);
+    box-shadow: var(--shadow-standard);
+}
+
+.bulk-selection-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: white;
+    font-weight: 600;
+    font-size: var(--font-size-md);
+}
+
+.bulk-selection-info i {
+    font-size: var(--font-size-lg);
+}
+
+.bulk-action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.bulk-action-buttons .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.bulk-action-buttons .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.bulk-action-buttons .btn-secondary {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Bulk Edit Toggle Button Active State */
+#bulkEditToggle.active {
+    background: var(--color-btn-success);
+    color: white;
+}
+
+/* Model Card Bulk Mode Checkbox */
+.model-card.bulk-mode {
+    position: relative;
+    cursor: pointer;
+}
+
+.model-card.bulk-mode::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.bulk-checkbox-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    width: 24px;
+    height: 24px;
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bulk-checkbox-overlay:hover {
+    border-color: var(--color-accent);
+    transform: scale(1.1);
+}
+
+.bulk-checkbox-overlay.checked {
+    background: var(--color-btn-success);
+    border-color: var(--color-btn-success);
+}
+
+.bulk-checkbox-overlay.checked::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: white;
+    font-size: 14px;
+}
+
+.model-card.bulk-mode.selected {
+    outline: 3px solid var(--color-btn-success);
+    outline-offset: 2px;
+}
+
+/* Bulk Modals */
+.bulk-modal-content {
+    max-width: 500px;
+}
+
+.bulk-rename-modal {
+    max-width: 700px;
+}
+
+.bulk-folder-select {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+}
+
+.bulk-edit-form .setting-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.bulk-edit-form input,
+.bulk-edit-form select {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+}
+
+/* Bulk Rename List */
+.bulk-rename-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-bg-tertiary);
+}
+
+.bulk-rename-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    gap: var(--spacing-md);
+}
+
+.bulk-rename-item:last-child {
+    border-bottom: none;
+}
+
+.bulk-rename-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.bulk-rename-item .rename-current {
+    flex: 1;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-rename-item .rename-arrow {
+    color: var(--color-accent);
+    font-size: var(--font-size-lg);
+}
+
+.bulk-rename-item .rename-proposed {
+    flex: 1;
+    color: var(--color-text);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-rename-item.same-name {
+    opacity: 0.5;
+}
+
+.bulk-rename-item.same-name .rename-proposed {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* Responsive bulk actions */
+@media (max-width: 768px) {
+    .bulk-actions-bar {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
+
+    .bulk-action-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .bulk-action-buttons .btn {
+        font-size: var(--font-size-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}

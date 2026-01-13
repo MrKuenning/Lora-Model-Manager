@@ -13,6 +13,7 @@ import * as ModelOps from './model-operations.js';
 import * as CivitaiAPI from './civitai-api.js';
 import { initializeCopyButtons } from './clipboard-utils.js';
 import { TagInput } from './tag-input.js';
+import * as BulkOps from './bulk-operations.js';
 
 // DOM Elements
 const modelsContainer = document.getElementById('models-container');
@@ -1082,6 +1083,9 @@ async function initApp() {
 
     closeSettingsModal();
 
+    // Initialize bulk operations
+    BulkOps.initBulkOperations(displayModels, refreshModels, settingsManager, generateRecommendedNameForModel);
+
     // Get the appropriate directory based on current location
     const dirPath = currentLocation === 'checkpoints'
         ? settingsManager.getSetting('checkpointsDirectory')
@@ -1136,6 +1140,7 @@ async function loadModelsFromDirectory(dirPath, location = null) {
     const loc = location || currentLocation;
     try {
         models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer, loc);
+        BulkOps.setModelsReference(models);
         displayModels();
     } catch (error) {
         // Error already handled in ModelOps
@@ -2814,6 +2819,53 @@ function handleRecommendedFilename() {
     modelFilename.value = recommendedName;
     console.log(`Generated Recommended Filename: ${recommendedName} (Format used: ${matchingFormat ? matchingFormat.baseModel : 'Fallback'})`);
     showToast(`Generated filename using format: ${matchingFormat ? matchingFormat.baseModel : 'Default'}`, 'success');
+}
+
+/**
+ * Generate a recommended filename for a given model object (used by bulk rename)
+ * @param {Object} model - Model object with name, json, baseModel, category, etc.
+ * @returns {string} The recommended filename
+ */
+function generateRecommendedNameForModel(model) {
+    if (!model) return '';
+
+    const modelName = model.json?.['name'] || '';
+    const version = model.json?.['model version'] || '';
+    const baseModel = model.baseModel || '';
+    const highLowValue = model.json?.['high low'] || '';
+    const category = model.category || '';
+    const subcategory = model.json?.['subcategory'] || '';
+
+    if (!modelName) {
+        // If no model name in JSON, return current name
+        return model.name || '';
+    }
+
+    // Get formats from settings
+    const formats = settingsManager.getSetting('filenameFormats') || [];
+
+    // Find matching format (case insensitive)
+    let matchingFormat = formats.find(f => f.baseModel && f.baseModel.toLowerCase() === baseModel.toLowerCase());
+
+    if (!matchingFormat) {
+        matchingFormat = formats.find(f => f.baseModel === 'Default');
+    }
+
+    // Fallback if no format found at all
+    let formatString = matchingFormat ? matchingFormat.format : '{modelname} {version}';
+
+    // Replace variables (case-insensitive)
+    let recommendedName = formatString
+        .replace(/{modelname}/gi, modelName)
+        .replace(/{version}/gi, version)
+        .replace(/{highlow}/gi, highLowValue)
+        .replace(/{category}/gi, category)
+        .replace(/{subcategory}/gi, subcategory);
+
+    // Clean up double spaces
+    recommendedName = recommendedName.replace(/\s+/g, ' ').trim();
+
+    return recommendedName;
 }
 
 // ===== Model Name Helper Buttons =====

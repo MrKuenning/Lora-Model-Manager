@@ -19,6 +19,11 @@
   Added settings to configure "Recommended Filename" formats per Base Model using variables like `{modelname}` and `{version}`.
 - **Smart Rule Creation**  
   When adding a new format rule, a dropdown now lists detected Base Models that aren't yet configured.
+- **Bulk Editing Mode**  
+  Select multiple models at once to perform batch operations:
+  - **Bulk Move**: Move all selected models to a different folder
+  - **Bulk Edit**: Update Category, Subcategory, Version, and High/Low for all selected models
+  - **Bulk Rename**: Preview and apply recommended filenames to selected models
 
 **Changed**
 - **Settings Modal Tabs**  
