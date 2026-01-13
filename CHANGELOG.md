@@ -15,8 +15,14 @@
   When editing Category or Subcategory, a "Use Folder" button appears to populate the field with the model's current folder name.
 - **Search by Tags**  
   Search now includes tags in addition to name, filename, and category.
+- **Filename Customization**  
+  Added settings to configure "Recommended Filename" formats per Base Model using variables like `{modelname}` and `{version}`.
+- **Smart Rule Creation**  
+  When adding a new format rule, a dropdown now lists detected Base Models that aren't yet configured.
 
 **Changed**
+- **Settings Modal Tabs**  
+  Organized settings into tabs (General, Table Columns, Filename Formatting) for better navigation.
 - **Header Button Text**  
   Shortened button labels: "Grid View" → "Grid", "Table View" → "Table", "Civitai Scan" → "Civitai".
 - **Categorization Section Reorganized**  

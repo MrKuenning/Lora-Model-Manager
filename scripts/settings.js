@@ -82,7 +82,8 @@ class Settings {
                 const response = await fetch('/load-settings');
                 if (response.ok) {
                     const serverSettings = await response.json();
-                    this.settings = serverSettings;
+                    // Merge with defaults to ensure new settings are present
+                    this.settings = { ...this.defaultSettings, ...serverSettings };
                     // Save to localStorage for offline use
                     localStorage.setItem('loraManagerSettings', JSON.stringify(this.settings));
                     console.log('Settings loaded from server:', this.settings);
@@ -95,7 +96,8 @@ class Settings {
             // If server load fails, try localStorage
             const savedSettings = localStorage.getItem('loraManagerSettings');
             if (savedSettings) {
-                this.settings = JSON.parse(savedSettings);
+                const parsedSettings = JSON.parse(savedSettings);
+                this.settings = { ...this.defaultSettings, ...parsedSettings };
             } else {
                 this.settings = { ...this.defaultSettings };
             }

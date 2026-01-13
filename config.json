@@ -3,8 +3,8 @@
   "checkpointsDirectory": "E:\\AI\\MODELS\\Stable-Diffusion",
   "theme": "dark",
   "defaultView": "grid",
-  "defaultSort": "date-newest",
-  "hideNSFW": true,
+  "defaultSort": "name-asc",
+  "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,
     "filename": true,
@@ -54,5 +54,55 @@
     "authorsWords",
     "description",
     "notes"
+  ],
+  "filenameFormats": [
+    {
+      "baseModel": "Default",
+      "format": "{modelname} {version}"
+    },
+    {
+      "baseModel": "Pony",
+      "format": "[P] {modelname} {version}"
+    },
+    {
+      "baseModel": "SDXL 1.0",
+      "format": "[X] {modelname} {version}"
+    },
+    {
+      "baseModel": "Illustrious",
+      "format": "[I] {modelname} {version}"
+    },
+    {
+      "baseModel": "ZImageTurbo",
+      "format": "[Z] {modelname} {version}"
+    },
+    {
+      "baseModel": "LTXV",
+      "format": "{modelname} {version}"
+    },
+    {
+      "baseModel": "Qwen",
+      "format": "{modelname} {version}"
+    },
+    {
+      "baseModel": "Wan Video 14B t2v",
+      "format": "{modelname} {version} - T2V - Wan21 14B"
+    },
+    {
+      "baseModel": "Wan Video 14B i2v 720p",
+      "format": "{modelname} {version} - I2v 720p - Wan21 14b"
+    },
+    {
+      "baseModel": "Wan Video",
+      "format": "{modelname} {version} - Wan21 14B"
+    },
+    {
+      "baseModel": "Wan Video 2.2 I2V-A14B",
+      "format": "{modelname} {version} - {highlow} I2v - Wan22 14b"
+    },
+    {
+      "baseModel": "Wan Video 2.2 T2V-A14B",
+      "format": "{modelname} {version} - {highlow} T2v - Wan22 14b"
+    }
   ]
 }

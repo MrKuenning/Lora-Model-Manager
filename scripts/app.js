@@ -419,12 +419,160 @@ async function openSettingsModal() {
     document.getElementById('col-modelName').checked = columns.modelName === true;
     document.getElementById('col-modelVersion').checked = columns.modelVersion === true;
     document.getElementById('col-highLow').checked = columns.highLow === true;
+
+    // Load filename formats
+    loadFilenameFormats(settings.filenameFormats || []);
+
+    // Reset settings tabs to General
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    if (tabBtns.length > 0) {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        // Find General tab
+        const generalTab = Array.from(tabBtns).find(b => b.getAttribute('data-tab') === 'settings-general');
+        if (generalTab) {
+            generalTab.classList.add('active');
+            document.getElementById('settings-general')?.classList.add('active');
+        } else {
+            // Fallback to first
+            tabBtns[0].classList.add('active');
+            const targetId = tabBtns[0].getAttribute('data-tab');
+            document.getElementById(targetId)?.classList.add('active');
+        }
+    }
 }
 
 function closeSettingsModal() {
     console.log("Close Settings Modal");
     settingsModal.style.display = 'none'; // Hide the modal
 }
+
+// Initialize filename formats settings UI
+function loadFilenameFormats(formats) {
+    const list = document.getElementById('filename-format-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    // Add logic to "Add Format" button if not already added (using a flag or removing old one)
+    const addBtn = document.getElementById('add-filename-format-btn');
+    if (addBtn) {
+        const newAddBtn = addBtn.cloneNode(true);
+        addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+        newAddBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const existing = getFilenameFormats().map(f => f.baseModel);
+            // Default to empty array if models is undefined
+            const currentModels = (typeof models !== 'undefined') ? models : [];
+            const allBaseModels = [...new Set(currentModels.map(m => m.baseModel).filter(Boolean))];
+            const available = allBaseModels.filter(m => !existing.includes(m));
+            addFilenameFormatRow('', '', available);
+        });
+    }
+
+    // Populate rows
+    // Use defaults if valid formats not provided or empty
+    if (!formats || !Array.isArray(formats) || formats.length === 0) {
+        if (settingsManager && settingsManager.defaultSettings && settingsManager.defaultSettings.filenameFormats) {
+            formats = settingsManager.defaultSettings.filenameFormats;
+        } else {
+            // Fallback default
+            formats = [{ baseModel: 'Default', format: '{modelname} {version}' }];
+        }
+    }
+
+    formats.forEach(f => addFilenameFormatRow(f.baseModel, f.format));
+}
+
+function addFilenameFormatRow(baseModel = '', format = '', availableModels = null) {
+    const list = document.getElementById('filename-format-list');
+    const row = document.createElement('div');
+    row.className = 'filename-format-row';
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+
+    const isDefault = baseModel === 'Default';
+
+    // Delete button logic
+    const deleteBtnHtml = isDefault
+        ? `<button class="btn btn-tiny btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;" title="Cannot delete Default rule"><i class="fas fa-lock"></i></button>`
+        : `<button class="btn btn-tiny btn-danger remove-format-btn"><i class="fas fa-times"></i></button>`;
+
+    // Base model input logic
+    let baseModelInput;
+    if (isDefault) {
+        baseModelInput = `<input type="text" class="format-base-model" placeholder="Base Model" value="${baseModel}" style="flex: 1; padding: 4px;" readonly title="Default base model cannot be renamed">`;
+    } else if (availableModels && Array.isArray(availableModels) && availableModels.length > 0) {
+        // Sort alphabetically
+        availableModels.sort((a, b) => a.localeCompare(b));
+        const options = availableModels.map(m => `<option value="${m}">${m}</option>`).join('');
+        baseModelInput = `<select class="format-base-model" style="flex: 1; padding: 4px;">
+            <option value="" disabled selected>Select Base Model...</option>
+            ${options}
+        </select>`;
+    } else {
+        // Existing row or fallback
+        baseModelInput = `<input type="text" class="format-base-model" placeholder="Base Model" value="${baseModel}" style="flex: 1; padding: 4px;">`;
+    }
+
+    row.innerHTML = `
+        ${baseModelInput}
+        <input type="text" class="format-string" placeholder="Format String" value="${format}" style="flex: 2; padding: 4px;">
+        ${deleteBtnHtml}
+    `;
+
+    if (!isDefault) {
+        row.querySelector('.remove-format-btn').addEventListener('click', () => {
+            list.removeChild(row);
+        });
+    }
+
+    list.appendChild(row);
+}
+
+function getFilenameFormats() {
+    const list = document.getElementById('filename-format-list');
+    if (!list) return [];
+
+    const formats = [];
+    list.querySelectorAll('.filename-format-row').forEach(row => {
+        const baseModel = row.querySelector('.format-base-model').value.trim();
+        const format = row.querySelector('.format-string').value.trim();
+        if (baseModel && format) {
+            formats.push({ baseModel, format });
+        }
+    });
+    return formats;
+}
+
+
+// Setup settings modal tabs
+function setupSettingsTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Deactivate all
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Activate clicked
+            btn.classList.add('active');
+            const targetId = btn.getAttribute('data-tab');
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+}
+
+// Initialize tabs
+setupSettingsTabs();
 
 // Initialize drag and drop for column ordering
 function initDragAndDrop() {
@@ -1325,7 +1473,9 @@ async function saveSettings() {
             highLow: document.getElementById('col-highLow')?.checked || false
         },
         // Get column order from the sortable list
-        columnOrder: Array.from(document.querySelectorAll('#sortable-columns li')).map(li => li.dataset.columnKey)
+        columnOrder: Array.from(document.querySelectorAll('#sortable-columns li')).map(li => li.dataset.columnKey),
+        // Get filename formats
+        filenameFormats: getFilenameFormats()
     }
 
     // Update all settings at once
@@ -2626,62 +2776,44 @@ function handleRecommendedFilename() {
     }
 
     const baseModel = currentModel.baseModel || '';
-    let recommendedName = '';
 
-    // Get High/Low toggle value for Wan 2.2 models
+    // Get High/Low toggle value for variables
     const highLowToggle = document.getElementById('high-low-toggle');
     const highLowValue = highLowToggle?.getAttribute('data-value') || '';
 
-    // Build base name: [Model Name] [version]
-    const baseName = version ? `${modelName} ${version}` : modelName;
+    // Get Category and Subcategory for variables
+    const category = currentModel.category || '';
+    const subcategory = currentModel.json?.['subcategory'] || '';
 
-    // Check for Prefix models (Pony, SDXL, Illustrious, ZImageTurbo)
-    const prefixMap = {
-        'Pony': '[P]',
-        'SDXL 1.0': '[X]',
-        'Illustrious': '[I]',
-        'ZImageTurbo': '[Z]'
-    };
+    // Get formats from settings
+    const formats = settingsManager.getSetting('filenameFormats') || [];
 
-    // Check for Wan Video models with suffixes
-    const wanSuffixMap = {
-        'Wan Video 14B t2v': '- T2V - Wan21 14B',
-        'Wan Video 14B i2v 720p': '- I2v 720p - Wan21 14b',
-        'Wan Video': '- Wan21 14B'
-    };
+    // Find matching format
+    // Try exact match first (case insensitive)
+    let matchingFormat = formats.find(f => f.baseModel && f.baseModel.toLowerCase() === baseModel.toLowerCase());
 
-    // Check for Wan 2.2 models (need High/Low toggle)
-    const wan22Models = {
-        'Wan Video 2.2 I2V-A14B': { high: '- High I2v - Wan22 14b', low: '- Low I2v - Wan22 14b' },
-        'Wan Video 2.2 T2V-A14B': { high: '- High T2v - Wan22 14b', low: '- Low T2v - Wan22 14b' }
-    };
-
-    // Determine the filename based on base model type
-    if (prefixMap[baseModel]) {
-        // Prefix models: [Prefix] [Model Name] [version]
-        recommendedName = `${prefixMap[baseModel]} ${baseName}`;
-    } else if (wan22Models[baseModel]) {
-        // Wan 2.2 models: check High/Low toggle
-        if (highLowValue === 'High') {
-            recommendedName = `${baseName} ${wan22Models[baseModel].high}`;
-        } else if (highLowValue === 'Low') {
-            recommendedName = `${baseName} ${wan22Models[baseModel].low}`;
-        } else {
-            // If no High/Low selected, prompt user
-            showToast('Please set the High/Low toggle for Wan 2.2 models before generating a recommended filename.', 'warning');
-            return;
-        }
-    } else if (wanSuffixMap[baseModel]) {
-        // Other Wan Video models: [Model Name] [version] - suffix
-        recommendedName = `${baseName} ${wanSuffixMap[baseModel]}`;
-    } else {
-        // Default: [Model Name] [version]
-        recommendedName = baseName;
+    if (!matchingFormat) {
+        matchingFormat = formats.find(f => f.baseModel === 'Default');
     }
 
-    // Set the filename
+    // Fallback if no format found at all
+    let formatString = matchingFormat ? matchingFormat.format : '{modelname} {version}';
+
+    // Replace variables (case-insensitive)
+    let recommendedName = formatString
+        .replace(/{modelname}/gi, modelName)
+        .replace(/{version}/gi, version)
+        .replace(/{highlow}/gi, highLowValue)
+        .replace(/{category}/gi, category)
+        .replace(/{subcategory}/gi, subcategory);
+
+    // Clean up double spaces
+    recommendedName = recommendedName.replace(/\s+/g, ' ').trim();
+
+    // Populating the filename field (without extension)
     modelFilename.value = recommendedName;
-    console.log(`Generated recommended filename: ${recommendedName}`);
+    console.log(`Generated Recommended Filename: ${recommendedName} (Format used: ${matchingFormat ? matchingFormat.baseModel : 'Fallback'})`);
+    showToast(`Generated filename using format: ${matchingFormat ? matchingFormat.baseModel : 'Default'}`, 'success');
 }
 
 // ===== Model Name Helper Buttons =====

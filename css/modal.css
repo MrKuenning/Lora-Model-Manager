@@ -177,13 +177,22 @@
 #settingsModal .modal-content,
 .settings-modal-content {
     max-width: 900px;
-    max-height: 90vh;
+    max-height: 95vh;
     overflow-y: auto;
     padding: var(--spacing-xl);
-    display: grid;
+    display: block;
+}
+
+/* Apply grid layout to General Settings tab */
+#settings-general {
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-xl) var(--spacing-lg);
     grid-auto-flow: dense;
+    margin-top: 10px;
+}
+
+#settings-general.active {
+    display: grid;
 }
 
 #settingsModal .modal-content>h3 {
@@ -300,7 +309,7 @@
 }
 
 .columns-container {
-    max-height: 400px;
+    max-height: 65vh;
     overflow-y: auto;
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-sm);
@@ -510,5 +519,93 @@
 
     .modal-buttons .btn {
         width: 100%;
+    }
+}
+
+/* Filename Formatting Settings */
+.filename-format-row {
+    background: var(--color-bg-tertiary);
+    padding: 8px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border);
+}
+
+.filename-format-row input {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.filename-format-row input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.add-format-row {
+    margin-top: 10px;
+}
+
+.filename-formats-group .group-header {
+    margin-bottom: 12px;
+}
+
+.filename-formats-group small {
+    font-family: monospace;
+    opacity: 0.8;
+}
+
+/* Settings Modal Tabs */
+.modal-tabs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 15px;
+    gap: 2px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.tab-btn:hover {
+    color: var(--color-text);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+}
+
+.tab-btn.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.2s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
