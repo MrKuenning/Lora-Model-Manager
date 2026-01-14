@@ -6,6 +6,12 @@ A web-based application for organizing and managing thousands of AI Lora and Che
 
 The AI Lora Model Manager is a powerful tool designed to help you organize, search, and manage large collections of Lora and Checkpoint models. It provides an intuitive interface for viewing model metadata, editing information, and syncing with Civitai.
 
+Go from this to this in seconds.
+<p>
+  <img src="https://github.com/user-attachments/assets/27656aab-5bd1-4d67-afda-c3ee2387938f" width="49%" alt="Description 1">
+  <img src="https://github.com/user-attachments/assets/97e09e27-f343-46f3-ad18-005f01d5e8f2" width="49%" alt="Description 2">
+</p>
+
 ## Changelog
 
 See the full changelog at [CHANGELOG.md](CHANGELOG.md)
@@ -16,8 +22,13 @@ See the full changelog at [CHANGELOG.md](CHANGELOG.md)
 
 ### 📊 Multiple View Modes
 - **Grid View**: Visual card-based layout with thumbnails
+<img src="https://github.com/user-attachments/assets/302b81b3-6409-4079-8846-c5f7473e7abe" width="500" />
+
 - **Table View**: Detailed spreadsheet-style view with sortable columns
+<img src="https://github.com/user-attachments/assets/c8732415-6fbb-48b5-a7e7-8e87b0671d64" width="500" />
+
 - **Grouped View**: Organize models by category, folder, or base model
+<img src="https://github.com/user-attachments/assets/87ff8bba-4e2a-48ec-9f92-4a4085077e75" width="500" />
 
 ### 🔍 Advanced Search & Filtering
 - Full-text search across all model metadata
@@ -33,6 +44,8 @@ Manage both LoRA and Checkpoint models from separate directories:
 - Switch between locations with tab buttons in the header
 
 ### 🎨 Model Details Modal
+<img src="https://github.com/user-attachments/assets/a2d666ab-9eb3-422d-ad64-44cd67615b49" width="500" />
+
 - **Multiple preview images** with carousel navigation
 - **Drag-and-drop thumbnail upload** for custom previews
 - **Editable metadata** including:
@@ -49,6 +62,8 @@ Manage both LoRA and Checkpoint models from separate directories:
 - **File information** split into File Info and File Data panels
 
 ### 🛠️ Filename Helper Tools
+<img src="https://github.com/user-attachments/assets/212f2a7d-ca5a-43aa-a994-c83af99dbb70" width="500" />
+
 Powerful buttons to help format and manage filenames:
 
 1. **Model Name**: Copy model name to filename field
@@ -62,6 +77,8 @@ Powerful buttons to help format and manage filenames:
 9. **Append Suffix**: Add WAN Video model suffixes
 
 ### 🌐 Civitai Integration
+<img src="https://github.com/user-attachments/assets/1f20344f-c124-49c2-9d08-9a2b7a0a4f25" width="500" />
+
 Dedicated Civitai Scan page with powerful tools:
 
 - **Get Civitai Data**: Fetch model info using SHA256 hash lookup
@@ -79,6 +96,8 @@ Four Civitai action buttons in the model popup for single-model operations:
 - Fix thumbnail name
 
 ### 📦 Bulk Editing Mode
+<img src="https://github.com/user-attachments/assets/bc2b8b01-c59c-4989-b2da-141576cd8df5" width="500" />
+
 Perform batch operations on multiple models at once:
 1. Click the **Bulk** button in the header to enter selection mode
 2. Click on model cards to select/deselect them
@@ -201,6 +220,8 @@ Settings are stored in `config.json` and include:
 
 ## Filename Helper Tools
 
+![2026-01-13 15_29_38-Greenshot](https://github.com/user-attachments/assets/434732d1-12c4-4dfc-a2dc-5bb15ca6ccbc)
+
 ### Model Name
 Copies the display name from Model Name field to filename.
 
@@ -251,6 +272,7 @@ Adds WAN Video model suffix to filename:
 - Other WAN variants supported
 
 ## Custom Filename Formatting
+![2026-01-13 16_04_35-Greenshot](https://github.com/user-attachments/assets/bf82b8a9-830b-41cc-9507-c65f927d15da)
 
 Configure custom "Recommended" filename formats per Base Model type in **Settings → Filename Formatting**.
 
