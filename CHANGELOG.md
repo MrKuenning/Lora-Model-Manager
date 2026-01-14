@@ -30,6 +30,8 @@
 **Changed**
 - **Keywords Section Reorganized**  
   Trigger words (positive, negative, all) now on the left, Example Prompts on the right. Section renamed to "Keywords & Prompts".
+- **Table View Grouping**  
+  Table view now supports grouping just like grid view. Group headers span all columns with model counts.
 - **Settings Modal Tabs**  
   Organized settings into tabs (General, Table Columns, Filename Formatting) for better navigation.
 - **Header Button Text**  

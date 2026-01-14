@@ -682,3 +682,28 @@ main {
         padding: var(--spacing-xs) var(--spacing-sm);
     }
 }
+
+/* ============================================
+   Table View Group Headers
+   ============================================ */
+
+.table-group-header {
+    background: linear-gradient(90deg, var(--color-primary-dark), var(--color-bg-secondary));
+    border-top: 2px solid var(--color-primary);
+}
+
+.table-group-header td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-md);
+    color: var(--color-text-primary);
+}
+
+.table-group-header strong {
+    color: var(--color-text-accent);
+}
+
+.table-group-header .group-count {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin-left: var(--spacing-xs);
+}

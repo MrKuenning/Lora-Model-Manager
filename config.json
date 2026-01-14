@@ -3,7 +3,7 @@
   "checkpointsDirectory": "E:\\AI\\MODELS\\Stable-Diffusion",
   "theme": "dark",
   "defaultView": "grid",
-  "defaultSort": "column:Base Model:asc",
+  "defaultSort": "date-newest",
   "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,

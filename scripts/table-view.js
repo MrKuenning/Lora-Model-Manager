@@ -121,7 +121,94 @@ function sortModels(models, column) {
     });
 }
 
-export function displayTableView(models, container, openModelDetails, settings) {
+// Helper function to group models by a property (shared logic with grid-group-view)
+function groupModelsByProperty(models, property) {
+    const groups = {};
+
+    models.forEach(model => {
+        let groupValue;
+
+        switch (property) {
+            case 'Category':
+                groupValue = model.category || 'Uncategorized';
+                break;
+            case 'Civitai Name':
+                groupValue = model.json && model.json['author name'] ? model.json['author name'] : 'Unknown Author';
+                break;
+            case 'Base Model':
+                groupValue = model.baseModel || 'Unknown';
+                break;
+            case 'Subcategory':
+                groupValue = model.json && model.json['subcategory'] ? model.json['subcategory'] : 'Uncategorized';
+                break;
+            case 'Folder':
+                groupValue = model.json && model.json['folder'] ? model.json['folder'] : 'Uncategorized';
+                break;
+            case 'Creator':
+                groupValue = model.json && model.json['creator'] ? model.json['creator'] : 'Unknown Creator';
+                break;
+            case 'Tags':
+                groupValue = model.json && model.json['tags'] ?
+                    (model.json['tags'].split(',')[0].trim() || 'No Tags') : 'No Tags';
+                break;
+            case 'NSFW':
+                groupValue = model.json && model.json['nsfw'] === 'true' ? 'NSFW' : 'Safe';
+                break;
+            case 'Size':
+                const sizeInMB = model.size / (1024 * 1024);
+                if (sizeInMB < 10) groupValue = 'Less than 10MB';
+                else if (sizeInMB < 50) groupValue = '10MB - 50MB';
+                else if (sizeInMB < 100) groupValue = '50MB - 100MB';
+                else groupValue = 'Over 100MB';
+                break;
+            case 'Date':
+                const date = new Date(model.dateModified * 1000);
+                groupValue = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+                break;
+            case 'Path':
+                if (model.path) {
+                    const modelsDir = appSettings.getSetting('modelsDirectory').replace(/\\/g, '/');
+                    const fullPath = model.path.replace(/\\/g, '/');
+                    let relativePath = fullPath;
+                    if (modelsDir && fullPath.startsWith(modelsDir)) {
+                        relativePath = fullPath.substring(modelsDir.length);
+                        if (relativePath.startsWith('/')) {
+                            relativePath = relativePath.substring(1);
+                        }
+                    }
+                    const lastSlashIndex = relativePath.lastIndexOf('/');
+                    if (lastSlashIndex !== -1) {
+                        groupValue = relativePath.substring(0, lastSlashIndex);
+                    } else {
+                        groupValue = 'Root';
+                    }
+                } else {
+                    groupValue = 'Unknown Path';
+                }
+                break;
+            case 'Model Name':
+                groupValue = model.json && model.json['name'] ? model.json['name'] : 'Unnamed';
+                break;
+            case 'Model Version':
+                groupValue = model.json && model.json['model version'] ? model.json['model version'] : 'No Version';
+                break;
+            case 'High/Low':
+                groupValue = model.json && model.json['high low'] ? model.json['high low'] : 'Not Set';
+                break;
+            default:
+                groupValue = 'Ungrouped';
+        }
+
+        if (!groups[groupValue]) {
+            groups[groupValue] = [];
+        }
+        groups[groupValue].push(model);
+    });
+
+    return groups;
+}
+
+export function displayTableView(models, container, openModelDetails, settings, groupBy = 'none') {
     if (!container) {
         console.error('Container element is required for table view');
         return;
@@ -296,12 +383,12 @@ export function displayTableView(models, container, openModelDetails, settings) 
     `;
     container.appendChild(infoBox);
 
-    // Initial table body
-    displayTableBody(models, table, openModelDetails, columns, bulkMode);
+    // Initial table body (with grouping support)
+    displayTableBody(models, table, openModelDetails, columns, bulkMode, groupBy);
     container.appendChild(table);
 }
 
-function displayTableBody(models, table, openModelDetails, columns, bulkMode = false) {
+function displayTableBody(models, table, openModelDetails, columns, bulkMode = false, groupBy = 'none') {
     // Remove existing tbody if it exists
     const existingTbody = table.querySelector('tbody');
     if (existingTbody) {
@@ -327,11 +414,15 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
             }
         });
     }, {
-        rootMargin: '100px 0px', // Start loading images when they're 100px from viewport
+        rootMargin: '100px 0px',
         threshold: 0.1
     });
 
-    models.forEach(model => {
+    // Calculate total columns for group header colspan
+    const totalColumns = columns.length + (bulkMode ? 1 : 0);
+
+    // Helper function to create a table row for a model
+    function createModelRow(model) {
         const row = document.createElement('tr');
         row.dataset.id = model.id;
 
@@ -369,7 +460,6 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     img.className = 'lazy-image';
                     thumbnail.appendChild(img);
                     cell.appendChild(thumbnail);
-                    // Observe the image for lazy loading
                     imageObserver.observe(img);
                     break;
                 case 'Filename':
@@ -385,24 +475,16 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     cell.textContent = model.category || 'Uncategorized';
                     break;
                 case 'Path':
-                    // Simplify path display to show just the folder structure
                     const fullPath = model.path.replace(/\\/g, '/');
-                    // Get the directory part of the path (remove filename)
                     const pathDir = fullPath.substring(0, fullPath.lastIndexOf('/'));
-
-                    // Get the models directory from settings
                     const modelsDir = appSettings.getSetting('modelsDirectory').replace(/\\/g, '/');
-
-                    // Create relative path by removing the models directory prefix
                     let relativePath = pathDir;
                     if (modelsDir && pathDir.startsWith(modelsDir)) {
                         relativePath = pathDir.substring(modelsDir.length);
-                        // Remove leading slash if present
                         if (relativePath.startsWith('/')) {
                             relativePath = relativePath.substring(1);
                         }
                     }
-
                     cell.textContent = relativePath || 'Root';
                     break;
                 case 'Size':
@@ -413,13 +495,11 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     break;
                 case 'URL':
                     cell.className = 'url-cell';
-                    // Check for URL in civitaiInfo first, then in model.json
                     const modelUrl = model.civitaiInfo?.modelUrl || model.json?.url || '';
                     if (modelUrl) {
                         const link = document.createElement('a');
                         link.href = modelUrl;
                         link.target = '_blank';
-                        // Add both icon and text for better visibility
                         const icon = document.createElement('i');
                         icon.className = 'fas fa-external-link-alt';
                         icon.title = 'View on Civitai';
@@ -483,7 +563,6 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
             row.style.cursor = 'pointer';
             row.addEventListener('click', (e) => {
                 toggleModelSelection(model.id);
-                // Update checkbox visual
                 const checkbox = row.querySelector('.bulk-table-checkbox');
                 if (checkbox) {
                     checkbox.checked = !checkbox.checked;
@@ -492,8 +571,51 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
         } else {
             row.addEventListener('click', () => openModelDetails(model));
         }
-        tbody.appendChild(row);
-    });
+
+        return row;
+    }
+
+    // If grouping is enabled, render with group headers
+    if (groupBy && groupBy !== 'none') {
+        const groupedModels = groupModelsByProperty(models, groupBy);
+
+        // Sort the groups (alphabetically, or chronologically for Date)
+        let sortedGroups;
+        if (groupBy === 'Date') {
+            sortedGroups = Object.keys(groupedModels).sort((a, b) => {
+                const [monthA, yearA] = a.split(' ');
+                const [monthB, yearB] = b.split(' ');
+                const yearDiff = parseInt(yearB) - parseInt(yearA);
+                if (yearDiff !== 0) return yearDiff;
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                return months.indexOf(monthB) - months.indexOf(monthA);
+            });
+        } else {
+            sortedGroups = Object.keys(groupedModels).sort();
+        }
+
+        // Render each group with a header row
+        sortedGroups.forEach(groupName => {
+            // Create group header row
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'table-group-header';
+            const headerCell = document.createElement('td');
+            headerCell.colSpan = totalColumns;
+            headerCell.innerHTML = `<strong>${groupName}</strong> <span class="group-count">(${groupedModels[groupName].length})</span>`;
+            headerRow.appendChild(headerCell);
+            tbody.appendChild(headerRow);
+
+            // Add model rows for this group
+            groupedModels[groupName].forEach(model => {
+                tbody.appendChild(createModelRow(model));
+            });
+        });
+    } else {
+        // No grouping - render all models normally
+        models.forEach(model => {
+            tbody.appendChild(createModelRow(model));
+        });
+    }
 
     table.appendChild(tbody);
 }
