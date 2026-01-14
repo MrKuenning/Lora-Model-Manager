@@ -3,10 +3,12 @@
 // Import settings manager
 import appSettings from './settings.js';
 import { generateCarouselHTML, initializeCarousel } from './preview-carousel.js';
+import { isBulkModeActive, addBulkCheckbox, toggleModelSelection } from './bulk-operations.js';
 
 // Function to display models in grouped grid view
 export function displayGroupedGridView(models, modelsContainer, openModelDetails, settings, groupBy) {
     modelsContainer.className = 'grouped-grid-view';
+    const bulkMode = isBulkModeActive();
 
     if (models.length === 0) {
         modelsContainer.innerHTML = `
@@ -103,14 +105,25 @@ export function displayGroupedGridView(models, modelsContainer, openModelDetails
                 </div>
             `;
 
-            modelCard.addEventListener('click', () => openModelDetails(model));
+            // In bulk mode, add checkbox and make entire card toggle selection
+            if (bulkMode) {
+                addBulkCheckbox(modelCard, model.id);
+                // Make entire card clickable to toggle selection
+                modelCard.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleModelSelection(model.id);
+                });
+            } else {
+                modelCard.addEventListener('click', () => openModelDetails(model));
+
+                // Only initialize carousel in normal mode (not bulk mode)
+                if (previewImages.length > 1) {
+                    initializeCarousel(modelCard, previewImages);
+                }
+            }
 
             groupModelsContainer.appendChild(modelCard);
-
-            // Initialize carousel if multiple images
-            if (previewImages.length > 1) {
-                initializeCarousel(modelCard, previewImages);
-            }
 
             // Observe all lazy images for lazy loading (main image and thumbnails)
             const lazyImages = modelCard.querySelectorAll('.lazy-image');

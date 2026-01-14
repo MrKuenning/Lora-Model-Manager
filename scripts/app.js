@@ -1223,7 +1223,7 @@ function displayModels() {
             displayGridView(filteredModels, modelsContainer, openModelDetails, settingsManager.getAllSettings());
         }
     } else {
-        displayTableView(filteredModels, modelsContainer, openModelDetails, settingsManager.getAllSettings());
+        displayTableView(filteredModels, modelsContainer, openModelDetails, settingsManager.getAllSettings(), currentGroupBy);
     }
 }
 

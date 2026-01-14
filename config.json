@@ -2,8 +2,8 @@
   "modelsDirectory": "E:\\AI\\MODELS\\LoRA",
   "checkpointsDirectory": "E:\\AI\\MODELS\\Stable-Diffusion",
   "theme": "dark",
-  "defaultView": "table",
-  "defaultSort": "column:Path:asc",
+  "defaultView": "grid",
+  "defaultSort": "column:Base Model:asc",
   "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,
@@ -17,8 +17,8 @@
     "examplePrompt": false,
     "tags": true,
     "path": true,
-    "size": false,
-    "date": false,
+    "size": true,
+    "date": true,
     "url": false,
     "nsfw": false,
     "positiveWords": false,
@@ -28,7 +28,7 @@
     "notes": false,
     "modelName": true,
     "modelVersion": true,
-    "highLow": true
+    "highLow": false
   },
   "columnOrder": [
     "thumbnail",
