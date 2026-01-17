@@ -2,6 +2,22 @@
 
 ---
 
+### 01/17/2026
+
+**Added**
+- **Grid Card Settings Tab**  
+  New settings tab to customize grid view card display. Configure image mode (single vs carousel), title source (filename or model name), and up to 3 subtitle fields from various options including folder, category, base model, version, and more.
+- **Configurable Subtitles**  
+  Grid cards now show customizable subtitle fields joined with " | ", with empty fields automatically hidden.
+
+**Changed**
+- **Folder Field Deprecated**  
+  The `folder` JSON field is no longer stored in model files. Folder is now derived dynamically from the model's file path, eliminating stale data when files are moved.
+- **Grid Card Display**  
+  Grid cards now use settings for title and subtitle content instead of hardcoded values.
+
+---
+
 ### 01/13/2026
 
 **Added**

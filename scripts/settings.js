@@ -62,7 +62,14 @@ class Settings {
                 { baseModel: 'Wan Video 14B t2v', format: '{modelname} {version} - {highlow} T2V - Wan21 14B' },
                 { baseModel: 'Wan Video 14B i2v 720p', format: '{modelname} {version} - {highlow} I2v 720p - Wan21 14b' },
                 { baseModel: 'Wan Video', format: '{modelname} {version} - {highlow} Wan21 14B' }
-            ]
+            ],
+            gridCardSettings: {
+                imageMode: 'carousel',   // 'single' or 'carousel'
+                title: 'filename',       // 'filename' or 'modelName'
+                subtitle1: 'folder',     // field key or 'none'
+                subtitle2: 'baseModel',  // field key or 'none'
+                subtitle3: 'none'        // field key or 'none'
+            }
         };
 
         this.settings = { ...this.defaultSettings };

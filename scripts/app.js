@@ -14,6 +14,7 @@ import * as CivitaiAPI from './civitai-api.js';
 import { initializeCopyButtons } from './clipboard-utils.js';
 import { TagInput } from './tag-input.js';
 import * as BulkOps from './bulk-operations.js';
+import { getFolderFromPath } from './model-utils.js';
 
 // DOM Elements
 const modelsContainer = document.getElementById('models-container');
@@ -208,9 +209,6 @@ document.querySelectorAll('.save-btn').forEach(btn => {
                 break;
             case 'model-notes':
                 currentModel.json['notes'] = value;
-                break;
-            case 'model-folder':
-                currentModel.json['folder'] = value;
                 break;
             case 'model-subcategory':
                 currentModel.json['subcategory'] = value;
@@ -423,6 +421,14 @@ async function openSettingsModal() {
 
     // Load filename formats
     loadFilenameFormats(settings.filenameFormats || []);
+
+    // Load grid card settings
+    const gridCardSettings = settings.gridCardSettings || {};
+    document.getElementById('gridcard-imageMode').value = gridCardSettings.imageMode || 'carousel';
+    document.getElementById('gridcard-title').value = gridCardSettings.title || 'filename';
+    document.getElementById('gridcard-subtitle1').value = gridCardSettings.subtitle1 || 'folder';
+    document.getElementById('gridcard-subtitle2').value = gridCardSettings.subtitle2 || 'baseModel';
+    document.getElementById('gridcard-subtitle3').value = gridCardSettings.subtitle3 || 'none';
 
     // Reset settings tabs to General
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -1319,8 +1325,8 @@ function sortModelsByColumn(models, column, direction) {
                 valueB = (b.json && b.json['description'] || '').toLowerCase();
                 break;
             case 'Folder':
-                valueA = (a.json && a.json['folder'] || '').toLowerCase();
-                valueB = (b.json && b.json['folder'] || '').toLowerCase();
+                valueA = getFolderFromPath(a).toLowerCase();
+                valueB = getFolderFromPath(b).toLowerCase();
                 break;
             case 'Subcategory':
                 valueA = (a.json && a.json['subcategory'] || '').toLowerCase();
@@ -1480,7 +1486,15 @@ async function saveSettings() {
         // Get column order from the sortable list
         columnOrder: Array.from(document.querySelectorAll('#sortable-columns li')).map(li => li.dataset.columnKey),
         // Get filename formats
-        filenameFormats: getFilenameFormats()
+        filenameFormats: getFilenameFormats(),
+        // Get grid card settings
+        gridCardSettings: {
+            imageMode: document.getElementById('gridcard-imageMode')?.value || 'carousel',
+            title: document.getElementById('gridcard-title')?.value || 'filename',
+            subtitle1: document.getElementById('gridcard-subtitle1')?.value || 'folder',
+            subtitle2: document.getElementById('gridcard-subtitle2')?.value || 'baseModel',
+            subtitle3: document.getElementById('gridcard-subtitle3')?.value || 'none'
+        }
     }
 
     // Update all settings at once

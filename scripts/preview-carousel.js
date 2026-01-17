@@ -103,3 +103,18 @@ export function generateCarouselHTML(previewImages, modelName) {
         \u003cspan class=\"carousel-indicator\"\u003e${previewImages.length}\u003c/span\u003e
     `;
 }
+
+/**
+ * Generate HTML for a single image preview (no carousel controls)
+ * @param {Array<string>} previewImages - Array of preview image URLs
+ * @param {string} modelName - Name of the model for alt text
+ * @returns {string} HTML string for a single image preview
+ */
+export function generateSingleImageHTML(previewImages, modelName) {
+    if (!previewImages || previewImages.length === 0) {
+        return `<img src="/assets/placeholder.png" data-src="/assets/placeholder.png" alt="${modelName}" class="lazy-image">`;
+    }
+
+    // Just show the first image, no carousel controls
+    return `<img src="/assets/placeholder.png" data-src="${previewImages[0]}" alt="${modelName}" class="lazy-image preview-main-image">`;
+}

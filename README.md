@@ -107,6 +107,28 @@ Perform batch operations on multiple models at once:
    - **Rename**: Preview and apply recommended filenames
 4. Click **Cancel** to exit bulk mode
 
+### 🎴 Grid Card Settings
+
+Customize what information appears on model cards in grid view via **Settings → Grid Card**:
+
+- **Image Display**:
+  - **Carousel**: Show navigation arrows to cycle through preview images
+  - **Single**: Show only the first preview image (faster loading)
+
+- **Title**: Choose what to display as the card title:
+  - **File Name**: Shows the model filename
+  - **Model Name**: Shows the display name from JSON metadata
+
+- **Subtitle 1, 2, 3**: Configure up to three data fields to show below the title:
+  - None, File Name, Model Name, Folder, Category, Subcategory
+  - Base Model, Model Version, High/Low, Trigger Words, Creator, Tags
+  - Fields are joined with " | " and empty fields are automatically hidden
+
+**Example Configurations**:
+- Classic: `Folder | Base Model` (default)
+- Detailed: `Category | Base Model | Creator`
+- Minimal: `Base Model` only (set others to None)
+
 ### 📋 Smart Textarea Behavior
 - View mode: Textareas shrink to fit content (max 20 lines with scrollbar)
 - Edit mode: Textareas expand to show all content with auto-resize
@@ -178,7 +200,6 @@ The `model_name.json` file contains metadata in the following structure:
   "description": "Model description",
   "example prompt": "Example prompt text",
   "example prompt 2": "Additional example",
-  "folder": "Styles/Anime",
   "high low": "High",
   "model name": "Display Name",
   "model version": "v1.0",

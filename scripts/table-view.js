@@ -3,6 +3,7 @@
 // Import settings manager
 import appSettings from './settings.js';
 import { isBulkModeActive, toggleModelSelection, getSelectedModels } from './bulk-operations.js';
+import { getFolderFromPath } from './model-utils.js';
 
 // Function to display models in table view
 
@@ -74,8 +75,8 @@ function sortModels(models, column) {
                 valueB = (b.json && b.json['description'] || '').toLowerCase();
                 break;
             case 'Folder':
-                valueA = (a.json && a.json['folder'] || '').toLowerCase();
-                valueB = (b.json && b.json['folder'] || '').toLowerCase();
+                valueA = getFolderFromPath(a).toLowerCase();
+                valueB = getFolderFromPath(b).toLowerCase();
                 break;
             case 'Subcategory':
                 valueA = (a.json && a.json['subcategory'] || '').toLowerCase();
@@ -142,7 +143,7 @@ function groupModelsByProperty(models, property) {
                 groupValue = model.json && model.json['subcategory'] ? model.json['subcategory'] : 'Uncategorized';
                 break;
             case 'Folder':
-                groupValue = model.json && model.json['folder'] ? model.json['folder'] : 'Uncategorized';
+                groupValue = getFolderFromPath(model) || 'Uncategorized';
                 break;
             case 'Creator':
                 groupValue = model.json && model.json['creator'] ? model.json['creator'] : 'Unknown Creator';
@@ -525,7 +526,7 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     cell.textContent = desc.length > 50 ? `${desc.substring(0, 50)}...` : desc;
                     break;
                 case 'Folder':
-                    cell.textContent = model.json?.['folder'] || '';
+                    cell.textContent = getFolderFromPath(model);
                     break;
                 case 'Subcategory':
                     cell.textContent = model.json?.['subcategory'] || '';

@@ -50,7 +50,6 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'creator': '',
         'description': '',  # Will keep this empty as per requirement
         'example prompt': '',
-        'folder': '',
         'high low': '',  # High/Low toggle field
         'model version': '',  # Model version field
         'name': '',  # Model name field (populated from civitai name)
@@ -63,10 +62,6 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'tags': '',
         'url': ''
     }
-    
-    # Get folder from parent folder name
-    parent_folder = os.path.basename(os.path.dirname(file_path))
-    mapped_data['folder'] = parent_folder
     
     # Extract data from civitai.info
     if 'trainedWords' in civitai_info_data:

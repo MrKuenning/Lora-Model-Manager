@@ -2,8 +2,44 @@
 
 // Import settings manager
 import appSettings from './settings.js';
-import { generateCarouselHTML, initializeCarousel } from './preview-carousel.js';
+import { generateCarouselHTML, generateSingleImageHTML, initializeCarousel } from './preview-carousel.js';
 import { isBulkModeActive, addBulkCheckbox, toggleModelSelection } from './bulk-operations.js';
+import { getFolderFromPath } from './model-utils.js';
+
+/**
+ * Get the display value for a given field key from a model
+ */
+function getFieldValue(model, fieldKey) {
+    switch (fieldKey) {
+        case 'none': return '';
+        case 'filename': return model.name || '';
+        case 'modelName': return model.json?.['name'] || '';
+        case 'folder': return getFolderFromPath(model) || '';
+        case 'category': return model.category || '';
+        case 'subcategory': return model.json?.['subcategory'] || '';
+        case 'baseModel': return model.baseModel || '';
+        case 'modelVersion': return model.json?.['model version'] || '';
+        case 'highLow': return model.json?.['high low'] || '';
+        case 'triggerWords': return model.json?.['activation text'] || '';
+        case 'creator': return model.json?.['creator'] || '';
+        case 'tags': return model.json?.['tags'] || '';
+        default: return '';
+    }
+}
+
+/**
+ * Build the subtitle string from subtitle settings
+ */
+function buildSubtitle(model, gridCardSettings) {
+    const parts = [];
+    const sub1 = getFieldValue(model, gridCardSettings.subtitle1 || 'folder');
+    const sub2 = getFieldValue(model, gridCardSettings.subtitle2 || 'baseModel');
+    const sub3 = getFieldValue(model, gridCardSettings.subtitle3 || 'none');
+    if (sub1) parts.push(sub1);
+    if (sub2) parts.push(sub2);
+    if (sub3) parts.push(sub3);
+    return parts.join(' | ');
+}
 
 // Function to display models in grouped grid view
 export function displayGroupedGridView(models, modelsContainer, openModelDetails, settings, groupBy) {
@@ -91,17 +127,41 @@ export function displayGroupedGridView(models, modelsContainer, openModelDetails
             modelCard.className = 'model-card';
             modelCard.dataset.id = model.id;
 
+            // Get grid card settings
+            const gridCardSettings = settings?.gridCardSettings || appSettings.getSetting('gridCardSettings') || {
+                imageMode: 'carousel',
+                title: 'filename',
+                subtitle1: 'folder',
+                subtitle2: 'baseModel',
+                subtitle3: 'none'
+            };
+
             // Use previewImages array if available, fallback to single previewUrl
             const previewImages = model.previewImages || (model.previewUrl ? [model.previewUrl] : []);
-            const carouselHTML = generateCarouselHTML(previewImages, model.name);
+
+            // Determine image HTML based on settings
+            let imageHTML;
+            if (gridCardSettings.imageMode === 'single' || previewImages.length <= 1) {
+                imageHTML = generateSingleImageHTML(previewImages, model.name);
+            } else {
+                imageHTML = generateCarouselHTML(previewImages, model.name);
+            }
+
+            // Determine title based on settings
+            const title = gridCardSettings.title === 'modelName'
+                ? (model.json?.['name'] || model.name)
+                : model.name;
+
+            // Build subtitle from settings
+            const subtitle = buildSubtitle(model, gridCardSettings);
 
             modelCard.innerHTML = `
                 <div class="model-preview">
-                    ${carouselHTML}
+                    ${imageHTML}
                 </div>
                 <div class="model-info">
-                    <div class="model-name">${model.name}</div>
-                    <div class="model-meta">${model.category} | ${model.baseModel}</div>
+                    <div class="model-name">${title}</div>
+                    ${subtitle ? `<div class="model-meta">${subtitle}</div>` : ''}
                 </div>
             `;
 
@@ -117,8 +177,8 @@ export function displayGroupedGridView(models, modelsContainer, openModelDetails
             } else {
                 modelCard.addEventListener('click', () => openModelDetails(model));
 
-                // Only initialize carousel in normal mode (not bulk mode)
-                if (previewImages.length > 1) {
+                // Only initialize carousel in normal mode (not bulk mode) and if carousel mode
+                if (gridCardSettings.imageMode === 'carousel' && previewImages.length > 1) {
                     initializeCarousel(modelCard, previewImages);
                 }
             }
@@ -160,7 +220,7 @@ function groupModelsByProperty(models, property) {
                 groupValue = model.json && model.json['subcategory'] ? model.json['subcategory'] : 'Uncategorized';
                 break;
             case 'Folder':
-                groupValue = model.json && model.json['folder'] ? model.json['folder'] : 'Uncategorized';
+                groupValue = getFolderFromPath(model) || 'Uncategorized';
                 break;
             case 'Creator':
                 groupValue = model.json && model.json['creator'] ? model.json['creator'] : 'Unknown Creator';

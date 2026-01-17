@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lora Model Manager</title>
+    <title>LoRa Manager</title>
     <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/loading.css">
@@ -21,7 +21,7 @@
         <header>
             <div class="header-top">
                 <div class="header-left">
-                    <h1 id="page-title">Lora Model Manager</h1>
+                    <h1 id="page-title">LoRa Manager</h1>
                     <div class="location-toggle">
                         <a href="?location=loras" id="loras-tab" class="location-tab active">LoRAs</a>
                         <a href="?location=checkpoints" id="checkpoints-tab" class="location-tab">Checkpoints</a>
@@ -935,6 +935,7 @@
                 <div class="modal-tabs">
                     <button class="tab-btn active" data-tab="settings-general">General</button>
                     <button class="tab-btn" data-tab="settings-columns">Table Columns</button>
+                    <button class="tab-btn" data-tab="settings-gridcard">Grid Card</button>
                     <button class="tab-btn" data-tab="settings-filename">Filename Formatting</button>
                 </div>
 
@@ -1050,6 +1051,82 @@
                                 <i class="fas fa-plus"></i> Add Format Rule
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Grid Card Settings Section -->
+                <div id="settings-gridcard" class="tab-content">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 15px;">Customize how model cards appear
+                        in grid view.</p>
+
+                    <div class="setting-group">
+                        <label for="gridcard-imageMode">Image Display:</label>
+                        <select id="gridcard-imageMode">
+                            <option value="carousel">Carousel (with arrows)</option>
+                            <option value="single">Single Image</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="gridcard-title">Title:</label>
+                        <select id="gridcard-title">
+                            <option value="filename">File Name</option>
+                            <option value="modelName">Model Name</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="gridcard-subtitle1">Subtitle 1:</label>
+                        <select id="gridcard-subtitle1" class="gridcard-subtitle-select">
+                            <option value="none">None</option>
+                            <option value="filename">File Name</option>
+                            <option value="modelName">Model Name</option>
+                            <option value="folder">Folder</option>
+                            <option value="category">Category</option>
+                            <option value="subcategory">Subcategory</option>
+                            <option value="baseModel">Base Model</option>
+                            <option value="modelVersion">Model Version</option>
+                            <option value="highLow">High/Low</option>
+                            <option value="triggerWords">Trigger Words</option>
+                            <option value="creator">Creator</option>
+                            <option value="tags">Tags</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="gridcard-subtitle2">Subtitle 2:</label>
+                        <select id="gridcard-subtitle2" class="gridcard-subtitle-select">
+                            <option value="none">None</option>
+                            <option value="filename">File Name</option>
+                            <option value="modelName">Model Name</option>
+                            <option value="folder">Folder</option>
+                            <option value="category">Category</option>
+                            <option value="subcategory">Subcategory</option>
+                            <option value="baseModel">Base Model</option>
+                            <option value="modelVersion">Model Version</option>
+                            <option value="highLow">High/Low</option>
+                            <option value="triggerWords">Trigger Words</option>
+                            <option value="creator">Creator</option>
+                            <option value="tags">Tags</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="gridcard-subtitle3">Subtitle 3:</label>
+                        <select id="gridcard-subtitle3" class="gridcard-subtitle-select">
+                            <option value="none">None</option>
+                            <option value="filename">File Name</option>
+                            <option value="modelName">Model Name</option>
+                            <option value="folder">Folder</option>
+                            <option value="category">Category</option>
+                            <option value="subcategory">Subcategory</option>
+                            <option value="baseModel">Base Model</option>
+                            <option value="modelVersion">Model Version</option>
+                            <option value="highLow">High/Low</option>
+                            <option value="triggerWords">Trigger Words</option>
+                            <option value="creator">Creator</option>
+                            <option value="tags">Tags</option>
+                        </select>
                     </div>
                 </div>
 

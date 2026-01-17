@@ -4,7 +4,7 @@
   "theme": "dark",
   "defaultView": "grid",
   "defaultSort": "date-newest",
-  "hideNSFW": false,
+  "hideNSFW": true,
   "visibleColumns": {
     "thumbnail": true,
     "filename": true,
@@ -104,5 +104,12 @@
       "baseModel": "Wan Video 2.2 T2V-A14B",
       "format": "{modelname} {version} - {highlow} T2v - Wan22 14b"
     }
-  ]
+  ],
+  "gridCardSettings": {
+    "imageMode": "carousel",
+    "title": "modelName",
+    "subtitle1": "folder",
+    "subtitle2": "baseModel",
+    "subtitle3": "modelVersion"
+  }
 }
