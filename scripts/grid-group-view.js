@@ -148,9 +148,16 @@ export function displayGroupedGridView(models, modelsContainer, openModelDetails
             }
 
             // Determine title based on settings
-            const title = gridCardSettings.title === 'modelName'
-                ? (model.json?.['name'] || model.name)
-                : model.name;
+            let title;
+            if (gridCardSettings.title === 'modelName') {
+                title = model.json?.['name'] || model.name;
+            } else if (gridCardSettings.title === 'modelNameVersion') {
+                const name = model.json?.['name'] || model.name;
+                const version = model.json?.['model version'] || '';
+                title = version ? `${name} ${version}` : name;
+            } else {
+                title = model.name;
+            }
 
             // Build subtitle from settings
             const subtitle = buildSubtitle(model, gridCardSettings);

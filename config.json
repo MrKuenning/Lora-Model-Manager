@@ -107,7 +107,7 @@
   ],
   "gridCardSettings": {
     "imageMode": "carousel",
-    "title": "modelName",
+    "title": "modelNameVersion",
     "subtitle1": "folder",
     "subtitle2": "baseModel",
     "subtitle3": "none"
