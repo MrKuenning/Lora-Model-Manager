@@ -82,6 +82,16 @@
                     <button id="fixThumbnailsBtn" class="btn btn-large btn-light">
                         <i class="fas fa-image"></i> Fix Thumbnail Names
                     </button>
+                    <hr style="margin: 15px 0; border-color: var(--color-border);">
+                    <button id="generateMissingHashesBtn" class="btn btn-large btn-warning">
+                        <i class="fas fa-fingerprint"></i> Generate Hashes - Missing
+                    </button>
+                    <button id="generateHashesBtn" class="btn btn-large btn-warning">
+                        <i class="fas fa-sync"></i> Generate Hashes - All
+                    </button>
+                    <button id="findDuplicatesBtn" class="btn btn-large btn-danger">
+                        <i class="fas fa-clone"></i> Find Duplicates
+                    </button>
                 </div>
             </div>
 
@@ -106,16 +116,20 @@
                         <span id="totalModels">0</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">With Info Files:</span>
-                        <span id="modelsWithInfo">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Without Info Files:</span>
+                        <span class="summary-label">Missing Civitai Info:</span>
                         <span id="modelsWithoutInfo">0</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Missing JSON Files:</span>
+                        <span class="summary-label">Missing JSON:</span>
                         <span id="modelsMissingJson">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Missing Thumbnails:</span>
+                        <span id="modelsMissingThumbnails">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Missing Hashes:</span>
+                        <span id="modelsMissingHashes">0</span>
                     </div>
                 </div>
 

@@ -55,6 +55,96 @@ def generate_sha256(file_path, chunk_size=8192):
         return None
 
 
+def save_sha256_to_json(model_path, sha256_hash):
+    """
+    Save SHA256 hash to the model's JSON file
+    
+    Args:
+        model_path: Path to the model file
+        sha256_hash: SHA256 hash string to save
+        
+    Returns:
+        True on success, False on error
+    """
+    try:
+        base_path = os.path.splitext(model_path)[0]
+        json_path = f"{base_path}.json"
+        
+        # Load existing JSON if it exists
+        existing_data = {}
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+            except:
+                pass
+        
+        # Update with SHA256
+        existing_data['sha256'] = sha256_hash
+        
+        # Write back
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, indent=4)
+        
+        print(f"Saved SHA256 to: {json_path}")
+        return True
+    except Exception as e:
+        print(f"Error saving SHA256 to JSON: {e}")
+        return False
+
+
+def find_duplicate_models(directory):
+    """
+    Find duplicate models by comparing SHA256 hashes from JSON files
+    
+    Args:
+        directory: Path to scan
+        
+    Returns:
+        dict with:
+            - duplicates: list of groups (each group is list of paths with same hash)
+            - missing_hash: list of model paths without SHA256 in JSON
+            - total_scanned: count of models scanned
+    """
+    hash_map = {}  # sha256 -> list of model paths
+    missing_hash = []
+    
+    try:
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                if any(filename.lower().endswith(ext) for ext in MODEL_EXTENSIONS):
+                    model_path = os.path.join(root, filename)
+                    base_path = os.path.splitext(model_path)[0]
+                    json_path = f"{base_path}.json"
+                    
+                    if os.path.exists(json_path):
+                        try:
+                            with open(json_path, 'r', encoding='utf-8') as f:
+                                json_data = json.load(f)
+                                sha256 = json_data.get('sha256')
+                                if sha256:
+                                    if sha256 not in hash_map:
+                                        hash_map[sha256] = []
+                                    hash_map[sha256].append(model_path)
+                                else:
+                                    missing_hash.append(model_path)
+                        except:
+                            missing_hash.append(model_path)
+                    else:
+                        missing_hash.append(model_path)
+    except Exception as e:
+        print(f"Error scanning for duplicates: {e}")
+    
+    # Find groups with more than one file (duplicates)
+    duplicates = [paths for paths in hash_map.values() if len(paths) > 1]
+    
+    return {
+        'duplicates': duplicates,
+        'missing_hash': missing_hash,
+        'total_scanned': sum(len(paths) for paths in hash_map.values()) + len(missing_hash)
+    }
+
+
 def fetch_model_info_by_hash(file_hash):
     """
     Fetch model info from Civitai using SHA256 hash
@@ -521,7 +611,7 @@ def scan_models_directory(directory):
         directory: Path to scan
         
     Returns:
-        List of dicts with model info: {path, name, has_info, has_preview, has_json}
+        List of dicts with model info: {path, name, has_info, has_preview, has_json, has_hash}
     """
     models = []
     
@@ -532,13 +622,25 @@ def scan_models_directory(directory):
                 if any(filename.lower().endswith(ext) for ext in MODEL_EXTENSIONS):
                     file_path = os.path.join(root, filename)
                     base_path = os.path.splitext(file_path)[0]
+                    json_path = f"{base_path}.json"
+                    
+                    # Check if hash exists in JSON
+                    has_hash = False
+                    if os.path.exists(json_path):
+                        try:
+                            with open(json_path, 'r', encoding='utf-8') as f:
+                                json_data = json.load(f)
+                                has_hash = bool(json_data.get('sha256'))
+                        except:
+                            pass
                     
                     model_data = {
                         'path': file_path,
                         'name': filename,
                         'has_info': os.path.exists(f"{base_path}{INFO_EXTENSION}"),
                         'has_preview': os.path.exists(f"{base_path}{PREVIEW_EXTENSION}"),
-                        'has_json': os.path.exists(f"{base_path}.json")
+                        'has_json': os.path.exists(json_path),
+                        'has_hash': has_hash
                     }
                     models.append(model_data)
     except Exception as e:

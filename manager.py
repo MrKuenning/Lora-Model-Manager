@@ -762,6 +762,9 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 # Save civitai info file
                 success = civitai_handler.save_civitai_info(model_path, model_info)
                 
+                # Also save the SHA256 hash to the model's JSON file
+                civitai_handler.save_sha256_to_json(model_path, file_hash)
+                
                 if not success:
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -965,7 +968,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                                 'negative text', 'civitai text', 
                                 'nsfw', 'url', 'base model', 'example prompt',
                                 'category', 'subcategory', 'tags', 'creator',
-                                'name', 'model version', 'high low'  # New fields to preserve
+                                'name', 'model version', 'high low',  # User-editable fields
+                                'sha256'  # Hash should always be preserved
                             ]
                             for field in fields_to_preserve:
                                 # If field exists in existing data and has a value, keep the existing value
@@ -1058,6 +1062,96 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
             except Exception as e:
                 print(f"Error in create-dummy-info: {e}")
+                self.send_error(500, f"Error: {e}")
+                
+        elif parsed_url.path == '/civitai/generate-hash':
+            # Generate SHA256 hash for a single model and save to JSON
+            try:
+                data = json.loads(post_data)
+                model_path = data.get('modelPath')
+                skip_if_exists = data.get('skipIfExists', False)
+                
+                if not model_path:
+                    self.send_error(400, "Missing modelPath parameter")
+                    return
+                
+                # Check if hash already exists in JSON
+                if skip_if_exists:
+                    base_path = os.path.splitext(model_path)[0]
+                    json_path = f"{base_path}.json"
+                    if os.path.exists(json_path):
+                        try:
+                            with open(json_path, 'r', encoding='utf-8') as f:
+                                existing_data = json.load(f)
+                                if existing_data.get('sha256'):
+                                    self.send_response(200)
+                                    self.send_header('Content-type', 'application/json')
+                                    self.end_headers()
+                                    self.wfile.write(json.dumps({
+                                        'status': 'skipped',
+                                        'message': 'Hash already exists',
+                                        'sha256': existing_data['sha256']
+                                    }).encode())
+                                    return
+                        except:
+                            pass
+                
+                print(f"Generating SHA256 hash for: {model_path}")
+                file_hash = civitai_handler.generate_sha256(model_path)
+                
+                if file_hash:
+                    civitai_handler.save_sha256_to_json(model_path, file_hash)
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'success',
+                        'message': 'Hash generated and saved',
+                        'sha256': file_hash
+                    }).encode())
+                else:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'status': 'error',
+                        'message': 'Failed to generate hash'
+                    }).encode())
+                    
+            except Exception as e:
+                print(f"Error in generate-hash: {e}")
+                self.send_error(500, f"Error: {e}")
+                
+        elif parsed_url.path == '/civitai/find-duplicates':
+            # Find duplicate models by comparing SHA256 hashes
+            try:
+                # Get location from request body
+                data = json.loads(post_data) if post_data else {}
+                location = data.get('location', 'loras')
+                models_path = self.get_path_for_location(location)
+                
+                if not models_path:
+                    self.send_error(400, f"Directory not set for location: {location}")
+                    return
+                
+                print(f"Finding duplicates in: {models_path}")
+                result = civitai_handler.find_duplicate_models(models_path)
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'duplicates': result['duplicates'],
+                    'missingHash': result['missing_hash'],
+                    'totalScanned': result['total_scanned'],
+                    'duplicateGroupCount': len(result['duplicates']),
+                    'duplicateFileCount': sum(len(group) for group in result['duplicates'])
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in find-duplicates: {e}")
                 self.send_error(500, f"Error: {e}")
                 
         elif parsed_url.path == '/upload-preview':

@@ -15,6 +15,7 @@ const selectedCountEl = document.getElementById('selectedCount');
 const bulkMoveBtn = document.getElementById('bulkMoveBtn');
 const bulkEditBtn = document.getElementById('bulkEditBtn');
 const bulkRenameBtn = document.getElementById('bulkRenameBtn');
+const bulkFindDuplicatesBtn = document.getElementById('bulkFindDuplicatesBtn');
 const bulkCancelBtn = document.getElementById('bulkCancelBtn');
 
 // Modals
@@ -423,6 +424,82 @@ export function closeBulkRenameModal() {
     bulkRenameModal.style.display = 'none';
 }
 
+// --- Find Duplicates ---
+async function findDuplicatesAndFilter(displayModelsCallback) {
+    showToast('Finding duplicates...', 'info');
+
+    try {
+        // Get current location from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const location = urlParams.get('location') || 'loras';
+
+        const response = await fetch('/civitai/find-duplicates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ location })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.duplicates || data.duplicates.length === 0) {
+            showToast('No duplicate models found', 'info');
+            return;
+        }
+
+        // Normalize path function to handle different slash formats
+        const normalizePath = (p) => p.replace(/\\/g, '/').toLowerCase();
+
+        // Collect all duplicate file paths (normalized)
+        const duplicatePaths = new Set();
+        data.duplicates.forEach(group => {
+            group.forEach(path => duplicatePaths.add(normalizePath(path)));
+        });
+
+        console.log('Duplicate paths from API:', Array.from(duplicatePaths).slice(0, 3));
+        console.log('Sample model paths:', allModels.slice(0, 3).map(m => normalizePath(m.path)));
+
+        // Filter allModels to only include duplicates (using normalized paths)
+        const duplicateModels = allModels.filter(m => duplicatePaths.has(normalizePath(m.path)));
+
+        if (duplicateModels.length === 0) {
+            showToast('No matching duplicates in current view', 'warning');
+            console.log('Path mismatch - check console for sample paths');
+            return;
+        }
+
+        // Sort duplicates so models with same hash are grouped together
+        // We need to create a hash-to-group mapping (using normalized paths)
+        const hashToGroup = {};
+        data.duplicates.forEach((group, index) => {
+            group.forEach(path => {
+                hashToGroup[normalizePath(path)] = index;
+            });
+        });
+
+        // Sort by group index so duplicates appear together
+        duplicateModels.sort((a, b) => {
+            const groupA = hashToGroup[normalizePath(a.path)] ?? 999;
+            const groupB = hashToGroup[normalizePath(b.path)] ?? 999;
+            return groupA - groupB;
+        });
+
+        showToast(`Found ${data.duplicateGroupCount} duplicate groups (${duplicateModels.length} files)`, 'success');
+
+        // Display only duplicate models
+        if (displayModelsCallback) {
+            displayModelsCallback(duplicateModels);
+        }
+
+    } catch (error) {
+        console.error('Error finding duplicates:', error);
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
 // ========== Initialize Event Listeners ==========
 export function initBulkOperations(displayModelsCallback, refreshCallback, settingsManager, generateRecommendedName) {
     // Toggle button
@@ -446,6 +523,10 @@ export function initBulkOperations(displayModelsCallback, refreshCallback, setti
 
     if (bulkRenameBtn) {
         bulkRenameBtn.addEventListener('click', () => openBulkRenameModal(generateRecommendedName));
+    }
+
+    if (bulkFindDuplicatesBtn) {
+        bulkFindDuplicatesBtn.addEventListener('click', () => findDuplicatesAndFilter(displayModelsCallback));
     }
 
     // Move modal

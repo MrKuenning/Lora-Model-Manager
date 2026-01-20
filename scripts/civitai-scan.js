@@ -25,9 +25,10 @@ const progressCount = document.getElementById('progressCount');
 const progressBar = document.getElementById('progressBar');
 
 const totalModelsSpan = document.getElementById('totalModels');
-const modelsWithInfoSpan = document.getElementById('modelsWithInfo');
 const modelsWithoutInfoSpan = document.getElementById('modelsWithoutInfo');
 const modelsMissingJsonSpan = document.getElementById('modelsMissingJson');
+const modelsMissingThumbnailsSpan = document.getElementById('modelsMissingThumbnails');
+const modelsMissingHashesSpan = document.getElementById('modelsMissingHashes');
 const resultsLog = document.getElementById('resultsLog');
 
 // Get location from URL query parameters
@@ -71,6 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     convertMissingJsonBtn.addEventListener('click', convertMissingToJson);
     fixThumbnailsBtn.addEventListener('click', fixThumbnailNames);
     clearLogBtn.addEventListener('click', clearLog);
+    document.getElementById('generateHashesBtn')?.addEventListener('click', generateAllHashes);
+    document.getElementById('generateMissingHashesBtn')?.addEventListener('click', generateMissingHashes);
+    document.getElementById('findDuplicatesBtn')?.addEventListener('click', findDuplicates);
 
     // Load initial model list
     loadModels();
@@ -104,14 +108,16 @@ async function loadModels() {
 
 // Update summary statistics
 function updateSummary() {
-    const withInfo = models.filter(m => m.has_info).length;
-    const withoutInfo = models.length - withInfo;
-    const missingJson = models.filter(m => m.has_info && !m.has_json).length;
+    const withoutInfo = models.filter(m => !m.has_info).length;
+    const missingJson = models.filter(m => !m.has_json).length;
+    const missingThumbnails = models.filter(m => !m.has_preview).length;
+    const missingHashes = models.filter(m => !m.has_hash).length;
 
     totalModelsSpan.textContent = models.length;
-    modelsWithInfoSpan.textContent = withInfo;
     modelsWithoutInfoSpan.textContent = withoutInfo;
     modelsMissingJsonSpan.textContent = missingJson;
+    if (modelsMissingThumbnailsSpan) modelsMissingThumbnailsSpan.textContent = missingThumbnails;
+    if (modelsMissingHashesSpan) modelsMissingHashesSpan.textContent = missingHashes;
 }
 
 // Scan all models
@@ -647,6 +653,192 @@ async function fixThumbnailNames() {
     enableButtons();
 }
 
+// Generate SHA256 hashes for models without existing hashes
+async function generateMissingHashes() {
+    if (currentOperation) {
+        addLog('warning', 'An operation is already in progress');
+        return;
+    }
+
+    // Filter to only models without hashes
+    const modelsToHash = models.filter(m => !m.has_hash);
+
+    if (modelsToHash.length === 0) {
+        addLog('info', 'All models already have hashes');
+        return;
+    }
+
+    currentOperation = 'generate-hashes';
+    disableButtons();
+
+    addLog('info', `Generating SHA256 hashes for ${modelsToHash.length} models missing hashes...`);
+    addLog('warning', 'This may take a while for large files...');
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < modelsToHash.length; i++) {
+        const model = modelsToHash[i];
+
+        updateProgress(`Hashing: ${model.name}`, i + 1, modelsToHash.length);
+
+        try {
+            const response = await fetch('/civitai/generate-hash', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modelPath: model.path })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                addLog('success', `✓ ${model.name}: Hash generated`);
+                successCount++;
+                model.has_hash = true;  // Update local state
+            } else {
+                addLog('error', `✗ ${model.name}: ${data.message}`);
+                errorCount++;
+            }
+
+        } catch (error) {
+            addLog('error', `✗ ${model.name}: ${error.message}`);
+            errorCount++;
+        }
+    }
+
+    updateProgress('Hash generation complete', modelsToHash.length, modelsToHash.length);
+    updateSummary();  // Refresh the summary counts
+    addLog('info', `Hash generation complete: ${successCount} generated, ${errorCount} errors`);
+
+    currentOperation = null;
+    enableButtons();
+}
+
+// Generate SHA256 hashes for all models
+async function generateAllHashes() {
+    if (currentOperation) {
+        addLog('warning', 'An operation is already in progress');
+        return;
+    }
+
+    // Get models that need hashes (check by looking for sha256 in their JSON)
+    // For simplicity, we'll hash all models and the backend will save to JSON
+    if (models.length === 0) {
+        addLog('info', 'No models to process');
+        return;
+    }
+
+    currentOperation = 'generate-hashes';
+    disableButtons();
+
+    addLog('info', `Generating SHA256 hashes for ${models.length} models...`);
+    addLog('warning', 'This may take a while for large files...');
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < models.length; i++) {
+        const model = models[i];
+
+        updateProgress(`Hashing: ${model.name}`, i + 1, models.length);
+
+        try {
+            const response = await fetch('/civitai/generate-hash', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modelPath: model.path })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                addLog('success', `✓ ${model.name}: Hash saved`);
+                successCount++;
+            } else {
+                addLog('error', `✗ ${model.name}: ${data.message}`);
+                errorCount++;
+            }
+
+        } catch (error) {
+            addLog('error', `✗ ${model.name}: ${error.message}`);
+            errorCount++;
+        }
+    }
+
+    updateProgress('Hash generation complete', models.length, models.length);
+    addLog('info', `Hash generation complete: ${successCount} success, ${errorCount} errors`);
+
+    currentOperation = null;
+    enableButtons();
+}
+
+// Find duplicate models by comparing SHA256 hashes
+async function findDuplicates() {
+    if (currentOperation) {
+        addLog('warning', 'An operation is already in progress');
+        return;
+    }
+
+    currentOperation = 'find-duplicates';
+    disableButtons();
+
+    addLog('info', 'Scanning for duplicate models...');
+    updateProgress('Scanning for duplicates...', 0, 1);
+
+    try {
+        const response = await fetch('/civitai/find-duplicates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ location: currentLocation })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        updateProgress('Scan complete', 1, 1);
+
+        if (data.duplicates && data.duplicates.length > 0) {
+            addLog('warning', `Found ${data.duplicateGroupCount} duplicate groups (${data.duplicateFileCount} files total)`);
+
+            // Log each duplicate group
+            data.duplicates.forEach((group, index) => {
+                addLog('info', `--- Duplicate Group ${index + 1} ---`);
+                group.forEach(path => {
+                    // Extract just the filename and immediate folder
+                    const parts = path.replace(/\\/g, '/').split('/');
+                    const shortPath = parts.slice(-2).join('/');
+                    addLog('warning', `  📋 ${shortPath}`);
+                });
+            });
+        } else {
+            addLog('success', '✓ No duplicate models found!');
+        }
+
+        if (data.missingHash && data.missingHash.length > 0) {
+            addLog('info', `Note: ${data.missingHash.length} models don't have SHA256 hashes yet. Run "Generate All Hashes" first.`);
+        }
+
+        addLog('info', `Scanned ${data.totalScanned} models total`);
+
+    } catch (error) {
+        addLog('error', `Error finding duplicates: ${error.message}`);
+    }
+
+    currentOperation = null;
+    enableButtons();
+}
+
 // Update progress UI
 function updateProgress(text, current, total) {
     progressText.textContent = text;
@@ -686,6 +878,12 @@ function disableButtons() {
     convertToJsonBtn.disabled = true;
     convertMissingJsonBtn.disabled = true;
     fixThumbnailsBtn.disabled = true;
+    const genHashBtn = document.getElementById('generateHashesBtn');
+    const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');
+    const findDupBtn = document.getElementById('findDuplicatesBtn');
+    if (genHashBtn) genHashBtn.disabled = true;
+    if (genMissingHashBtn) genMissingHashBtn.disabled = true;
+    if (findDupBtn) findDupBtn.disabled = true;
 }
 
 // Enable buttons after operation
@@ -696,6 +894,12 @@ function enableButtons() {
     convertToJsonBtn.disabled = false;
     convertMissingJsonBtn.disabled = false;
     fixThumbnailsBtn.disabled = false;
+    const genHashBtn = document.getElementById('generateHashesBtn');
+    const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');
+    const findDupBtn = document.getElementById('findDuplicatesBtn');
+    if (genHashBtn) genHashBtn.disabled = false;
+    if (genMissingHashBtn) genMissingHashBtn.disabled = false;
+    if (findDupBtn) findDupBtn.disabled = false;
 }
 
 // Sleep utility

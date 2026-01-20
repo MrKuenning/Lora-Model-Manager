@@ -1158,7 +1158,8 @@ async function refreshModels() {
 }
 
 // Display models based on current view, sort, and search
-function displayModels() {
+// @param {Array} modelsToDisplay - Optional array of models to display (bypasses normal filtering)
+function displayModels(modelsToDisplay = null) {
     // Clear the container
     modelsContainer.innerHTML = '';
 
@@ -1172,50 +1173,54 @@ function displayModels() {
         return;
     }
 
+    // If specific models array provided, use it directly (bypasses filtering)
     // Filter models based on search term and NSFW setting
-    let filteredModels = models;
+    let filteredModels = modelsToDisplay !== null ? modelsToDisplay : models;
 
-    // Apply NSFW filter if hideNSFW is enabled
-    const hideNSFW = settingsManager.getSetting('hideNSFW');
-    if (hideNSFW) {
-        filteredModels = filteredModels.filter(model =>
-            !(model.json && model.json['nsfw'] === 'true')
-        );
-    }
-
-    // Apply search filter
-    if (searchTerm) {
-        // Check if the search term contains any of our special operators
-        const hasAdvancedSyntax = /["!|<>]/.test(searchTerm);
-
-        if (hasAdvancedSyntax) {
-            // Use advanced search parser
-            filteredModels = filterModelsByQuery(filteredModels, searchTerm);
-        } else {
-            // Use simple search for better performance when no special operators are used
-            const searchLower = searchTerm.toLowerCase();
-            filteredModels = filteredModels.filter(model => {
-                const tags = (model.json?.['tags'] || '').toLowerCase();
-                return model.name.toLowerCase().includes(searchLower) ||
-                    model.filename.toLowerCase().includes(searchLower) ||
-                    model.category.toLowerCase().includes(searchLower) ||
-                    tags.includes(searchLower);
-            });
+    // Only apply filters when displaying normal models (not a custom filtered set)
+    if (modelsToDisplay === null) {
+        // Apply NSFW filter if hideNSFW is enabled
+        const hideNSFW = settingsManager.getSetting('hideNSFW');
+        if (hideNSFW) {
+            filteredModels = filteredModels.filter(model =>
+                !(model.json && model.json['nsfw'] === 'true')
+            );
         }
+
+        // Apply search filter
+        if (searchTerm) {
+            // Check if the search term contains any of our special operators
+            const hasAdvancedSyntax = /["!|<>]/.test(searchTerm);
+
+            if (hasAdvancedSyntax) {
+                // Use advanced search parser
+                filteredModels = filterModelsByQuery(filteredModels, searchTerm);
+            } else {
+                // Use simple search for better performance when no special operators are used
+                const searchLower = searchTerm.toLowerCase();
+                filteredModels = filteredModels.filter(model => {
+                    const tags = (model.json?.['tags'] || '').toLowerCase();
+                    return model.name.toLowerCase().includes(searchLower) ||
+                        model.filename.toLowerCase().includes(searchLower) ||
+                        model.category.toLowerCase().includes(searchLower) ||
+                        tags.includes(searchLower);
+                });
+            }
+        }
+
+        // Apply base model filter
+        if (currentModelFilter !== 'all') {
+            filteredModels = filteredModels.filter(model =>
+                model.baseModel === currentModelFilter
+            );
+        }
+
+        // Populate the model filter dropdown with unique base models
+        populateModelFilter();
+
+        // Sort models
+        filteredModels = sortModels(filteredModels, currentSort);
     }
-
-    // Apply base model filter
-    if (currentModelFilter !== 'all') {
-        filteredModels = filteredModels.filter(model =>
-            model.baseModel === currentModelFilter
-        );
-    }
-
-    // Populate the model filter dropdown with unique base models
-    populateModelFilter();
-
-    // Sort models
-    filteredModels = sortModels(filteredModels, currentSort);
 
     // Store for modal navigation
     currentFilteredModels = filteredModels;

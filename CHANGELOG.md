@@ -4,6 +4,14 @@
 
 ### 01/20/2026
 
+**Added**
+- **SHA256 Hash Storage**  
+  SHA256 hashes are now saved to each model's JSON file when fetching Civitai data. This enables duplicate detection and faster lookups.
+- **Generate Hashes Buttons**  
+  New buttons on Civitai Scan page: "Generate Hashes - Missing" (skips models with existing hashes) and "Generate Hashes - All" (regenerates all).
+- **Find Duplicates Button**  
+  New button on Civitai Scan page to detect duplicate model files by comparing their SHA256 hashes.
+
 **Changed**
 - **Hierarchical Folder Sorting**  
   Folders now sort hierarchically so subfolders appear directly after their parent folders (e.g., Animals, Animals/Cats, Trees, Trees/Green). Applies to Group By Folder/Path views and all folder dropdowns.
