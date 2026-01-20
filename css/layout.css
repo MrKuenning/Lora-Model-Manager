@@ -587,6 +587,81 @@ main {
     font-size: var(--font-size-md);
 }
 
+/* Bulk Move Folder List */
+.bulk-move-modal {
+    max-width: 500px;
+}
+
+.bulk-folder-list {
+    max-height: 950px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-bg-tertiary);
+}
+
+.bulk-folder-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border);
+    transition: all 0.15s ease;
+    color: var(--color-text);
+}
+
+.bulk-folder-item:last-child {
+    border-bottom: none;
+}
+
+.bulk-folder-item:hover {
+    background: var(--color-bg-hover);
+}
+
+.bulk-folder-item:focus {
+    outline: none;
+    background: var(--color-bg-hover);
+}
+
+.bulk-folder-item.selected {
+    background: var(--color-btn-primary);
+    color: white;
+}
+
+.bulk-folder-item.selected:hover {
+    background: var(--color-btn-primary-hover, #5a9fd4);
+}
+
+.bulk-folder-item i {
+    font-size: var(--font-size-md);
+    width: 20px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.bulk-folder-item.selected i {
+    opacity: 1;
+}
+
+.bulk-folder-item .folder-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-folder-item.loading,
+.bulk-folder-item.error {
+    justify-content: center;
+    color: var(--color-text-secondary);
+    cursor: default;
+}
+
+.bulk-folder-item.error {
+    color: var(--color-error, #dc3545);
+}
+
 .bulk-edit-form .setting-group {
     margin-bottom: var(--spacing-md);
 }

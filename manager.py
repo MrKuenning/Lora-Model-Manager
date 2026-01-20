@@ -223,6 +223,19 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                         'name': relative_path.replace("\\", "/")
                     })
             
+            # Sort folders hierarchically so subfolders appear after parent folders
+            # e.g., Animals, Animals/Cats, Trees, Trees/Green
+            def hierarchical_sort_key(folder):
+                if folder['path'] == '':
+                    return ('', 0)  # Root always first
+                parts = folder['path'].lower().split('/')
+                return (parts, len(parts))
+            
+            folders.sort(key=lambda f: (
+                0 if f['path'] == '' else 1,  # Root first
+                tuple(f['path'].lower().split('/'))  # Then hierarchical sort
+            ))
+            
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()

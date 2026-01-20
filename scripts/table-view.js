@@ -576,11 +576,30 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
         return row;
     }
 
+    // Helper function to sort folders hierarchically (subfolders appear after parent folders)
+    function sortFoldersHierarchically(folders) {
+        return folders.sort((a, b) => {
+            // Split paths into segments
+            const partsA = a.split('/');
+            const partsB = b.split('/');
+
+            // Compare segment by segment
+            const minLength = Math.min(partsA.length, partsB.length);
+            for (let i = 0; i < minLength; i++) {
+                const compare = partsA[i].localeCompare(partsB[i], undefined, { sensitivity: 'base' });
+                if (compare !== 0) return compare;
+            }
+
+            // If all compared segments are equal, shorter path (parent) comes first
+            return partsA.length - partsB.length;
+        });
+    }
+
     // If grouping is enabled, render with group headers
     if (groupBy && groupBy !== 'none') {
         const groupedModels = groupModelsByProperty(models, groupBy);
 
-        // Sort the groups (alphabetically, or chronologically for Date)
+        // Sort the groups (hierarchically for folder/path, chronologically for Date, alphabetically for others)
         let sortedGroups;
         if (groupBy === 'Date') {
             sortedGroups = Object.keys(groupedModels).sort((a, b) => {
@@ -591,6 +610,9 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                 return months.indexOf(monthB) - months.indexOf(monthA);
             });
+        } else if (groupBy === 'Folder' || groupBy === 'Path') {
+            // For Folder and Path groupings, sort hierarchically so subfolders appear after parent folders
+            sortedGroups = sortFoldersHierarchically(Object.keys(groupedModels));
         } else {
             sortedGroups = Object.keys(groupedModels).sort();
         }

@@ -1326,13 +1326,16 @@
 
     <!-- Bulk Move Modal -->
     <div id="bulkMoveModal" class="modal">
-        <div class="modal-content bulk-modal-content">
+        <div class="modal-content bulk-modal-content bulk-move-modal">
             <span class="close-modal">&times;</span>
             <h3><i class="fas fa-folder-open"></i> Bulk Move</h3>
             <p>Move <strong><span id="bulkMoveCount">0</span></strong> selected models to:</p>
             <div class="setting-group">
-                <label for="bulkMoveFolder">Target Folder:</label>
-                <select id="bulkMoveFolder" class="bulk-folder-select"></select>
+                <label>Select Target Folder:</label>
+                <div id="bulkMoveFolderList" class="bulk-folder-list">
+                    <!-- Populated dynamically by JS -->
+                </div>
+                <input type="hidden" id="bulkMoveFolder" value="">
             </div>
             <div class="modal-buttons">
                 <button id="bulkMoveConfirm" class="btn btn-small btn-success">

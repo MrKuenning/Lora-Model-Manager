@@ -148,22 +148,55 @@ export async function openBulkMoveModal(settingsManager) {
 
     document.getElementById('bulkMoveCount').textContent = count;
 
-    // Populate folder dropdown
-    const folderSelect = document.getElementById('bulkMoveFolder');
-    folderSelect.innerHTML = '<option value="">Loading...</option>';
+    // Populate folder list
+    const folderList = document.getElementById('bulkMoveFolderList');
+    const folderInput = document.getElementById('bulkMoveFolder');
+    folderList.innerHTML = '<div class="bulk-folder-item loading">Loading folders...</div>';
+    folderInput.value = '';
 
     try {
         const response = await fetch('/get-folders');
         if (response.ok) {
             const data = await response.json();
             const folders = data.folders || [];
-            folderSelect.innerHTML = folders.map(f =>
-                `<option value="${f.path}">${f.name || 'Root'}</option>`
-            ).join('');
+
+            folderList.innerHTML = folders.map(f => `
+                <div class="bulk-folder-item" data-path="${f.path}" tabindex="0">
+                    <i class="fas ${f.path === '' ? 'fa-home' : 'fa-folder'}"></i>
+                    <span class="folder-name">${f.name || 'Root'}</span>
+                </div>
+            `).join('');
+
+            // Add click handlers for folder selection
+            folderList.querySelectorAll('.bulk-folder-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    // Remove selection from all items
+                    folderList.querySelectorAll('.bulk-folder-item').forEach(i => i.classList.remove('selected'));
+                    // Select this item
+                    item.classList.add('selected');
+                    // Update hidden input
+                    folderInput.value = item.dataset.path;
+                });
+
+                // Keyboard support
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        item.click();
+                    }
+                });
+            });
+
+            // Select Root by default
+            const rootItem = folderList.querySelector('.bulk-folder-item[data-path=""]');
+            if (rootItem) {
+                rootItem.classList.add('selected');
+                folderInput.value = '';
+            }
         }
     } catch (error) {
         console.error('Error loading folders:', error);
-        folderSelect.innerHTML = '<option value="">Error loading folders</option>';
+        folderList.innerHTML = '<div class="bulk-folder-item error">Error loading folders</div>';
     }
 
     bulkMoveModal.style.display = 'block';

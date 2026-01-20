@@ -2,6 +2,16 @@
 
 ---
 
+### 01/20/2026
+
+**Changed**
+- **Hierarchical Folder Sorting**  
+  Folders now sort hierarchically so subfolders appear directly after their parent folders (e.g., Animals, Animals/Cats, Trees, Trees/Green). Applies to Group By Folder/Path views and all folder dropdowns.
+- **Bulk Move Folder List**  
+  Replaced the dropdown with a scrollable, clickable folder list for easier folder selection when bulk moving models.
+
+---
+
 ### 01/17/2026
 
 **Added**
