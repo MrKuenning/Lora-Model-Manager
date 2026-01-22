@@ -89,6 +89,36 @@
     transform: scale(0.98);
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    transition: var(--transition-standard);
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: scale(1.02);
+}
+
+.btn-danger:active {
+    transform: scale(0.98);
+}
+
+.btn-warning {
+    background-color: #c9923e;
+    color: white;
+    transition: var(--transition-standard);
+}
+
+.btn-warning:hover {
+    background-color: #b07e30;
+    transform: scale(1.02);
+}
+
+.btn-warning:active {
+    transform: scale(0.98);
+}
+
 /* Icon Button */
 .btn-icon {
     background: none;

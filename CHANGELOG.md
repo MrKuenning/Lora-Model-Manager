@@ -2,6 +2,26 @@
 
 ---
 
+### 01/21/2026
+
+**Added**
+- **Bulk Delete**  
+  New delete button in bulk edit mode allows deleting selected models and all associated files (.json, .civitai.info, preview images).
+- **Civitai Scan Page Redesign**  
+  Actions reorganized into card-based layout with icons, descriptions, and grouped buttons.
+- **Settings Gear on Civitai Scan Page**  
+  Scan options moved to a settings modal, accessible via gear icon. Settings auto-save to config.json.
+- **High/Low Required Field Validation**  
+  When filename formats use `{highlow}`, models missing this value show warnings during rename operations.
+
+**Changed**
+- **Button Colors**  
+  Added `btn-danger` (red) and `btn-warning` (muted orange) button styles for better visual hierarchy.
+- **Action Button Sections**  
+  Civitai Scan buttons now organized into labeled sections: Civitai Data, JSON, Thumbnails, Hashes, and Duplicates.
+
+---
+
 ### 01/20/2026
 
 **Added**

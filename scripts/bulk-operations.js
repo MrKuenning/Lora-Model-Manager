@@ -15,6 +15,7 @@ const selectedCountEl = document.getElementById('selectedCount');
 const bulkMoveBtn = document.getElementById('bulkMoveBtn');
 const bulkEditBtn = document.getElementById('bulkEditBtn');
 const bulkRenameBtn = document.getElementById('bulkRenameBtn');
+const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 const bulkFindDuplicatesBtn = document.getElementById('bulkFindDuplicatesBtn');
 const bulkCancelBtn = document.getElementById('bulkCancelBtn');
 
@@ -328,24 +329,40 @@ export function openBulkRenameModal(generateRecommendedName) {
     const list = document.getElementById('bulkRenameList');
     list.innerHTML = '';
 
+    let missingHighlowCount = 0;
+
     models.forEach(model => {
-        const proposedName = generateRecommendedName(model);
+        // Use returnDetails = true to get info about missing required fields
+        const result = generateRecommendedName(model, true);
+        const proposedName = result.name;
+        const missingRequired = result.missingRequired || [];
         const isSame = model.name === proposedName;
+        const hasMissingHighlow = missingRequired.some(m => m.variable === 'highlow');
+
+        if (hasMissingHighlow) missingHighlowCount++;
 
         const item = document.createElement('div');
-        item.className = 'bulk-rename-item' + (isSame ? ' same-name' : '');
+        item.className = 'bulk-rename-item' + (isSame ? ' same-name' : '') + (hasMissingHighlow ? ' missing-required' : '');
         item.dataset.modelId = model.id;
         item.dataset.proposedName = proposedName;
+        item.dataset.hasMissing = hasMissingHighlow ? 'true' : 'false';
+
+        const warningIcon = hasMissingHighlow ? '<i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-right: 0.5rem;" title="Missing High/Low value"></i>' : '';
 
         item.innerHTML = `
-            <input type="checkbox" ${isSame ? '' : 'checked'} ${isSame ? 'disabled' : ''}>
+            <input type="checkbox" ${isSame || hasMissingHighlow ? '' : 'checked'} ${isSame ? 'disabled' : ''}>
+            ${warningIcon}
             <span class="rename-current" title="${model.name}">${model.name}</span>
             <span class="rename-arrow"><i class="fas fa-arrow-right"></i></span>
-            <span class="rename-proposed" title="${proposedName}">${isSame ? '(no change)' : proposedName}</span>
+            <span class="rename-proposed" title="${proposedName}">${hasMissingHighlow ? '⚠️ Missing High/Low' : (isSame ? '(no change)' : proposedName)}</span>
         `;
 
         list.appendChild(item);
     });
+
+    if (missingHighlowCount > 0) {
+        showToast(`${missingHighlowCount} model(s) missing required High/Low value`, 'warning');
+    }
 
     bulkRenameModal.style.display = 'block';
 }
@@ -422,6 +439,75 @@ export function closeBulkEditModal() {
 
 export function closeBulkRenameModal() {
     bulkRenameModal.style.display = 'none';
+}
+// --- Bulk Delete ---
+async function executeBulkDelete(refreshCallback) {
+    if (selectedModels.size === 0) {
+        showToast('No models selected', 'warning');
+        return;
+    }
+
+    const selectedList = getSelectedModels();
+    const count = selectedList.length;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+        `⚠️ DELETE ${count} MODEL${count > 1 ? 'S' : ''}?\n\n` +
+        `This will permanently delete:\n` +
+        `• ${count} model file${count > 1 ? 's' : ''} (.safetensors)\n` +
+        `• All associated files (.json, .civitai.info, .preview.png)\n\n` +
+        `This action cannot be undone!\n\n` +
+        `Are you sure you want to continue?`
+    );
+
+    if (!confirmed) {
+        showToast('Delete cancelled', 'info');
+        return;
+    }
+
+    showToast(`Deleting ${count} models...`, 'info');
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const model of selectedList) {
+        try {
+            const response = await fetch('/delete-model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modelPath: model.path })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success' || data.status === 'partial') {
+                successCount++;
+                console.log(`Deleted: ${model.name} (${data.deletedFiles.join(', ')})`);
+            } else {
+                errorCount++;
+                console.error(`Failed to delete: ${model.name}`);
+            }
+
+        } catch (error) {
+            errorCount++;
+            console.error(`Error deleting ${model.name}:`, error);
+        }
+    }
+
+    // Show result
+    if (errorCount === 0) {
+        showToast(`Successfully deleted ${successCount} model${successCount > 1 ? 's' : ''}`, 'success');
+    } else {
+        showToast(`Deleted ${successCount}, failed ${errorCount}`, 'warning');
+    }
+
+    // Clear selection and refresh
+    clearSelection();
+    if (refreshCallback) refreshCallback();
 }
 
 // --- Find Duplicates ---
@@ -523,6 +609,10 @@ export function initBulkOperations(displayModelsCallback, refreshCallback, setti
 
     if (bulkRenameBtn) {
         bulkRenameBtn.addEventListener('click', () => openBulkRenameModal(generateRecommendedName));
+    }
+
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', () => executeBulkDelete(refreshCallback));
     }
 
     if (bulkFindDuplicatesBtn) {

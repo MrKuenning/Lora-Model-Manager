@@ -24,73 +24,93 @@
                     <button id="backButton" class="btn btn-medium btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Manager
                     </button>
+                    <button id="settingsButton" class="settings-gear" title="Scan Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
                 </div>
             </div>
         </header>
 
         <main class="scan-container">
-            <div class="scan-controls">
-                <div class="scan-options">
-                    <h2>Scan Options</h2>
-                    <div class="option-group">
-                        <label>
-                            <input type="checkbox" id="skipExisting" checked>
-                            Skip models with existing .civitai.info files
-                        </label>
+            <div class="action-cards-grid">
+                <!-- Civitai Data Card -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        <h3>1. Civitai Data</h3>
                     </div>
-                    <div class="option-group">
-                        <label>
-                            <input type="checkbox" id="skipNsfwPreview" checked>
-                            Skip NSFW preview images
-                        </label>
+                    <p class="action-card-desc">Fetch model info from Civitai API using file hashes. Downloads
+                        .civitai.info files.</p>
+                    <button id="scanModelsBtn" class="btn btn-large btn-primary">
+                        <i class="fas fa-search"></i> Scan & Fetch Missing
+                    </button>
+                </div>
+
+                <!-- JSON Files Card -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-file-code"></i>
+                        <h3>2. JSON Metadata</h3>
                     </div>
-                    <div class="option-group">
-                        <label>
-                            <input type="checkbox" id="maxSizePreview">
-                            Download full-size preview images
-                        </label>
-                    </div>
-                    <div class="option-group">
-                        <label>
-                            <input type="checkbox" id="useApiForCreator" checked>
-                            Fetch creator info from API (slower)
-                        </label>
-                    </div>
-                    <div class="option-group">
-                        <label for="delayBetweenRequests">Delay between requests (seconds):</label>
-                        <input type="number" id="delayBetweenRequests" min="0" max="5" step="0.1" value="0.5">
+                    <p class="action-card-desc">Create or update .json files with model metadata from the civitai info
+                        files.</p>
+                    <div class="action-card-buttons">
+                        <button id="convertMissingJsonBtn" class="btn btn-medium btn-success">
+                            <i class="fas fa-plus"></i> Create Missing
+                        </button>
+                        <button id="convertToJsonBtn" class="btn btn-medium btn-secondary">
+                            <i class="fas fa-sync"></i> Update All
+                        </button>
                     </div>
                 </div>
 
-                <div class="scan-actions">
-                    <h2>Actions</h2>
-                    <button id="scanModelsBtn" class="btn btn-large btn-primary">
-                        <i class="fas fa-search"></i> Scan Files & Get Civitai Data
+                <!-- Thumbnails Card -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-images"></i>
+                        <h3>3. Thumbnails</h3>
+                    </div>
+                    <p class="action-card-desc">Download preview images from Civitai. Also fixes naming for
+                        compatibility.</p>
+                    <div class="action-card-buttons">
+                        <button id="downloadPreviewsBtn" class="btn btn-medium btn-primary">
+                            <i class="fas fa-download"></i> Get Missing
+                        </button>
+                        <button id="downloadAllPreviewsBtn" class="btn btn-medium btn-secondary">
+                            <i class="fas fa-images"></i> Get All
+                        </button>
+                    </div>
+                    <button id="fixThumbnailsBtn" class="btn btn-small btn-light" style="margin-top: 0.5rem;">
+                        <i class="fas fa-wrench"></i> Fix Names
                     </button>
-                    <button id="convertMissingJsonBtn" class="btn btn-large btn-success">
-                        <i class="fas fa-file-code"></i> Create JSON - Missing
-                    </button>
-                    <button id="convertToJsonBtn" class="btn btn-large btn-success">
-                        <i class="fas fa-sync"></i> Update JSON - All (Slow)
-                    </button>
-                    <button id="downloadPreviewsBtn" class="btn btn-large btn-secondary">
-                        <i class="fas fa-download"></i> Download Thumbnails - Missing
-                    </button>
-                    <button id="downloadAllPreviewsBtn" class="btn btn-large btn-secondary">
-                        <i class="fas fa-images"></i> Download Thumbnails - All
-                    </button>
-                    <button id="fixThumbnailsBtn" class="btn btn-large btn-light">
-                        <i class="fas fa-image"></i> Fix Thumbnail Names
-                    </button>
-                    <hr style="margin: 15px 0; border-color: var(--color-border);">
-                    <button id="generateMissingHashesBtn" class="btn btn-large btn-warning">
-                        <i class="fas fa-fingerprint"></i> Generate Hashes - Missing
-                    </button>
-                    <button id="generateHashesBtn" class="btn btn-large btn-warning">
-                        <i class="fas fa-sync"></i> Generate Hashes - All
-                    </button>
+                </div>
+
+                <!-- Hashes Card -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-fingerprint"></i>
+                        <h3>SHA256 Hashes</h3>
+                    </div>
+                    <p class="action-card-desc">Generate file hashes for duplicate detection and Civitai lookups.</p>
+                    <div class="action-card-buttons">
+                        <button id="generateMissingHashesBtn" class="btn btn-medium btn-warning">
+                            <i class="fas fa-plus"></i> Generate Missing
+                        </button>
+                        <button id="generateHashesBtn" class="btn btn-medium btn-secondary">
+                            <i class="fas fa-sync"></i> Regenerate All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Duplicates Card -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-clone"></i>
+                        <h3>Find Duplicates</h3>
+                    </div>
+                    <p class="action-card-desc">Identify duplicate models by comparing SHA256 hashes.</p>
                     <button id="findDuplicatesBtn" class="btn btn-large btn-danger">
-                        <i class="fas fa-clone"></i> Find Duplicates
+                        <i class="fas fa-search"></i> Find Duplicates
                     </button>
                 </div>
             </div>
@@ -142,6 +162,43 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="scanSettingsModal" class="modal">
+        <div class="modal-content scan-settings-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Scan Settings</h3>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="skipExisting" checked>
+                    Skip models with existing .civitai.info files
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="skipNsfwPreview" checked>
+                    Skip NSFW preview images
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="maxSizePreview">
+                    Download full-size preview images
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="useApiForCreator" checked>
+                    Fetch creator info from API (slower)
+                </label>
+            </div>
+            <div class="setting-group">
+                <label for="delayBetweenRequests">Delay between requests (seconds):</label>
+                <input type="number" id="delayBetweenRequests" min="0" max="5" step="0.1" value="0.5"
+                    style="width: 80px; padding: 0.5rem; margin-left: 0.5rem;">
+            </div>
+        </div>
     </div>
 
     <script type="module" src="../scripts/civitai-scan.js"></script>

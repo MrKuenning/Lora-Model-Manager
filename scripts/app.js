@@ -2823,11 +2823,17 @@ function handleRecommendedFilename() {
     // Fallback if no format found at all
     let formatString = matchingFormat ? matchingFormat.format : '{modelname} {version}';
 
+    // Check if format uses {highlow} and warn if missing
+    if (formatString.toLowerCase().includes('{highlow}') && (!highLowValue || highLowValue.toLowerCase() === 'none')) {
+        showToast('⚠️ High/Low is required for this format but is missing or set to "None"', 'warning');
+        // Still generate the name but with warning - user can see it's incomplete
+    }
+
     // Replace variables (case-insensitive)
     let recommendedName = formatString
         .replace(/{modelname}/gi, modelName)
         .replace(/{version}/gi, version)
-        .replace(/{highlow}/gi, highLowValue)
+        .replace(/{highlow}/gi, (highLowValue && highLowValue.toLowerCase() !== 'none') ? highLowValue : '')
         .replace(/{category}/gi, category)
         .replace(/{subcategory}/gi, subcategory);
 
@@ -2843,10 +2849,11 @@ function handleRecommendedFilename() {
 /**
  * Generate a recommended filename for a given model object (used by bulk rename)
  * @param {Object} model - Model object with name, json, baseModel, category, etc.
- * @returns {string} The recommended filename
+ * @param {boolean} returnDetails - If true, returns object with details about missing variables
+ * @returns {string|Object} The recommended filename, or object with details if returnDetails is true
  */
-function generateRecommendedNameForModel(model) {
-    if (!model) return '';
+function generateRecommendedNameForModel(model, returnDetails = false) {
+    if (!model) return returnDetails ? { name: '', missingRequired: [] } : '';
 
     const modelName = model.json?.['name'] || '';
     const version = model.json?.['model version'] || '';
@@ -2857,7 +2864,8 @@ function generateRecommendedNameForModel(model) {
 
     if (!modelName) {
         // If no model name in JSON, return current name
-        return model.name || '';
+        const currentName = model.name || '';
+        return returnDetails ? { name: currentName, missingRequired: [] } : currentName;
     }
 
     // Get formats from settings
@@ -2873,6 +2881,12 @@ function generateRecommendedNameForModel(model) {
     // Fallback if no format found at all
     let formatString = matchingFormat ? matchingFormat.format : '{modelname} {version}';
 
+    // Check for missing required variables
+    const missingRequired = [];
+    if (formatString.toLowerCase().includes('{highlow}') && !highLowValue) {
+        missingRequired.push({ variable: 'highlow', label: 'High/Low', modelName: model.name });
+    }
+
     // Replace variables (case-insensitive)
     let recommendedName = formatString
         .replace(/{modelname}/gi, modelName)
@@ -2884,6 +2898,13 @@ function generateRecommendedNameForModel(model) {
     // Clean up double spaces
     recommendedName = recommendedName.replace(/\s+/g, ' ').trim();
 
+    if (returnDetails) {
+        return {
+            name: recommendedName,
+            missingRequired: missingRequired,
+            format: matchingFormat?.baseModel || 'Default'
+        };
+    }
     return recommendedName;
 }
 

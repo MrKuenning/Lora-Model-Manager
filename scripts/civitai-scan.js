@@ -54,6 +54,65 @@ function updateLocationTabs() {
     }
 }
 
+// Load scan settings from server
+async function loadScanSettings() {
+    try {
+        const response = await fetch('/settings');
+        if (!response.ok) return;
+
+        const settings = await response.json();
+        const scanSettings = settings.civitaiScanSettings || {};
+
+        // Apply saved settings to checkboxes
+        if (skipExistingCheckbox && scanSettings.skipExisting !== undefined) {
+            skipExistingCheckbox.checked = scanSettings.skipExisting;
+        }
+        if (skipNsfwPreviewCheckbox && scanSettings.skipNsfwPreview !== undefined) {
+            skipNsfwPreviewCheckbox.checked = scanSettings.skipNsfwPreview;
+        }
+        if (maxSizePreviewCheckbox && scanSettings.maxSizePreview !== undefined) {
+            maxSizePreviewCheckbox.checked = scanSettings.maxSizePreview;
+        }
+        if (useApiForCreatorCheckbox && scanSettings.useApiForCreator !== undefined) {
+            useApiForCreatorCheckbox.checked = scanSettings.useApiForCreator;
+        }
+        if (delayInput && scanSettings.delayBetweenRequests !== undefined) {
+            delayInput.value = scanSettings.delayBetweenRequests;
+        }
+    } catch (error) {
+        console.error('Error loading scan settings:', error);
+    }
+}
+
+// Save scan settings to server
+async function saveScanSettings() {
+    try {
+        // First get existing settings
+        const response = await fetch('/settings');
+        if (!response.ok) return;
+
+        const settings = await response.json();
+
+        // Update scan settings
+        settings.civitaiScanSettings = {
+            skipExisting: skipExistingCheckbox?.checked ?? true,
+            skipNsfwPreview: skipNsfwPreviewCheckbox?.checked ?? true,
+            maxSizePreview: maxSizePreviewCheckbox?.checked ?? false,
+            useApiForCreator: useApiForCreatorCheckbox?.checked ?? true,
+            delayBetweenRequests: parseFloat(delayInput?.value) || 0.5
+        };
+
+        // Save back to server
+        await fetch('/save-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+    } catch (error) {
+        console.error('Error saving scan settings:', error);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Get location from URL
@@ -65,6 +124,27 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = `index.html?location=${currentLocation}`;
     });
 
+    // Settings modal handlers
+    const settingsButton = document.getElementById('settingsButton');
+    const scanSettingsModal = document.getElementById('scanSettingsModal');
+    const closeModal = scanSettingsModal?.querySelector('.close-modal');
+
+    if (settingsButton && scanSettingsModal) {
+        settingsButton.addEventListener('click', () => {
+            scanSettingsModal.style.display = 'block';
+        });
+
+        closeModal?.addEventListener('click', () => {
+            scanSettingsModal.style.display = 'none';
+        });
+
+        scanSettingsModal.addEventListener('click', (e) => {
+            if (e.target === scanSettingsModal) {
+                scanSettingsModal.style.display = 'none';
+            }
+        });
+    }
+
     scanModelsBtn.addEventListener('click', scanAllModels);
     downloadPreviewsBtn.addEventListener('click', downloadMissingPreviews);
     document.getElementById('downloadAllPreviewsBtn')?.addEventListener('click', downloadAllPreviews);
@@ -75,6 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('generateHashesBtn')?.addEventListener('click', generateAllHashes);
     document.getElementById('generateMissingHashesBtn')?.addEventListener('click', generateMissingHashes);
     document.getElementById('findDuplicatesBtn')?.addEventListener('click', findDuplicates);
+
+    // Load saved scan settings
+    loadScanSettings();
+
+    // Auto-save settings when changed
+    skipExistingCheckbox?.addEventListener('change', saveScanSettings);
+    skipNsfwPreviewCheckbox?.addEventListener('change', saveScanSettings);
+    maxSizePreviewCheckbox?.addEventListener('change', saveScanSettings);
+    useApiForCreatorCheckbox?.addEventListener('change', saveScanSettings);
+    delayInput?.addEventListener('change', saveScanSettings);
 
     // Load initial model list
     loadModels();

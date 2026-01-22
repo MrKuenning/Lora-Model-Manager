@@ -1153,6 +1153,70 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"Error in find-duplicates: {e}")
                 self.send_error(500, f"Error: {e}")
+        
+        elif parsed_url.path == '/delete-model':
+            # Delete a model and all its associated files
+            try:
+                data = json.loads(post_data)
+                model_path = data.get('modelPath')
+                
+                print(f"Delete request for: {model_path}")
+                
+                if not model_path:
+                    self.send_error(400, "Missing modelPath parameter")
+                    return
+                
+                if not os.path.exists(model_path):
+                    print(f"Model file not found: {model_path}")
+                    self.send_error(404, f"Model file not found: {model_path}")
+                    return
+                
+                # Get the base path for associated files
+                base_path = os.path.splitext(model_path)[0]
+                print(f"Base path for deletion: {base_path}")
+                
+                # List of associated file extensions to delete
+                associated_extensions = [
+                    '.safetensors',  # The model file itself
+                    '.json',          # Metadata JSON
+                    '.civitai.info',  # Civitai info file
+                    '.preview.png',   # Preview image
+                    '.preview2.png',  # Additional previews
+                    '.preview3.png',
+                    '.preview4.png',
+                ]
+                
+                deleted_files = []
+                failed_files = []
+                
+                for ext in associated_extensions:
+                    file_path = base_path + ext
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                            deleted_files.append(os.path.basename(file_path))
+                            print(f"Deleted: {file_path}")
+                        except Exception as e:
+                            failed_files.append(os.path.basename(file_path))
+                            print(f"Failed to delete {file_path}: {e}")
+                
+                # Invalidate cache
+                self.lora_data_cache = None
+                self.checkpoint_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success' if not failed_files else 'partial',
+                    'message': f"Deleted {len(deleted_files)} files",
+                    'deletedFiles': deleted_files,
+                    'failedFiles': failed_files
+                }).encode())
+                
+            except Exception as e:
+                print(f"Error in delete-model: {e}")
+                self.send_error(500, f"Error: {e}")
                 
         elif parsed_url.path == '/upload-preview':
             # Upload a preview image for a model

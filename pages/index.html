@@ -33,10 +33,10 @@
                 </div>
                 <div class="header-top-controls">
                     <button id="civitaiScanButton" class="btn btn-medium btn-primary" title="Scan models with Civitai">
-                        <i class="fas fa-search"></i> Civitai
+                        <i class="fas fa-search"></i> Scan
                     </button>
                     <button id="bulkEditToggle" class="btn btn-medium btn-secondary" title="Toggle bulk selection mode">
-                        <i class="fas fa-check-square"></i> Bulk
+                        <i class="fas fa-check-square"></i> Bulk Edit
                     </button>
                     <button id="refresh-btn" class="btn btn-medium btn-secondary" title="Refresh models">
                         <i class="fas fa-sync-alt"></i> Refresh
@@ -70,9 +70,12 @@
                     <button id="bulkRenameBtn" class="btn btn-small btn-primary" title="Rename selected models">
                         <i class="fas fa-i-cursor"></i> Rename
                     </button>
+                    <button id="bulkDeleteBtn" class="btn btn-small btn-danger" title="Delete selected models">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
                     <button id="bulkFindDuplicatesBtn" class="btn btn-small btn-warning"
                         title="Filter to show only duplicate models">
-                        <i class="fas fa-clone"></i> Find Duplicates
+                        <i class="fas fa-clone"></i> Show Duplicates
                     </button>
                     <button id="bulkCancelBtn" class="btn btn-small btn-secondary" title="Exit bulk mode">
                         <i class="fas fa-times"></i> Cancel
@@ -1042,9 +1045,15 @@
                             style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                             <label>Filename Formatting:</label>
                             <small style="color: var(--color-text-secondary);">Variables: {modelname}, {version},
-                                {highlow},
+                                <span style="color: #f59e0b;"
+                                    title="Required field - models without this value will show a warning">{highlow}*</span>,
                                 {category}, {subcategory}</small>
                         </div>
+                        <p style="color: #f59e0b; font-size: 0.8rem; margin: 0 0 10px 0;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            * {highlow} is a required field. Models missing this value will show a warning during
+                            rename.
+                        </p>
                         <div class="filename-format-list" id="filename-format-list"
                             style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
                             <!-- Rows will be injected here by JS -->
