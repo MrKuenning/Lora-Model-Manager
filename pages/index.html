@@ -238,8 +238,16 @@
                                     <label>BASE MODEL:</label>
                                     <div class="static-editable-content">
                                         <span id="model-basemodel-static" class="static-value"></span>
-                                        <input type="text" id="model-basemodel-input" class="static-edit-input"
-                                            style="display: none;">
+                                        <div id="model-basemodel-edit-container" style="display: none; flex: 1;">
+                                            <select id="model-basemodel-select" class="static-edit-input"
+                                                style="width: 100%;">
+                                                <option value="">-- Select Base Model --</option>
+                                                <option value="__custom__">Custom...</option>
+                                            </select>
+                                            <input type="text" id="model-basemodel-custom" class="static-edit-input"
+                                                placeholder="Enter custom base model..."
+                                                style="display: none; margin-top: 4px;">
+                                        </div>
                                         <div class="static-edit-buttons">
                                             <button id="edit-basemodel-btn" class="btn btn-tiny btn-secondary"
                                                 title="Edit Base Model">

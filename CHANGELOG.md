@@ -2,6 +2,14 @@
 
 ---
 
+### 01/26/2026
+
+**Changed**
+- **Base Model Dropdown**  
+  The Base Model field on the model card is now a dropdown populated with all existing base models from your collection (same list used for grid filtering). Includes a "Custom..." option to enter values not in the list.
+
+---
+
 ### 01/21/2026
 
 **Added**

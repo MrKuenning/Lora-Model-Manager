@@ -3277,3 +3277,172 @@ function handleUseRecommended() {
         enterFilenameEditMode();
     }
 }
+
+// ===== Base Model Dropdown Functions =====
+
+// Get unique base models from all loaded models (same logic as populateModelFilter)
+function getUniqueBaseModels() {
+    const baseModels = new Set();
+    models.forEach(model => {
+        const baseModel = model.baseModel || 'Unknown';
+        if (baseModel && baseModel !== 'Unknown') {
+            baseModels.add(baseModel);
+        }
+    });
+
+    // Convert to array and sort alphabetically
+    return Array.from(baseModels).sort((a, b) => a.localeCompare(b));
+}
+
+// Populate the base model dropdown with existing base models
+function populateBaseModelDropdown(currentValue = '') {
+    const select = document.getElementById('model-basemodel-select');
+    if (!select) return;
+
+    // Clear existing options except first two (placeholder and custom)
+    while (select.options.length > 2) {
+        select.remove(2);
+    }
+
+    // Get unique base models
+    const baseModels = getUniqueBaseModels();
+
+    // Add options for each base model
+    baseModels.forEach(baseModel => {
+        const option = document.createElement('option');
+        option.value = baseModel;
+        option.textContent = baseModel;
+        // Insert before the Custom option (which is at index 1)
+        select.add(option, select.options.length);
+    });
+
+    // Set the current value
+    if (currentValue) {
+        // Check if the current value exists in the options
+        const existingOption = Array.from(select.options).find(opt => opt.value === currentValue);
+        if (existingOption) {
+            select.value = currentValue;
+        } else if (currentValue !== '') {
+            // Current value is custom - show custom input
+            select.value = '__custom__';
+            const customInput = document.getElementById('model-basemodel-custom');
+            if (customInput) {
+                customInput.value = currentValue;
+                customInput.style.display = 'block';
+            }
+        }
+    }
+}
+
+// Initialize base model dropdown event handlers
+function initBaseModelDropdown() {
+    const editBtn = document.getElementById('edit-basemodel-btn');
+    const saveBtn = document.getElementById('save-basemodel-btn');
+    const cancelBtn = document.getElementById('cancel-basemodel-btn');
+    const staticDisplay = document.getElementById('model-basemodel-static');
+    const editContainer = document.getElementById('model-basemodel-edit-container');
+    const select = document.getElementById('model-basemodel-select');
+    const customInput = document.getElementById('model-basemodel-custom');
+
+    if (!editBtn || !saveBtn || !cancelBtn || !staticDisplay || !editContainer || !select || !customInput) {
+        console.warn('Base model dropdown elements not found');
+        return;
+    }
+
+    // Handle select change - show/hide custom input
+    select.addEventListener('change', () => {
+        if (select.value === '__custom__') {
+            customInput.style.display = 'block';
+            customInput.focus();
+        } else {
+            customInput.style.display = 'none';
+            customInput.value = '';
+        }
+    });
+
+    // Edit button click
+    editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Populate dropdown with current base models
+        populateBaseModelDropdown(currentModel?.baseModel || '');
+
+        // Hide static display, show edit container
+        staticDisplay.style.display = 'none';
+        editContainer.style.display = 'flex';
+
+        // Toggle buttons
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    });
+
+    // Cancel button click
+    cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Hide edit container, show static display
+        editContainer.style.display = 'none';
+        customInput.style.display = 'none';
+        customInput.value = '';
+        staticDisplay.style.display = 'inline';
+
+        // Toggle buttons
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    });
+
+    // Save button click
+    saveBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Get the value - either from dropdown or custom input
+        let newValue;
+        if (select.value === '__custom__') {
+            newValue = customInput.value.trim();
+        } else if (select.value === '') {
+            newValue = '';
+        } else {
+            newValue = select.value;
+        }
+
+        try {
+            // Update the model
+            currentModel.baseModel = newValue;
+
+            // Save to server
+            await saveModel();
+
+            // Update static display
+            staticDisplay.textContent = newValue;
+
+            // Hide edit container, show static display
+            editContainer.style.display = 'none';
+            customInput.style.display = 'none';
+            customInput.value = '';
+            staticDisplay.style.display = 'inline';
+
+            // Toggle buttons
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+
+            // Refresh models to update filter dropdown if needed
+            displayModels();
+
+        } catch (error) {
+            console.error('Error saving base model:', error);
+            showToast('Failed to save base model. Please try again.', 'error');
+        }
+    });
+}
+
+// Initialize base model dropdown when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Delay to ensure other setup has completed
+    setTimeout(initBaseModelDropdown, 100);
+});
