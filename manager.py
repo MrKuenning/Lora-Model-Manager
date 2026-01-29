@@ -65,12 +65,15 @@ lora_path = settings.get('modelsDirectory', '')
 print(f"Loaded settings A: {settings}")
 print("Lora path = " + lora_path)
 
+# Module-level cache for model data (persists across HTTP requests)
+# Each handler instance is created per-request, so we need module-level storage
+_lora_data_cache = None
+_checkpoints_data_cache = None
+
 
 class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         web_app_directory = os.path.dirname(os.path.abspath(__file__))
-        self.lora_data_cache = None  # Initialize cache for loras
-        self.checkpoints_data_cache = None  # Initialize cache for checkpoints
         super().__init__(*args, directory=web_app_directory, **kwargs)
     
     def get_path_for_location(self, location_type):
@@ -89,8 +92,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        global lora_path, _lora_data_cache, _checkpoints_data_cache
         print("do_GET called")
-        global lora_path
         parsed_url = urllib.parse.urlparse(self.path)
         query_params = urllib.parse.parse_qs(parsed_url.query)
 
@@ -170,21 +173,21 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             
             # Use appropriate cache based on location
             if location == 'checkpoints':
-                if self.checkpoints_data_cache is None or refresh:
+                if _checkpoints_data_cache is None or refresh:
                     print("Building checkpoints data cache...")
-                    self.checkpoints_data_cache = self.get_lora_data(models_path)
-                    print(f"Checkpoints cache built with {len(self.checkpoints_data_cache)} items")
+                    _checkpoints_data_cache = self.get_lora_data(models_path)
+                    print(f"Checkpoints cache built with {len(_checkpoints_data_cache)} items")
                 else:
-                    print(f"Using cached checkpoints data with {len(self.checkpoints_data_cache)} items")
-                data_cache = self.checkpoints_data_cache
+                    print(f"Using cached checkpoints data with {len(_checkpoints_data_cache)} items")
+                data_cache = _checkpoints_data_cache
             else:
-                if self.lora_data_cache is None or refresh:
+                if _lora_data_cache is None or refresh:
                     print("Building lora data cache...")
-                    self.lora_data_cache = self.get_lora_data(models_path)
-                    print(f"Lora cache built with {len(self.lora_data_cache)} items")
+                    _lora_data_cache = self.get_lora_data(models_path)
+                    print(f"Lora cache built with {len(_lora_data_cache)} items")
                 else:
-                    print(f"Using cached lora data with {len(self.lora_data_cache)} items")
-                data_cache = self.lora_data_cache
+                    print(f"Using cached lora data with {len(_lora_data_cache)} items")
+                data_cache = _lora_data_cache
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -325,6 +328,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
           super().do_GET()
 
     def do_POST(self):
+        global _lora_data_cache, _checkpoints_data_cache
         parsed_url = urllib.parse.urlparse(self.path)
         content_length = int(self.headers['Content-Length'])
         
@@ -337,11 +341,26 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
 
         if parsed_url.path == '/save-settings':
             data = json.loads(post_data)
+            
+            # Load current settings to compare directories
+            current_settings = self.load_settings()
+            
+            # Only invalidate cache if directory actually changed
+            if 'modelsDirectory' in data:
+                old_dir = current_settings.get('modelsDirectory', '')
+                new_dir = data.get('modelsDirectory', '')
+                if old_dir != new_dir:
+                    _lora_data_cache = None
+                    print(f"Lora cache invalidated: directory changed from '{old_dir}' to '{new_dir}'")
+            
+            if 'checkpointsDirectory' in data:
+                old_dir = current_settings.get('checkpointsDirectory', '')
+                new_dir = data.get('checkpointsDirectory', '')
+                if old_dir != new_dir:
+                    _checkpoints_data_cache = None
+                    print(f"Checkpoints cache invalidated: directory changed from '{old_dir}' to '{new_dir}'")
+            
             self.save_settings(data)
-            # Invalidate cache if models directory changed
-            if 'modelsDirectory' in data and self.lora_data_cache is not None:
-                self.lora_data_cache = None
-                print("Cache invalidated due to settings change")
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -384,8 +403,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     json.dump(json_data, file, indent=4)
                 
                 # Invalidate both caches after JSON edit
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 print("Caches invalidated due to JSON edit")
             except Exception as e:
                 self.send_error(500, f"Error saving JSON: {e}")
@@ -486,9 +505,9 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 with open(json_path, 'w') as file:
                     json.dump(data.get('json', {}), file, indent=4)
                     
-                # Invalidate appropriate cache after model edit
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                # Invalidate both caches after model edit
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 print("Caches invalidated due to model edit")
                 
                 self.send_response(200)
@@ -672,8 +691,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     print(f"Moved: {file_path} -> {new_path}")
                 
                 # Invalidate both caches after successful move
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 print("Caches invalidated due to model move")
                 
                 self.send_response(200)

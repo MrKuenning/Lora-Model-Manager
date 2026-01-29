@@ -9,11 +9,13 @@ import { showToast } from './toast.js';
  * @param {string} dirPath - Path to models directory
  * @param {HTMLElement} modelsContainer - Container element for displaying models
  * @param {string} location - Location type ('loras' or 'checkpoints')
+ * @param {boolean} forceRefresh - If true, forces a cache refresh to detect new files
  * @returns {Promise<Array>} Array of model objects
  */
-export async function loadModelsFromDirectory(dirPath, modelsContainer, location = 'loras') {
+export async function loadModelsFromDirectory(dirPath, modelsContainer, location = 'loras', forceRefresh = false) {
     try {
-        const response = await fetch(`/load-loras?location=${encodeURIComponent(location)}`);
+        const refreshParam = forceRefresh ? '&refresh=true' : '';
+        const response = await fetch(`/load-loras?location=${encodeURIComponent(location)}${refreshParam}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || `HTTP error! status: ${response.status}`);
@@ -36,9 +38,9 @@ export async function loadModelsFromDirectory(dirPath, modelsContainer, location
 }
 
 /**
- * Refresh models from directory
+ * Refresh models from directory (forces cache refresh)
  * @param {Object} settingsManager - Settings manager instance
- * @param {Function} loadCallback - Callback to load and display models
+ * @param {Function} loadCallback - Callback to load and display models (dirPath, location, forceRefresh)
  * @param {Function} openSettingsCallback - Callback to open settings modal
  * @param {string} location - Location type ('loras' or 'checkpoints')
  */
@@ -48,7 +50,8 @@ export async function refreshModels(settingsManager, loadCallback, openSettingsC
 
     if (dirPath) {
         showLoadingOverlay();
-        await loadCallback(dirPath, location);
+        // Pass forceRefresh=true to ensure cache is refreshed
+        await loadCallback(dirPath, location, true);
     } else {
         const locName = location === 'checkpoints' ? 'checkpoints' : 'LoRAs';
         showToast(`No ${locName} directory set. Please set a directory in Settings.`, 'warning');

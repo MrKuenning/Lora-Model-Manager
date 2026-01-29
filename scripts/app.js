@@ -1141,11 +1141,11 @@ async function ensureSettingsInitialized() {
 }
 
 // Load models from the specified directory (wrapper for ModelOps)
-async function loadModelsFromDirectory(dirPath, location = null) {
+async function loadModelsFromDirectory(dirPath, location = null, forceRefresh = false) {
     // Use provided location or fall back to currentLocation
     const loc = location || currentLocation;
     try {
-        models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer, loc);
+        models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer, loc, forceRefresh);
         BulkOps.setModelsReference(models);
         displayModels();
     } catch (error) {

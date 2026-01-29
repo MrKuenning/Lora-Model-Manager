@@ -2,6 +2,20 @@
 
 ---
 
+### 01/27/2026
+
+**Fixed**
+- **Model Cache Persistence**  
+  Fixed a critical bug where the model cache was not actually persisting between requests. The cache was stored on handler instances which are recreated per HTTP request, defeating the caching entirely. Moved cache to module-level variables so models are scanned once on first load, then served instantly from cache. Use the refresh button to force a re-scan when needed.
+
+- **Refresh Button Not Detecting New Files**  
+  Fixed an issue where clicking the refresh button would not detect newly added model files. The refresh button now correctly passes `refresh=true` to the backend, forcing a full re-scan of the models directory.
+
+- **SafeMode Toggle Invalidating Cache**  
+  Fixed an issue where toggling SafeMode (or changing any setting) would incorrectly invalidate the model cache and force a slow re-scan. Cache is now only invalidated when the models directory path actually changes.
+
+---
+
 ### 01/26/2026
 
 **Changed**
