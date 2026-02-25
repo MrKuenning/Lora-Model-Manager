@@ -22,8 +22,7 @@ export function disableCivitaiButtons(disabled = true) {
     const buttons = [
         document.getElementById('get-civitai-data-btn'),
         document.getElementById('create-json-btn'),
-        document.getElementById('download-thumbnail-btn'),
-        document.getElementById('fix-thumbnail-btn')
+        document.getElementById('download-thumbnail-btn')
     ];
     buttons.forEach(btn => btn && (btn.disabled = disabled));
 }

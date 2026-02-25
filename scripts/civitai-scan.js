@@ -120,8 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLocationTabs();
 
     backButton.addEventListener('click', () => {
-        // Go back to main page with same location
-        window.location.href = `index.html?location=${currentLocation}`;
+        // Go back to main page with same location and trigger refresh
+        window.location.href = `index.html?location=${currentLocation}&refresh=true`;
     });
 
     // Settings modal handlers
@@ -149,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadPreviewsBtn.addEventListener('click', downloadMissingPreviews);
     document.getElementById('downloadAllPreviewsBtn')?.addEventListener('click', downloadAllPreviews);
     convertToJsonBtn.addEventListener('click', convertAllToJson);
-    convertMissingJsonBtn.addEventListener('click', convertMissingToJson);
-    fixThumbnailsBtn.addEventListener('click', fixThumbnailNames);
-    clearLogBtn.addEventListener('click', clearLog);
+    convertMissingJsonBtn?.addEventListener('click', convertMissingToJson);
+    fixThumbnailsBtn?.addEventListener('click', fixThumbnailNames);
+    clearLogBtn?.addEventListener('click', clearLog);
     document.getElementById('generateHashesBtn')?.addEventListener('click', generateAllHashes);
     document.getElementById('generateMissingHashesBtn')?.addEventListener('click', generateMissingHashes);
     document.getElementById('findDuplicatesBtn')?.addEventListener('click', findDuplicates);
@@ -967,7 +967,7 @@ function disableButtons() {
     document.getElementById('downloadAllPreviewsBtn').disabled = true;
     convertToJsonBtn.disabled = true;
     convertMissingJsonBtn.disabled = true;
-    fixThumbnailsBtn.disabled = true;
+    if (fixThumbnailsBtn) fixThumbnailsBtn.disabled = true;
     const genHashBtn = document.getElementById('generateHashesBtn');
     const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');
     const findDupBtn = document.getElementById('findDuplicatesBtn');
@@ -983,7 +983,7 @@ function enableButtons() {
     document.getElementById('downloadAllPreviewsBtn').disabled = false;
     convertToJsonBtn.disabled = false;
     convertMissingJsonBtn.disabled = false;
-    fixThumbnailsBtn.disabled = false;
+    if (fixThumbnailsBtn) fixThumbnailsBtn.disabled = false;
     const genHashBtn = document.getElementById('generateHashesBtn');
     const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');
     const findDupBtn = document.getElementById('findDuplicatesBtn');

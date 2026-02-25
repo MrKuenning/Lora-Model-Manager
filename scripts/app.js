@@ -25,6 +25,11 @@ const modelFilterSelect = document.getElementById('model-filter-select');
 const gridViewBtn = document.getElementById('grid-view-btn');
 const tableViewBtn = document.getElementById('table-view-btn');
 const refreshBtn = document.getElementById('refresh-btn');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const folderSidebar = document.getElementById('folder-sidebar');
+const folderContainer = document.getElementById('folder-container');
+const folderViewToggleBtn = document.getElementById('folder-view-toggle');
+const folderDensityToggleBtn = document.getElementById('folder-density-toggle');
 const modelModal = document.getElementById('model-modal');
 const closeModal = document.querySelector('.close-modal');
 const settingsBtn = document.getElementById('settingsButton');
@@ -59,6 +64,10 @@ let currentView = appSettings.getSetting('defaultView');
 let currentSort = appSettings.getSetting('defaultSort');
 let currentGroupBy = 'none'; // Default to no grouping
 let currentModelFilter = 'all'; // Default to show all models
+let currentFolderFilter = null; // Default to no folder filter
+let showSidebar = false; // Default sidebar visibility
+let folderViewMode = 'list'; // 'list' or 'tree'
+let folderDensityMode = 'comfy'; // 'comfy' or 'compact'
 let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
 let selectedThumbnailIndex = 0; // Currently selected thumbnail (0-based for preview-thumb elements)
@@ -80,6 +89,28 @@ const settingsManager = appSettings;
 // Event Listeners
 document.addEventListener('DOMContentLoaded', initApp);
 searchInput.addEventListener('input', handleSearch);
+
+// Helper function to get relative folder path, avoiding consolidating the same-named subfolders under different parents
+function getRelativeFolderPath(model) {
+    if (!model || !model.path) return '';
+    const rootPath = currentLocation === 'checkpoints'
+        ? settingsManager.getSetting('checkpointsDirectory')
+        : settingsManager.getSetting('modelsDirectory');
+
+    if (!rootPath) return '';
+
+    const mPath = model.path.replace(/\\/g, '/');
+    let rPath = rootPath.replace(/\\/g, '/');
+    if (!rPath.endsWith('/')) rPath += '/';
+
+    if (mPath.toLowerCase().startsWith(rPath.toLowerCase())) {
+        let rel = mPath.substring(rPath.length);
+        const lastSlash = rel.lastIndexOf('/');
+        if (lastSlash === -1 || lastSlash === 0) return '';
+        return rel.substring(0, lastSlash).replace(/\//g, '\\');
+    }
+    return '';
+}
 
 // Clear search button functionality
 const clearSearchBtn = document.getElementById('clear-search-btn');
@@ -104,6 +135,31 @@ modelFilterSelect.addEventListener('change', handleModelFilterChange);
 gridViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('grid'); });
 tableViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
 refreshBtn.addEventListener('click', refreshModels);
+
+sidebarToggleBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showSidebar = !showSidebar;
+    folderSidebar.style.display = showSidebar ? 'block' : 'none';
+    if (showSidebar) {
+        renderFolderSidebar();
+    }
+});
+
+folderViewToggleBtn?.addEventListener('click', () => {
+    folderViewMode = folderViewMode === 'list' ? 'tree' : 'list';
+    folderViewToggleBtn.innerHTML = folderViewMode === 'list' ? '<i class="fas fa-list"></i>' : '<i class="fas fa-sitemap"></i>';
+    renderFolderSidebar();
+});
+
+folderDensityToggleBtn?.addEventListener('click', () => {
+    folderDensityMode = folderDensityMode === 'comfy' ? 'compact' : 'comfy';
+    folderDensityToggleBtn.innerHTML = folderDensityMode === 'comfy' ? '<i class="fas fa-compress-arrows-alt"></i>' : '<i class="fas fa-expand-arrows-alt"></i>';
+    if (folderDensityMode === 'compact') {
+        folderContainer.classList.add('compact-view');
+    } else {
+        folderContainer.classList.remove('compact-view');
+    }
+});
 closeModal.addEventListener('click', closeModelModal);
 
 // Refresh button in modal
@@ -1097,8 +1153,19 @@ async function initApp() {
         ? settingsManager.getSetting('checkpointsDirectory')
         : settingsManager.getSetting('modelsDirectory');
 
+    // Check if refresh parameter is present (e.g., coming back from scan page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceRefresh = urlParams.get('refresh') === 'true';
+
+    // Clean up the URL by removing the refresh parameter (so manual page reload won't force refresh again)
+    if (forceRefresh) {
+        urlParams.delete('refresh');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+
     if (dirPath) {
-        await loadModelsFromDirectory(dirPath);
+        await loadModelsFromDirectory(dirPath, null, forceRefresh);
     } else {
         // Hide loading overlay if no directory is set
         hideLoadingOverlay();
@@ -1147,6 +1214,7 @@ async function loadModelsFromDirectory(dirPath, location = null, forceRefresh = 
     try {
         models = await ModelOps.loadModelsFromDirectory(dirPath, modelsContainer, loc, forceRefresh);
         BulkOps.setModelsReference(models);
+        if (showSidebar) renderFolderSidebar();
         displayModels();
     } catch (error) {
         // Error already handled in ModelOps
@@ -1213,6 +1281,19 @@ function displayModels(modelsToDisplay = null) {
             filteredModels = filteredModels.filter(model =>
                 model.baseModel === currentModelFilter
             );
+        }
+
+        // Apply folder filter
+        if (currentFolderFilter !== null) {
+            filteredModels = filteredModels.filter(model => {
+                const folder = getRelativeFolderPath(model) || 'Root';
+                if (folderViewMode === 'tree') {
+                    if (currentFolderFilter === 'Root') return folder === 'Root';
+                    return folder === currentFolderFilter || folder.startsWith(currentFolderFilter + '\\');
+                } else {
+                    return folder === currentFolderFilter;
+                }
+            });
         }
 
         // Populate the model filter dropdown with unique base models
@@ -2396,13 +2477,10 @@ function formatFileSize(bytes) {
 const getCivitaiDataBtn = document.getElementById('get-civitai-data-btn');
 const createJsonBtn = document.getElementById('create-json-btn');
 const downloadThumbnailBtn = document.getElementById('download-thumbnail-btn');
-const fixThumbnailBtn = document.getElementById('fix-thumbnail-btn');
-
 // Event Listeners (using CivitaiAPI module)
 getCivitaiDataBtn?.addEventListener('click', () => CivitaiAPI.getCivitaiData(currentModel, refreshModelData));
 createJsonBtn?.addEventListener('click', () => CivitaiAPI.convertCivitaiToJson(currentModel, refreshModelData));
 downloadThumbnailBtn?.addEventListener('click', () => CivitaiAPI.downloadCivitaiThumbnail(currentModel, refreshModelData));
-fixThumbnailBtn?.addEventListener('click', () => CivitaiAPI.fixThumbnailName(currentModel, refreshModelData));
 
 
 // ===== Filename Helper Buttons =====
@@ -3439,6 +3517,196 @@ function initBaseModelDropdown() {
             showToast('Failed to save base model. Please try again.', 'error');
         }
     });
+}
+
+function renderFolderSidebar() {
+    if (!folderContainer) return;
+
+    folderContainer.innerHTML = '';
+
+    // Apply Safe Mode check
+    const hideNSFW = settingsManager.getSetting('hideNSFW');
+    const visibleModels = hideNSFW
+        ? models.filter(model => !(model.json && model.json['nsfw'] === 'true'))
+        : models;
+
+    // Add "All Folders" option
+    const allItem = document.createElement('div');
+    allItem.className = 'folder-item';
+    const allContent = document.createElement('div');
+    allContent.className = `folder-content ${currentFolderFilter === null ? 'active' : ''}`;
+    allContent.innerHTML = `
+        <i class="fas fa-layer-group folder-icon"></i>
+        <span class="folder-name">All Folders</span>
+        <span class="folder-count">${visibleModels.length}</span>
+    `;
+    allContent.addEventListener('click', () => {
+        currentFolderFilter = null;
+        renderFolderSidebar();
+        displayModels();
+    });
+    allItem.appendChild(allContent);
+    folderContainer.appendChild(allItem);
+
+    // Get all folders and subfolders
+    const folderStats = {};
+    visibleModels.forEach(model => {
+        const folder = getRelativeFolderPath(model) || 'Root';
+        folderStats[folder] = (folderStats[folder] || 0) + 1;
+    });
+
+    if (folderViewMode === 'list') {
+        const sortedFolders = Object.keys(folderStats).sort((a, b) => a.localeCompare(b));
+
+        sortedFolders.forEach(folder => {
+            const item = document.createElement('div');
+            item.className = 'folder-item';
+
+            const content = document.createElement('div');
+            content.className = `folder-content ${currentFolderFilter === folder ? 'active' : ''}`;
+
+            let displayFolder = '';
+            if (folder === 'Root') {
+                displayFolder = folder;
+            } else {
+                const parts = folder.split('\\');
+                const lastPart = parts.pop();
+                if (parts.length > 0) {
+                    displayFolder = `<span style="opacity: 0.5; font-size: 0.85em;">${parts.join(' | ')} | </span>`;
+                }
+                displayFolder += `<strong style="font-weight: 500;">${lastPart}</strong>`;
+            }
+
+            content.innerHTML = `
+                <i class="fas fa-folder folder-icon"></i>
+                <span class="folder-name" title="${folder}">${displayFolder}</span>
+                <span class="folder-count">${folderStats[folder]}</span>
+            `;
+
+            content.addEventListener('click', () => {
+                currentFolderFilter = folder;
+                renderFolderSidebar();
+                displayModels();
+            });
+
+            item.appendChild(content);
+            folderContainer.appendChild(item);
+        });
+    } else {
+        // Built Tree
+        const buildTree = (paths) => {
+            const root = { name: 'Root', children: {}, count: 0, fullPath: 'Root' };
+            Object.keys(paths).forEach(path => {
+                if (path === 'Root') {
+                    root.count += paths[path];
+                    return;
+                }
+                const parts = path.split(/[/\\]/);
+                let current = root;
+                root.count += paths[path];
+
+                let currentPath = '';
+                parts.forEach((part, i) => {
+                    currentPath += (i > 0 ? '\\' : '') + part;
+                    if (!current.children[part]) {
+                        current.children[part] = {
+                            name: part,
+                            children: {},
+                            count: 0,
+                            fullPath: currentPath
+                        };
+                    }
+                    current.children[part].count += paths[path];
+                    current = current.children[part];
+                });
+            });
+            return root;
+        };
+
+        const tree = buildTree(folderStats);
+
+        const renderTree = (node, container, isRootNode = false) => {
+            if (isRootNode) {
+                // Render root contents
+                if (folderStats['Root']) {
+                    const item = document.createElement('div');
+                    item.className = 'folder-item';
+                    const content = document.createElement('div');
+                    content.className = `folder-content ${currentFolderFilter === 'Root' ? 'active' : ''}`;
+                    content.innerHTML = `
+                        <i class="fas fa-folder folder-icon"></i>
+                        <span class="folder-name">Root</span>
+                        <span class="folder-count">${folderStats['Root']}</span>
+                    `;
+                    content.addEventListener('click', () => {
+                        currentFolderFilter = 'Root';
+                        renderFolderSidebar();
+                        displayModels();
+                    });
+                    item.appendChild(content);
+                    container.appendChild(item);
+                }
+
+                Object.keys(node.children).sort((a, b) => a.localeCompare(b)).forEach(key => {
+                    renderTree(node.children[key], container);
+                });
+                return;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'folder-item';
+
+            const content = document.createElement('div');
+            content.className = `folder-content ${currentFolderFilter === node.fullPath ? 'active' : ''}`;
+
+            const hasChildren = Object.keys(node.children).length > 0;
+            const toggleIcon = hasChildren ? '<i class="fas fa-caret-down folder-toggle"></i>' : '<span style="width:24px;margin-right:4px;"></span>';
+
+            let selfCount = folderStats[node.fullPath] || 0;
+            const displayCount = selfCount > 0 ? selfCount : node.count;
+
+            content.innerHTML = `
+                ${toggleIcon}
+                <i class="fas ${hasChildren ? 'fa-folder-open' : 'fa-folder'} folder-icon"></i>
+                <span class="folder-name" title="${node.fullPath}">${node.name}</span>
+                <span class="folder-count">${displayCount}</span>
+            `;
+
+            if (hasChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'folder-children';
+                Object.keys(node.children).sort((a, b) => a.localeCompare(b)).forEach(key => {
+                    renderTree(node.children[key], childrenContainer);
+                });
+
+                const toggleBtn = content.querySelector('.folder-toggle');
+                toggleBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isExpanded = childrenContainer.style.display !== 'none';
+                    childrenContainer.style.display = isExpanded ? 'none' : 'block';
+                    toggleBtn.className = `fas ${isExpanded ? 'fa-caret-right' : 'fa-caret-down'} folder-toggle`;
+                    const folderIcon = content.querySelector('.folder-icon');
+                    folderIcon.className = `fas ${isExpanded ? 'fa-folder' : 'fa-folder-open'} folder-icon`;
+                });
+
+                item.appendChild(content);
+                item.appendChild(childrenContainer);
+            } else {
+                item.appendChild(content);
+            }
+
+            content.addEventListener('click', (e) => {
+                if (e.target.classList.contains('folder-toggle')) return;
+                currentFolderFilter = node.fullPath;
+                renderFolderSidebar();
+                displayModels();
+            });
+
+            container.appendChild(item);
+        };
+
+        renderTree(tree, folderContainer, true);
+    }
 }
 
 // Initialize base model dropdown when DOM is ready

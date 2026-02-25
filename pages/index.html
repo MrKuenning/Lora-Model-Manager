@@ -27,6 +27,8 @@
                         <a href="?location=checkpoints" id="checkpoints-tab" class="location-tab">Checkpoints</a>
                     </div>
                     <div class="view-toggle">
+                        <a href="#" id="sidebar-toggle-btn" class="view-tab" title="Toggle Folder Sidebar"><i
+                                class="fas fa-folder-tree"></i></a>
                         <a href="#" id="grid-view-btn" class="view-tab active">Grid</a>
                         <a href="#" id="table-view-btn" class="view-tab">Table</a>
                     </div>
@@ -183,14 +185,34 @@
                 </div>
         </header>
 
-        <main>
-            <div id="models-container" class="grid-view">
-                <!-- Models will be displayed here -->
-                <div class="placeholder-message">
-                    <p>No models loaded. Please set your models directory in Settings.</p>
+        <div class="main-layout">
+            <aside id="folder-sidebar" class="folder-sidebar" style="display: none;">
+                <div class="sidebar-header">
+                    <h3>Folders</h3>
+                    <div class="sidebar-controls">
+                        <button id="folder-view-toggle" class="btn btn-small btn-secondary"
+                            title="Toggle List/Tree View">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button id="folder-density-toggle" class="btn btn-small btn-secondary"
+                            title="Toggle Comfy/Compact View">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </main>
+                <div id="folder-container" class="folder-container list-view">
+                    <!-- Folders will be populated here -->
+                </div>
+            </aside>
+            <main>
+                <div id="models-container" class="grid-view">
+                    <!-- Models will be displayed here -->
+                    <div class="placeholder-message">
+                        <p>No models loaded. Please set your models directory in Settings.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
 
         <!-- Model Details Modal -->
         <div id="model-modal" class="modal">
@@ -889,13 +911,9 @@
                                     title="Convert .civitai.info to .json for this model">
                                     <i class="fas fa-file-code"></i> Create JSON
                                 </button>
-                                <button id="download-thumbnail-btn" class="btn btn-medium btn-secondary"
+                                <button id="download-thumbnail-btn" class="btn btn-medium btn-warning"
                                     title="Download preview image from Civitai for this model">
                                     <i class="fas fa-image"></i> Download Thumbnail
-                                </button>
-                                <button id="fix-thumbnail-btn" class="btn btn-medium btn-warning"
-                                    title="Fix thumbnail filename for this model">
-                                    <i class="fas fa-wrench"></i> Fix Thumbnail Names
                                 </button>
                             </div>
                             <div id="civitai-action-status" class="civitai-action-status"></div>

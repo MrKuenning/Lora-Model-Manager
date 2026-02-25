@@ -501,9 +501,16 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 return
                 
             try:
+                # Get the json data from the request
+                json_data = data.get('json', {})
+                
+                # If baseModel is provided at the top level, include it in the JSON data
+                if 'baseModel' in data:
+                    json_data['baseModel'] = data['baseModel']
+                
                 # Update the JSON file with the model's json data
                 with open(json_path, 'w') as file:
-                    json.dump(data.get('json', {}), file, indent=4)
+                    json.dump(json_data, file, indent=4)
                     
                 # Invalidate both caches after model edit
                 _lora_data_cache = None

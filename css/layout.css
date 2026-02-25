@@ -782,3 +782,162 @@ main {
     font-size: var(--font-size-sm);
     margin-left: var(--spacing-xs);
 }
+
+/* Sidebar and Main Layout */
+.main-layout {
+    display: flex;
+    gap: var(--spacing-md);
+    height: 100%;
+    align-items: flex-start;
+}
+
+.folder-sidebar {
+    width: 280px;
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-standard);
+    padding: var(--spacing-md);
+    flex-shrink: 0;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+}
+
+.sidebar-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.folder-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.folder-item {
+    margin-bottom: 2px;
+}
+
+.folder-content {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    user-select: none;
+}
+
+.folder-content:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.folder-content.active {
+    background-color: var(--color-btn-primary);
+    color: white;
+}
+
+.folder-toggle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-right: 4px;
+    color: var(--color-text-secondary);
+}
+
+.folder-content.active .folder-toggle {
+    color: white;
+}
+
+.folder-icon {
+    margin-right: var(--spacing-sm);
+    color: var(--color-accent);
+}
+
+.folder-content.active .folder-icon {
+    color: white;
+}
+
+.folder-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--font-size-md);
+}
+
+.folder-count {
+    font-size: var(--font-size-xs);
+    background-color: var(--color-bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: var(--spacing-sm);
+    color: var(--color-text-secondary);
+}
+
+.folder-content.active .folder-count {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.folder-children {
+    padding-left: 20px;
+    margin-top: 2px;
+}
+
+main {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Compact Folder View Settings */
+.folder-container.compact-view {
+    gap: 0;
+}
+
+.folder-container.compact-view .folder-item {
+    margin-bottom: 0;
+}
+
+.folder-container.compact-view .folder-content {
+    padding: 2px 8px;
+}
+
+.folder-container.compact-view .folder-name {
+    font-size: var(--font-size-sm);
+}
+
+.folder-container.compact-view .folder-icon {
+    font-size: 14px;
+    margin-right: 6px;
+}
+
+.folder-container.compact-view .folder-count {
+    padding: 1px 4px;
+    font-size: 10px;
+}
+
+.folder-container.compact-view .folder-toggle {
+    width: 20px;
+    height: 20px;
+}
+
+.folder-container.compact-view .folder-children {
+    padding-left: 12px;
+}
