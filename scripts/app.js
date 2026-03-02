@@ -3044,8 +3044,14 @@ function handleModelNameClean() {
     // 5. Remove leading and trailing spaces
     modelName = modelName.trim();
 
-    // 6. Capitalize first letter of each word
-    modelName = modelName.replace(/\b\w/g, char => char.toUpperCase());
+    // 6. Convert ALL CAPS words to Title Case, while preserving mixed case
+    modelName = modelName.replace(/\b([A-Z]{2,})\b/g, (match) => {
+        // Convert ALL CAPS to Title Case (first letter upper, rest lower)
+        return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
+    });
+
+    // 7. Capitalize first letter of each word (for lowercase words)
+    modelName = modelName.replace(/\b[a-z]/g, char => char.toUpperCase());
 
     // Update the model name field
     modelNameField.value = modelName;

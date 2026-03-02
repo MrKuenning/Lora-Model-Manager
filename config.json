@@ -1,10 +1,10 @@
 {
   "modelsDirectory": "E:\\AI\\MODELS\\LoRA",
-  "checkpointsDirectory": "E:\\AI\\MODELS\\Stable-Diffusion",
+  "checkpointsDirectory": "E:\\AI\\MODELS\\LORA_WAN2GP",
   "theme": "dark",
   "defaultView": "grid",
   "defaultSort": "date-newest",
-  "hideNSFW": true,
+  "hideNSFW": false,
   "visibleColumns": {
     "thumbnail": true,
     "filename": true,
