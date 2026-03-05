@@ -7,10 +7,10 @@
  * @param {string} type - Message type ('info', 'success', 'error')
  */
 export function showCivitaiStatus(message, type = 'info') {
-    const statusElement = document.getElementById('civitai-status');
+    const statusElement = document.getElementById('civitai-action-status'); // fixed id
     if (statusElement) {
         statusElement.textContent = message;
-        statusElement.className = `civitai-status ${type}`;
+        statusElement.className = `civitai-action-status ${type}`;
     }
 }
 
@@ -22,7 +22,9 @@ export function disableCivitaiButtons(disabled = true) {
     const buttons = [
         document.getElementById('get-civitai-data-btn'),
         document.getElementById('create-json-btn'),
-        document.getElementById('download-thumbnail-btn')
+        document.getElementById('download-thumbnail-btn'),
+        document.getElementById('generate-sha256-btn'),
+        document.getElementById('delete-model-btn')
     ];
     buttons.forEach(btn => btn && (btn.disabled = disabled));
 }
@@ -296,5 +298,46 @@ export async function createDummyInfoFile(model, refreshCallback) {
         console.error('Error creating dummy info file:', error);
         showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
         throw error;
+    }
+}
+
+/**
+ * Generate SHA256 hash for a model file
+ * @param {Object} model - Model object containing path
+ * @param {Function} refreshCallback - Callback to refresh model data
+ */
+export async function generateSha256(model, refreshCallback) {
+    if (!model) throw new Error('No model provided');
+
+    disableCivitaiButtons(true);
+    showCivitaiStatus(`Generating SHA256 hash for ${model.name}... this may take a while.`, 'info');
+
+    try {
+        const response = await fetch('/generate-sha256', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                modelPath: model.path
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showCivitaiStatus(`✓ SHA256 hash generated: ${data.hash.substring(0, 10)}...`, 'success');
+            if (refreshCallback) await refreshCallback();
+        } else {
+            showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error generating SHA256:', error);
+        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
+        throw error;
+    } finally {
+        disableCivitaiButtons(false);
     }
 }

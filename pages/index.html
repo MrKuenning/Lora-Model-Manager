@@ -126,9 +126,15 @@
                         <span class="dropdown-description"><strong>Group</strong> Models</span>
                     </div>
                     <div class="dropdown-item">
-                        <select id="model-filter-select">
-                            <option value="all">All Models</option>
-                        </select>
+                        <div class="multi-select-container" id="model-filter-container">
+                            <button id="model-filter-btn" class="multi-select-btn">
+                                <span id="model-filter-text">All Models</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="model-filter-dropdown" class="multi-select-dropdown" style="display: none;">
+                                <!-- Checkboxes populated by JS -->
+                            </div>
+                        </div>
                         <span class="dropdown-description"><strong>Filter</strong> by Model</span>
                     </div>
                     <div class="dropdown-item">
@@ -420,6 +426,11 @@
                                 <div class="static-info-row">
                                     <label>DATE:</label>
                                     <span id="model-date"></span>
+                                </div>
+                                <div class="static-info-row">
+                                    <label>SHA256:</label>
+                                    <span id="model-sha256"
+                                        style="font-family: var(--font-family-mono); font-size: 11px;"></span>
                                 </div>
                             </div>
                         </div>
@@ -899,466 +910,480 @@
                             </div>
                         </div>
 
-                        <!-- Civitai Actions Section -->
-                        <div class="civitai-actions-section">
-                            <h3 class="section-title">Civitai Actions</h3>
-                            <div class="civitai-actions-buttons">
-                                <button id="get-civitai-data-btn" class="btn btn-medium btn-primary"
-                                    title="Fetch Civitai data for this model">
-                                    <i class="fas fa-download"></i> Get Civitai Data
-                                </button>
-                                <button id="create-json-btn" class="btn btn-medium btn-success"
-                                    title="Convert .civitai.info to .json for this model">
-                                    <i class="fas fa-file-code"></i> Create JSON
-                                </button>
-                                <button id="download-thumbnail-btn" class="btn btn-medium btn-warning"
-                                    title="Download preview image from Civitai for this model">
-                                    <i class="fas fa-image"></i> Download Thumbnail
-                                </button>
-                            </div>
-                            <div id="civitai-action-status" class="civitai-action-status"></div>
+                        <!-- Actions and Files side-by-side container -->
+                        <div class="actions-and-files-container">
+                            <!-- Actions Section -->
+                            <div class="civitai-actions-section">
+                                <h3 class="section-title">Actions</h3>
 
-                            <!-- Associated Files List -->
-                            <div class="associated-files-box">
-                                <h4>Associated Files</h4>
-                                <ul id="model-associated-files" class="file-list"></ul>
-                            </div>
-
-
-                            <!-- JSON Editor section -->
-                            <div class="json-editor-section">
-                                <div class="json-editor-header">
-                                    <h3>
-                                        JSON Metadata Editor
-                                        <button id="toggle-json-editor" class="btn btn-small btn-secondary"
-                                            title="Toggle JSON Editor">
-                                            <i class="fas fa-chevron-down"></i>
-                                        </button>
-                                    </h3>
+                                <div class="civitai-actions-buttons">
+                                    <button id="get-civitai-data-btn" class="btn btn-medium btn-primary"
+                                        title="Fetch Civitai data for this model">
+                                        <i class="fas fa-download"></i> Get Civitai Data
+                                    </button>
+                                    <button id="create-json-btn" class="btn btn-medium btn-success"
+                                        title="Convert .civitai.info to .json for this model">
+                                        <i class="fas fa-file-code"></i> Create JSON
+                                    </button>
+                                    <button id="download-thumbnail-btn" class="btn btn-medium btn-warning"
+                                        title="Download preview image from Civitai for this model">
+                                        <i class="fas fa-image"></i> Download Thumbnail
+                                    </button>
+                                    <button id="generate-sha256-btn" class="btn btn-medium btn-secondary"
+                                        title="Generate SHA256 hash for this model">
+                                        <i class="fas fa-hashtag"></i> Generate SHA256
+                                    </button>
+                                    <button id="delete-model-btn" class="btn btn-medium btn-danger"
+                                        style="background-color: var(--color-danger); color: white;"
+                                        title="Delete this model and all associated files">
+                                        <i class="fas fa-trash"></i> Delete Model
+                                    </button>
                                 </div>
-                                <div id="json-editor-content" class="json-editor-content">
-                                    <div class="json-type-selector">
-                                        <button id="model-json-btn"
-                                            class="btn btn-small btn-secondary json-type-btn active">Model
-                                            JSON</button>
-                                        <button id="civitai-json-btn"
-                                            class="btn btn-small btn-secondary json-type-btn">Civitai
-                                            Info</button>
-                                        <button id="save-json-btn" class="btn btn-small btn-success">Save
-                                            JSON</button>
-                                        <button id="refresh-json-btn" class="btn btn-small btn-primary">Refresh</button>
-                                    </div>
-                                    <div class="json-editor-container">
-                                        <textarea id="json-editor"></textarea>
-                                    </div>
+                                <div id="civitai-action-status" class="civitai-action-status"></div>
+                            </div>
+
+                            <!-- Associated Files Section -->
+                            <div class="associated-files-section">
+                                <h3 class="section-title">Associated Files</h3>
+                                <div class="associated-files-box" style="margin-top: var(--spacing-md);">
+                                    <ul id="model-associated-files" class="file-list"></ul>
                                 </div>
                             </div>
-
                         </div>
+
+
+                        <!-- JSON Editor section -->
+                        <div class="json-editor-section">
+                            <div class="json-editor-header">
+                                <h3>
+                                    JSON Metadata Editor
+                                    <button id="toggle-json-editor" class="btn btn-small btn-secondary"
+                                        title="Toggle JSON Editor">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                </h3>
+                            </div>
+                            <div id="json-editor-content" class="json-editor-content">
+                                <div class="json-type-selector">
+                                    <button id="model-json-btn"
+                                        class="btn btn-small btn-secondary json-type-btn active">Model
+                                        JSON</button>
+                                    <button id="civitai-json-btn"
+                                        class="btn btn-small btn-secondary json-type-btn">Civitai
+                                        Info</button>
+                                    <button id="save-json-btn" class="btn btn-small btn-success">Save
+                                        JSON</button>
+                                    <button id="refresh-json-btn" class="btn btn-small btn-primary">Refresh</button>
+                                </div>
+                                <div class="json-editor-container">
+                                    <textarea id="json-editor"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Settings Modal -->
-        <div id="settingsModal" class="modal">
-            <div class="modal-content settings-modal-content">
-                <span class="close-modal">&times;</span>
-                <h3>Settings</h3>
-                <div class="modal-tabs">
-                    <button class="tab-btn active" data-tab="settings-general">General</button>
-                    <button class="tab-btn" data-tab="settings-columns">Table Columns</button>
-                    <button class="tab-btn" data-tab="settings-gridcard">Grid Card</button>
-                    <button class="tab-btn" data-tab="settings-filename">Filename Formatting</button>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Settings</h3>
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-tab="settings-general">General</button>
+                <button class="tab-btn" data-tab="settings-columns">Table Columns</button>
+                <button class="tab-btn" data-tab="settings-gridcard">Grid Card</button>
+                <button class="tab-btn" data-tab="settings-filename">Filename Formatting</button>
+            </div>
+
+            <div id="settings-general" class="tab-content active">
+                <div class="setting-group directory-setting">
+                    <label for="modelsDirectoryInput">Lora Models Directory:</label>
+                    <div class="directory-input-container">
+                        <input type="text" id="modelsDirectoryInput" placeholder="Enter path or use Browse" />
+                        <button id="browse-loras-directory" class="btn btn-small btn-secondary">Browse</button>
+                    </div>
                 </div>
-
-                <div id="settings-general" class="tab-content active">
-                    <div class="setting-group directory-setting">
-                        <label for="modelsDirectoryInput">Lora Models Directory:</label>
-                        <div class="directory-input-container">
-                            <input type="text" id="modelsDirectoryInput" placeholder="Enter path or use Browse" />
-                            <button id="browse-loras-directory" class="btn btn-small btn-secondary">Browse</button>
-                        </div>
+                <div class="setting-group directory-setting">
+                    <label for="checkpointsDirectoryInput">Checkpoints Directory:</label>
+                    <div class="directory-input-container">
+                        <input type="text" id="checkpointsDirectoryInput" placeholder="Enter path or use Browse" />
+                        <button id="browse-checkpoints-directory" class="btn btn-small btn-secondary">Browse</button>
                     </div>
-                    <div class="setting-group directory-setting">
-                        <label for="checkpointsDirectoryInput">Checkpoints Directory:</label>
-                        <div class="directory-input-container">
-                            <input type="text" id="checkpointsDirectoryInput" placeholder="Enter path or use Browse" />
-                            <button id="browse-checkpoints-directory"
-                                class="btn btn-small btn-secondary">Browse</button>
-                        </div>
-                    </div>
-                    <div class="setting-group">
-                        <label>Theme:</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="theme" id="theme-dark" value="dark"> Dark</label>
-                            <label><input type="radio" name="theme" id="theme-light" value="light"> Light</label>
-                        </div>
-                    </div>
-                    <div class="setting-group">
-                        <label>Default View:</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="defaultView" id="default-view-grid" value="grid">
-                                Grid</label>
-                            <label><input type="radio" name="defaultView" id="default-view-table" value="table">
-                                Table</label>
-                        </div>
-                    </div>
-                    <div class="setting-group">
-                        <label>Default Sort:</label>
-                        <select id="default-sort-select">
-                            <option value="name-asc">Name (A-Z)</option>
-                            <option value="name-desc">Name (Z-A)</option>
-                            <option value="date-newest">Date (Newest)</option>
-                            <option value="date-oldest">Date (Oldest)</option>
-                            <option disabled>──────────</option>
-                            <option disabled>Column Sorting:</option>
-                            <option value="column:Filename:asc">Filename (A-Z)</option>
-                            <option value="column:Filename:desc">Filename (Z-A)</option>
-                            <option value="column:Civitai Name:asc">Civitai Name (A-Z)</option>
-                            <option value="column:Civitai Name:desc">Civitai Name (Z-A)</option>
-                            <option value="column:Base Model:asc">Base Model (A-Z)</option>
-                            <option value="column:Base Model:desc">Base Model (Z-A)</option>
-                            <option value="column:Category:asc">Category (A-Z)</option>
-                            <option value="column:Category:desc">Category (Z-A)</option>
-                            <option value="column:Subcategory:asc">Subcategory (A-Z)</option>
-                            <option value="column:Subcategory:desc">Subcategory (Z-A)</option>
-                            <option value="column:Folder:asc">Folder (A-Z)</option>
-                            <option value="column:Folder:desc">Folder (Z-A)</option>
-                            <option value="column:Creator:asc">Creator (A-Z)</option>
-                            <option value="column:Creator:desc">Creator (Z-A)</option>
-                            <option value="column:Tags:asc">Tags (A-Z)</option>
-                            <option value="column:Tags:desc">Tags (Z-A)</option>
-                            <option value="column:Path:asc">Path (A-Z)</option>
-                            <option value="column:Path:desc">Path (Z-A)</option>
-                            <option value="column:Size:asc">Size (Smallest)</option>
-                            <option value="column:Size:desc">Size (Largest)</option>
-                            <option value="column:Date:asc">Date (Oldest)</option>
-                            <option value="column:Date:desc">Date (Newest)</option>
-                            <option value="column:NSFW:asc">NSFW (No-Yes)</option>
-                            <option value="column:NSFW:desc">NSFW (Yes-No)</option>
-                            <option value="column:Positive Words:asc">Positive Words (A-Z)</option>
-                            <option value="column:Positive Words:desc">Positive Words (Z-A)</option>
-                            <option value="column:Negative Words:asc">Negative Words (A-Z)</option>
-                            <option value="column:Negative Words:desc">Negative Words (Z-A)</option>
-                            <option value="column:Civitai Words:asc">Civitai Words (A-Z)</option>
-                            <option value="column:Civitai Words:desc">Civitai Words (Z-A)</option>
-                            <option value="column:Example Prompt:asc">Example Prompt (A-Z)</option>
-                            <option value="column:Example Prompt:desc">Example Prompt (Z-A)</option>
-                            <option value="column:Description:asc">Description (A-Z)</option>
-                            <option value="column:Description:desc">Description (Z-A)</option>
-                            <option value="column:Model Name:asc">Model Name (A-Z)</option>
-                            <option value="column:Model Name:desc">Model Name (Z-A)</option>
-                            <option value="column:Model Version:asc">Model Version (A-Z)</option>
-                            <option value="column:Model Version:desc">Model Version (Z-A)</option>
-                            <option value="column:High/Low:asc">High/Low (A-Z)</option>
-                            <option value="column:High/Low:desc">High/Low (Z-A)</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label>View Options:</label>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" id="hideNSFW"> Hide NSFW Content</label>
-                        </div>
-                    </div>
-
                 </div>
-
-                <!-- Filename Formatting Section -->
-                <div id="settings-filename" class="tab-content">
-                    <div class="setting-group filename-formats-group">
-                        <div class="group-header"
-                            style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                            <label>Filename Formatting:</label>
-                            <small style="color: var(--color-text-secondary);">Variables: {modelname}, {version},
-                                <span style="color: #f59e0b;"
-                                    title="Required field - models without this value will show a warning">{highlow}*</span>,
-                                {category}, {subcategory}</small>
-                        </div>
-                        <p style="color: #f59e0b; font-size: 0.8rem; margin: 0 0 10px 0;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            * {highlow} is a required field. Models missing this value will show a warning during
-                            rename.
-                        </p>
-                        <div class="filename-format-list" id="filename-format-list"
-                            style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-                            <!-- Rows will be injected here by JS -->
-                        </div>
-                        <div class="add-format-row">
-                            <button id="add-filename-format-btn" class="btn btn-small btn-secondary"
-                                style="width: 100%;">
-                                <i class="fas fa-plus"></i> Add Format Rule
-                            </button>
-                        </div>
+                <div class="setting-group">
+                    <label>Theme:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="theme" id="theme-dark" value="dark"> Dark</label>
+                        <label><input type="radio" name="theme" id="theme-light" value="light"> Light</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Default View:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="defaultView" id="default-view-grid" value="grid">
+                            Grid</label>
+                        <label><input type="radio" name="defaultView" id="default-view-table" value="table">
+                            Table</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Default Sort:</label>
+                    <select id="default-sort-select">
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="date-newest">Date (Newest)</option>
+                        <option value="date-oldest">Date (Oldest)</option>
+                        <option disabled>──────────</option>
+                        <option disabled>Column Sorting:</option>
+                        <option value="column:Filename:asc">Filename (A-Z)</option>
+                        <option value="column:Filename:desc">Filename (Z-A)</option>
+                        <option value="column:Civitai Name:asc">Civitai Name (A-Z)</option>
+                        <option value="column:Civitai Name:desc">Civitai Name (Z-A)</option>
+                        <option value="column:Base Model:asc">Base Model (A-Z)</option>
+                        <option value="column:Base Model:desc">Base Model (Z-A)</option>
+                        <option value="column:Category:asc">Category (A-Z)</option>
+                        <option value="column:Category:desc">Category (Z-A)</option>
+                        <option value="column:Subcategory:asc">Subcategory (A-Z)</option>
+                        <option value="column:Subcategory:desc">Subcategory (Z-A)</option>
+                        <option value="column:Folder:asc">Folder (A-Z)</option>
+                        <option value="column:Folder:desc">Folder (Z-A)</option>
+                        <option value="column:Creator:asc">Creator (A-Z)</option>
+                        <option value="column:Creator:desc">Creator (Z-A)</option>
+                        <option value="column:Tags:asc">Tags (A-Z)</option>
+                        <option value="column:Tags:desc">Tags (Z-A)</option>
+                        <option value="column:Path:asc">Path (A-Z)</option>
+                        <option value="column:Path:desc">Path (Z-A)</option>
+                        <option value="column:Size:asc">Size (Smallest)</option>
+                        <option value="column:Size:desc">Size (Largest)</option>
+                        <option value="column:Date:asc">Date (Oldest)</option>
+                        <option value="column:Date:desc">Date (Newest)</option>
+                        <option value="column:NSFW:asc">NSFW (No-Yes)</option>
+                        <option value="column:NSFW:desc">NSFW (Yes-No)</option>
+                        <option value="column:Positive Words:asc">Positive Words (A-Z)</option>
+                        <option value="column:Positive Words:desc">Positive Words (Z-A)</option>
+                        <option value="column:Negative Words:asc">Negative Words (A-Z)</option>
+                        <option value="column:Negative Words:desc">Negative Words (Z-A)</option>
+                        <option value="column:Civitai Words:asc">Civitai Words (A-Z)</option>
+                        <option value="column:Civitai Words:desc">Civitai Words (Z-A)</option>
+                        <option value="column:Example Prompt:asc">Example Prompt (A-Z)</option>
+                        <option value="column:Example Prompt:desc">Example Prompt (Z-A)</option>
+                        <option value="column:Description:asc">Description (A-Z)</option>
+                        <option value="column:Description:desc">Description (Z-A)</option>
+                        <option value="column:Model Name:asc">Model Name (A-Z)</option>
+                        <option value="column:Model Name:desc">Model Name (Z-A)</option>
+                        <option value="column:Model Version:asc">Model Version (A-Z)</option>
+                        <option value="column:Model Version:desc">Model Version (Z-A)</option>
+                        <option value="column:High/Low:asc">High/Low (A-Z)</option>
+                        <option value="column:High/Low:desc">High/Low (Z-A)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>View Options:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="hideNSFW"> Hide NSFW Content</label>
                     </div>
                 </div>
 
-                <!-- Grid Card Settings Section -->
-                <div id="settings-gridcard" class="tab-content">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 15px;">Customize how model cards appear
-                        in grid view.</p>
+            </div>
 
-                    <div class="setting-group">
-                        <label for="gridcard-imageMode">Image Display:</label>
-                        <select id="gridcard-imageMode">
-                            <option value="carousel">Carousel (with arrows)</option>
-                            <option value="single">Single Image</option>
-                        </select>
+            <!-- Filename Formatting Section -->
+            <div id="settings-filename" class="tab-content">
+                <div class="setting-group filename-formats-group">
+                    <div class="group-header"
+                        style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <label>Filename Formatting:</label>
+                        <small style="color: var(--color-text-secondary);">Variables: {modelname}, {version},
+                            <span style="color: #f59e0b;"
+                                title="Required field - models without this value will show a warning">{highlow}*</span>,
+                            {category}, {subcategory}</small>
                     </div>
-
-                    <div class="setting-group">
-                        <label for="gridcard-title">Title:</label>
-                        <select id="gridcard-title">
-                            <option value="filename">File Name</option>
-                            <option value="modelName">Model Name</option>
-                            <option value="modelNameVersion">Model Name + Version</option>
-                        </select>
+                    <p style="color: #f59e0b; font-size: 0.8rem; margin: 0 0 10px 0;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        * {highlow} is a required field. Models missing this value will show a warning during
+                        rename.
+                    </p>
+                    <div class="filename-format-list" id="filename-format-list"
+                        style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                        <!-- Rows will be injected here by JS -->
                     </div>
-
-                    <div class="setting-group">
-                        <label>Subtitles:</label>
-                        <div class="subtitle-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 120px;">
-                                <label for="gridcard-subtitle1"
-                                    style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 1</label>
-                                <select id="gridcard-subtitle1" class="gridcard-subtitle-select" style="width: 100%;">
-                                    <option value="none">None</option>
-                                    <option value="filename">File Name</option>
-                                    <option value="modelName">Model Name</option>
-                                    <option value="folder">Folder</option>
-                                    <option value="category">Category</option>
-                                    <option value="subcategory">Subcategory</option>
-                                    <option value="baseModel">Base Model</option>
-                                    <option value="modelVersion">Model Version</option>
-                                    <option value="highLow">High/Low</option>
-                                    <option value="triggerWords">Trigger Words</option>
-                                    <option value="creator">Creator</option>
-                                    <option value="tags">Tags</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 120px;">
-                                <label for="gridcard-subtitle2"
-                                    style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 2</label>
-                                <select id="gridcard-subtitle2" class="gridcard-subtitle-select" style="width: 100%;">
-                                    <option value="none">None</option>
-                                    <option value="filename">File Name</option>
-                                    <option value="modelName">Model Name</option>
-                                    <option value="folder">Folder</option>
-                                    <option value="category">Category</option>
-                                    <option value="subcategory">Subcategory</option>
-                                    <option value="baseModel">Base Model</option>
-                                    <option value="modelVersion">Model Version</option>
-                                    <option value="highLow">High/Low</option>
-                                    <option value="triggerWords">Trigger Words</option>
-                                    <option value="creator">Creator</option>
-                                    <option value="tags">Tags</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 120px;">
-                                <label for="gridcard-subtitle3"
-                                    style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 3</label>
-                                <select id="gridcard-subtitle3" class="gridcard-subtitle-select" style="width: 100%;">
-                                    <option value="none">None</option>
-                                    <option value="filename">File Name</option>
-                                    <option value="modelName">Model Name</option>
-                                    <option value="folder">Folder</option>
-                                    <option value="category">Category</option>
-                                    <option value="subcategory">Subcategory</option>
-                                    <option value="baseModel">Base Model</option>
-                                    <option value="modelVersion">Model Version</option>
-                                    <option value="highLow">High/Low</option>
-                                    <option value="triggerWords">Trigger Words</option>
-                                    <option value="creator">Creator</option>
-                                    <option value="tags">Tags</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="add-format-row">
+                        <button id="add-filename-format-btn" class="btn btn-small btn-secondary" style="width: 100%;">
+                            <i class="fas fa-plus"></i> Add Format Rule
+                        </button>
                     </div>
-                </div>
-
-                <div id="settings-columns" class="tab-content">
-                    <div class="setting-group">
-                        <label>Table Columns:</label>
-                        <div class="columns-container">
-                            <div class="columns-header">
-                                <span>Visibility</span>
-                                <span>Column Name</span>
-                                <span>Order</span>
-                            </div>
-                            <ul id="sortable-columns" class="sortable-columns">
-                                <li data-column-key="thumbnail">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-thumbnail"></div>
-                                        <div class="column-name">Thumbnail</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="filename">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-filename"></div>
-                                        <div class="column-name">Filename</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="authorName">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-author"></div>
-                                        <div class="column-name">Civitai Name</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="baseModel">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-basemodel"></div>
-                                        <div class="column-name">Base Model</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="category">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-category"></div>
-                                        <div class="column-name">Category</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="folder">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-folder"></div>
-                                        <div class="column-name">Folder</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="subcategory">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-subcategory"></div>
-                                        <div class="column-name">Subcategory</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="creator">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-creator"></div>
-                                        <div class="column-name">Creator</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="examplePrompt">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-examplePrompt">
-                                        </div>
-                                        <div class="column-name">Example Prompt</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="tags">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-tags"></div>
-                                        <div class="column-name">Tags</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="path">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-path"></div>
-                                        <div class="column-name">Path</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="size">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-size"></div>
-                                        <div class="column-name">Size</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="date">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-date"></div>
-                                        <div class="column-name">Date</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="url">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-url"></div>
-                                        <div class="column-name">URL</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="nsfw">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-nsfw"></div>
-                                        <div class="column-name">NSFW</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="positiveWords">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-positive"></div>
-                                        <div class="column-name">Positive Words</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="negativeWords">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-negative"></div>
-                                        <div class="column-name">Negative Words</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="authorsWords">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-authors"></div>
-                                        <div class="column-name">Civitai Words</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="description">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-description"></div>
-                                        <div class="column-name">Description</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="notes">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-notes"></div>
-                                        <div class="column-name">Notes</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="modelName">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-modelName"></div>
-                                        <div class="column-name">Model Name</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="modelVersion">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-modelVersion"></div>
-                                        <div class="column-name">Model Version</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                                <li data-column-key="highLow">
-                                    <div class="column-item">
-                                        <div class="column-checkbox"><input type="checkbox" id="col-highLow"></div>
-                                        <div class="column-name">High/Low</div>
-                                        <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-buttons">
-                    <button id="save-settings" class="btn btn-small btn-success">Save</button>
-                    <button id="cancel-settings" class="btn btn-small btn-secondary">Cancel</button>
                 </div>
             </div>
+
+            <!-- Grid Card Settings Section -->
+            <div id="settings-gridcard" class="tab-content">
+                <p style="color: var(--color-text-secondary); margin-bottom: 15px;">Customize how model cards appear
+                    in grid view.</p>
+
+                <div class="setting-group">
+                    <label for="gridcard-imageMode">Image Display:</label>
+                    <select id="gridcard-imageMode">
+                        <option value="carousel">Carousel (with arrows)</option>
+                        <option value="single">Single Image</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label for="gridcard-title">Title:</label>
+                    <select id="gridcard-title">
+                        <option value="filename">File Name</option>
+                        <option value="modelName">Model Name</option>
+                        <option value="modelNameVersion">Model Name + Version</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>Subtitles:</label>
+                    <div class="subtitle-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 120px;">
+                            <label for="gridcard-subtitle1"
+                                style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 1</label>
+                            <select id="gridcard-subtitle1" class="gridcard-subtitle-select" style="width: 100%;">
+                                <option value="none">None</option>
+                                <option value="filename">File Name</option>
+                                <option value="modelName">Model Name</option>
+                                <option value="folder">Folder</option>
+                                <option value="category">Category</option>
+                                <option value="subcategory">Subcategory</option>
+                                <option value="baseModel">Base Model</option>
+                                <option value="modelVersion">Model Version</option>
+                                <option value="highLow">High/Low</option>
+                                <option value="triggerWords">Trigger Words</option>
+                                <option value="creator">Creator</option>
+                                <option value="tags">Tags</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label for="gridcard-subtitle2"
+                                style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 2</label>
+                            <select id="gridcard-subtitle2" class="gridcard-subtitle-select" style="width: 100%;">
+                                <option value="none">None</option>
+                                <option value="filename">File Name</option>
+                                <option value="modelName">Model Name</option>
+                                <option value="folder">Folder</option>
+                                <option value="category">Category</option>
+                                <option value="subcategory">Subcategory</option>
+                                <option value="baseModel">Base Model</option>
+                                <option value="modelVersion">Model Version</option>
+                                <option value="highLow">High/Low</option>
+                                <option value="triggerWords">Trigger Words</option>
+                                <option value="creator">Creator</option>
+                                <option value="tags">Tags</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label for="gridcard-subtitle3"
+                                style="font-size: 0.85em; color: var(--color-text-secondary);">Subtitle 3</label>
+                            <select id="gridcard-subtitle3" class="gridcard-subtitle-select" style="width: 100%;">
+                                <option value="none">None</option>
+                                <option value="filename">File Name</option>
+                                <option value="modelName">Model Name</option>
+                                <option value="folder">Folder</option>
+                                <option value="category">Category</option>
+                                <option value="subcategory">Subcategory</option>
+                                <option value="baseModel">Base Model</option>
+                                <option value="modelVersion">Model Version</option>
+                                <option value="highLow">High/Low</option>
+                                <option value="triggerWords">Trigger Words</option>
+                                <option value="creator">Creator</option>
+                                <option value="tags">Tags</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings-columns" class="tab-content">
+                <div class="setting-group">
+                    <label>Table Columns:</label>
+                    <div class="columns-container">
+                        <div class="columns-header">
+                            <span>Visibility</span>
+                            <span>Column Name</span>
+                            <span>Order</span>
+                        </div>
+                        <ul id="sortable-columns" class="sortable-columns">
+                            <li data-column-key="thumbnail">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-thumbnail"></div>
+                                    <div class="column-name">Thumbnail</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="filename">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-filename"></div>
+                                    <div class="column-name">Filename</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="authorName">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-author"></div>
+                                    <div class="column-name">Civitai Name</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="baseModel">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-basemodel"></div>
+                                    <div class="column-name">Base Model</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="category">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-category"></div>
+                                    <div class="column-name">Category</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="folder">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-folder"></div>
+                                    <div class="column-name">Folder</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="subcategory">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-subcategory"></div>
+                                    <div class="column-name">Subcategory</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="creator">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-creator"></div>
+                                    <div class="column-name">Creator</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="examplePrompt">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-examplePrompt">
+                                    </div>
+                                    <div class="column-name">Example Prompt</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="tags">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-tags"></div>
+                                    <div class="column-name">Tags</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="path">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-path"></div>
+                                    <div class="column-name">Path</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="size">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-size"></div>
+                                    <div class="column-name">Size</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="date">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-date"></div>
+                                    <div class="column-name">Date</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="url">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-url"></div>
+                                    <div class="column-name">URL</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="nsfw">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-nsfw"></div>
+                                    <div class="column-name">NSFW</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="positiveWords">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-positive"></div>
+                                    <div class="column-name">Positive Words</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="negativeWords">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-negative"></div>
+                                    <div class="column-name">Negative Words</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="authorsWords">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-authors"></div>
+                                    <div class="column-name">Civitai Words</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="description">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-description"></div>
+                                    <div class="column-name">Description</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="notes">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-notes"></div>
+                                    <div class="column-name">Notes</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="modelName">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-modelName"></div>
+                                    <div class="column-name">Model Name</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="modelVersion">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-modelVersion"></div>
+                                    <div class="column-name">Model Version</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                            <li data-column-key="highLow">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-highLow"></div>
+                                    <div class="column-name">High/Low</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button id="save-settings" class="btn btn-small btn-success">Save</button>
+                <button id="cancel-settings" class="btn btn-small btn-secondary">Cancel</button>
+            </div>
         </div>
+    </div>
     </div>
     </div>
 

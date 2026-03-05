@@ -8,6 +8,7 @@ import webbrowser
 import time
 import sys
 from pathlib import Path
+import hashlib
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'))
@@ -645,6 +646,62 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_error(500, f"Error saving model: {e}")
                 return
+                
+        elif parsed_url.path == '/generate-sha256':
+            try:
+                data = json.loads(post_data)
+                model_path = data.get('modelPath')
+                
+                if not model_path:
+                    self.send_error(400, "Missing 'modelPath' parameter")
+                    return
+                    
+                if not os.path.exists(model_path):
+                    self.send_error(404, f"Model file not found: {model_path}")
+                    return
+                
+                # Calculate SHA256
+                sha256_hash = hashlib.sha256()
+                with open(model_path, "rb") as f:
+                    for byte_block in iter(lambda: f.read(4096), b""):
+                        sha256_hash.update(byte_block)
+                hash_hex = sha256_hash.hexdigest()
+                
+                # Update JSON file
+                root = os.path.dirname(model_path)
+                model_name = os.path.splitext(os.path.basename(model_path))[0]
+                json_path = os.path.join(root, f"{model_name}.json")
+                
+                json_data = {}
+                if os.path.exists(json_path):
+                    try:
+                        with open(json_path, "r") as json_file:
+                            json_data = json.load(json_file)
+                    except Exception:
+                        pass
+                
+                json_data['sha256'] = hash_hex
+                
+                with open(json_path, 'w') as file:
+                    json.dump(json_data, file, indent=4)
+                
+                # Invalidate cache
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'status': 'success',
+                    'hash': hash_hex,
+                    'message': f'Generated SHA256: {hash_hex}'
+                }).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'error', 'message': str(e)}).encode())
                 
         elif parsed_url.path == '/rename-lora':
             data = json.loads(post_data)

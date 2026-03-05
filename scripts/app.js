@@ -21,7 +21,9 @@ const modelsContainer = document.getElementById('models-container');
 const searchInput = document.getElementById('search-input');
 const sortSelect = document.getElementById('sort-select');
 const groupSelect = document.getElementById('group-select');
-const modelFilterSelect = document.getElementById('model-filter-select');
+const modelFilterBtn = document.getElementById('model-filter-btn');
+const modelFilterDropdown = document.getElementById('model-filter-dropdown');
+const modelFilterText = document.getElementById('model-filter-text');
 const gridViewBtn = document.getElementById('grid-view-btn');
 const tableViewBtn = document.getElementById('table-view-btn');
 const refreshBtn = document.getElementById('refresh-btn');
@@ -47,6 +49,7 @@ const modelFilename = document.getElementById('model-filename');
 const modelPath = document.getElementById('model-path');
 const modelSize = document.getElementById('model-size');
 const modelDate = document.getElementById('model-date');
+const modelSha256 = document.getElementById('model-sha256');
 const editFilenameBtn = document.getElementById('edit-filename-btn');
 const saveFilenameBtn = document.getElementById('save-filename-btn');
 const jsonEditor = document.getElementById('json-editor');
@@ -63,7 +66,7 @@ export let currentModel = null;
 let currentView = appSettings.getSetting('defaultView');
 let currentSort = appSettings.getSetting('defaultSort');
 let currentGroupBy = 'none'; // Default to no grouping
-let currentModelFilter = 'all'; // Default to show all models
+let currentModelFilters = []; // empty array means show all models
 let currentFolderFilter = null; // Default to no folder filter
 let showSidebar = false; // Default sidebar visibility
 let folderViewMode = 'list'; // 'list' or 'tree'
@@ -131,7 +134,6 @@ if (clearSearchBtn) {
 
 sortSelect.addEventListener('change', handleSort);
 groupSelect.addEventListener('change', handleGroupChange);
-modelFilterSelect.addEventListener('change', handleModelFilterChange);
 gridViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('grid'); });
 tableViewBtn.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
 refreshBtn.addEventListener('click', refreshModels);
@@ -1276,10 +1278,10 @@ function displayModels(modelsToDisplay = null) {
             }
         }
 
-        // Apply base model filter
-        if (currentModelFilter !== 'all') {
+        // Apply base model filter (multi-select)
+        if (currentModelFilters.length > 0) {
             filteredModels = filteredModels.filter(model =>
-                model.baseModel === currentModelFilter
+                currentModelFilters.includes(model.baseModel || 'Unknown')
             );
         }
 
@@ -1461,9 +1463,45 @@ function handleGroupChange(e) {
     displayModels();
 }
 
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (modelFilterBtn && modelFilterDropdown && !modelFilterBtn.contains(e.target) && !modelFilterDropdown.contains(e.target)) {
+        modelFilterDropdown.style.display = 'none';
+        modelFilterBtn.classList.remove('active');
+    }
+});
+
+if (modelFilterBtn) {
+    modelFilterBtn.addEventListener('click', () => {
+        const isHidden = modelFilterDropdown.style.display === 'none';
+        modelFilterDropdown.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            modelFilterBtn.classList.add('active');
+        } else {
+            modelFilterBtn.classList.remove('active');
+        }
+    });
+}
+
 // Handle model filter selection
-function handleModelFilterChange(e) {
-    currentModelFilter = e.target.value;
+function handleModelFilterChange(baseModel, isChecked) {
+    if (isChecked) {
+        if (!currentModelFilters.includes(baseModel)) {
+            currentModelFilters.push(baseModel);
+        }
+    } else {
+        currentModelFilters = currentModelFilters.filter(m => m !== baseModel);
+    }
+
+    // Update button text
+    if (currentModelFilters.length === 0) {
+        modelFilterText.textContent = 'All Models';
+    } else if (currentModelFilters.length === 1) {
+        modelFilterText.textContent = currentModelFilters[0];
+    } else {
+        modelFilterText.textContent = `${currentModelFilters.length} Models Selected`;
+    }
+
     displayModels();
 }
 
@@ -1484,28 +1522,37 @@ function populateModelFilter() {
         return a.localeCompare(b);
     });
 
-    // Save current selection
-    const currentSelection = currentModelFilter;
+    // Clear existing options
+    modelFilterDropdown.innerHTML = '';
 
-    // Clear existing options except "All Models"
-    modelFilterSelect.innerHTML = '<option value="all">All Models</option>';
+    if (sortedBaseModels.length === 0) {
+        modelFilterDropdown.innerHTML = '<div style="padding: 8px; color: var(--color-text-secondary); font-size: 12px;">No models found</div>';
+        currentModelFilters = [];
+        if (modelFilterText) modelFilterText.textContent = 'All Models';
+        return;
+    }
 
     // Add options for each unique base model
     sortedBaseModels.forEach(baseModel => {
-        const option = document.createElement('option');
-        option.value = baseModel;
-        option.textContent = baseModel;
-        modelFilterSelect.appendChild(option);
-    });
+        const option = document.createElement('label');
+        option.className = 'multi-select-option';
 
-    // Restore selection if it still exists in the new list
-    if (currentSelection !== 'all' && sortedBaseModels.includes(currentSelection)) {
-        modelFilterSelect.value = currentSelection;
-    } else if (currentSelection !== 'all') {
-        // If the previously selected model no longer exists, reset to "all"
-        currentModelFilter = 'all';
-        modelFilterSelect.value = 'all';
-    }
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = baseModel;
+        checkbox.checked = currentModelFilters.includes(baseModel);
+
+        checkbox.addEventListener('change', (e) => {
+            handleModelFilterChange(baseModel, e.target.checked);
+        });
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = baseModel;
+
+        option.appendChild(checkbox);
+        option.appendChild(textSpan);
+        modelFilterDropdown.appendChild(option);
+    });
 }
 
 
@@ -1799,6 +1846,7 @@ function openModelDetails(model) {
     modelPath.textContent = pathWithoutFilename;
     modelSize.textContent = formatFileSize(model.size);
     modelDate.textContent = new Date(model.dateModified * 1000).toLocaleString();
+    modelSha256.textContent = model.json?.['sha256'] || 'Not generated';
 
     // Set URL in the non-editable section
     const modelUrl = model.json?.['url'] || '';
@@ -2477,10 +2525,55 @@ function formatFileSize(bytes) {
 const getCivitaiDataBtn = document.getElementById('get-civitai-data-btn');
 const createJsonBtn = document.getElementById('create-json-btn');
 const downloadThumbnailBtn = document.getElementById('download-thumbnail-btn');
+const generateSha256Btn = document.getElementById('generate-sha256-btn');
+const deleteModelBtn = document.getElementById('delete-model-btn');
+
 // Event Listeners (using CivitaiAPI module)
 getCivitaiDataBtn?.addEventListener('click', () => CivitaiAPI.getCivitaiData(currentModel, refreshModelData));
 createJsonBtn?.addEventListener('click', () => CivitaiAPI.convertCivitaiToJson(currentModel, refreshModelData));
 downloadThumbnailBtn?.addEventListener('click', () => CivitaiAPI.downloadCivitaiThumbnail(currentModel, refreshModelData));
+generateSha256Btn?.addEventListener('click', () => CivitaiAPI.generateSha256(currentModel, refreshModelData));
+
+deleteModelBtn?.addEventListener('click', async () => {
+    if (!currentModel) return;
+
+    const count = 1;
+    const confirmed = confirm(
+        `⚠️ DELETE MODEL?\n\n` +
+        `This will permanently delete:\n` +
+        `• Model file (.safetensors)\n` +
+        `• All associated files (.json, .civitai.info, .preview.png)\n\n` +
+        `This action cannot be undone!\n\n` +
+        `Are you sure you want to delete "${currentModel.name}"?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch('/delete-model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelPath: currentModel.path })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success' || data.status === 'partial') {
+            showToast(`Successfully deleted ${data.deletedFiles.length} file(s)`, 'success');
+            closeModelModal();
+            refreshModels();
+        } else {
+            showToast('Failed to delete model', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting model:', error);
+        showToast(`Error deleting model: ${error.message}`, 'error');
+    }
+});
 
 
 // ===== Filename Helper Buttons =====
