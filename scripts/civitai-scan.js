@@ -7,6 +7,7 @@ let currentLocation = 'loras';
 
 // DOM Elements
 const backButton = document.getElementById('backButton');
+const runAllInOneBtn = document.getElementById('runAllInOneBtn');
 const scanModelsBtn = document.getElementById('scanModelsBtn');
 const downloadPreviewsBtn = document.getElementById('downloadPreviewsBtn');
 const convertToJsonBtn = document.getElementById('convertToJsonBtn');
@@ -145,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    runAllInOneBtn?.addEventListener('click', runAllInOneScan);
     scanModelsBtn.addEventListener('click', scanAllModels);
     downloadPreviewsBtn.addEventListener('click', downloadMissingPreviews);
     document.getElementById('downloadAllPreviewsBtn')?.addEventListener('click', downloadAllPreviews);
@@ -208,6 +210,27 @@ function updateSummary() {
     modelsMissingJsonSpan.textContent = missingJson;
     if (modelsMissingThumbnailsSpan) modelsMissingThumbnailsSpan.textContent = missingThumbnails;
     if (modelsMissingHashesSpan) modelsMissingHashesSpan.textContent = missingHashes;
+}
+
+// Run all-in-one scan (Scan missing -> Create missing JSON -> Download missing previews)
+async function runAllInOneScan() {
+    if (currentOperation) {
+        addLog('warning', 'An operation is already in progress');
+        return;
+    }
+
+    addLog('info', '--- Starting All-In-One Scan (Steps 1, 2, and 3) ---');
+
+    // Step 1: Civitai Data
+    await scanAllModels();
+
+    // Step 2: JSON Metadata
+    await convertMissingToJson();
+
+    // Step 3: Thumbnails
+    await downloadMissingPreviews();
+
+    addLog('info', '--- All-In-One Scan Sequence Complete ---');
 }
 
 // Scan all models
@@ -962,6 +985,7 @@ function clearLog() {
 
 // Disable buttons during operation
 function disableButtons() {
+    if (runAllInOneBtn) runAllInOneBtn.disabled = true;
     scanModelsBtn.disabled = true;
     downloadPreviewsBtn.disabled = true;
     document.getElementById('downloadAllPreviewsBtn').disabled = true;
@@ -978,6 +1002,7 @@ function disableButtons() {
 
 // Enable buttons after operation
 function enableButtons() {
+    if (runAllInOneBtn) runAllInOneBtn.disabled = false;
     scanModelsBtn.disabled = false;
     downloadPreviewsBtn.disabled = false;
     document.getElementById('downloadAllPreviewsBtn').disabled = false;

@@ -157,7 +157,9 @@ export async function openBulkMoveModal(settingsManager) {
     folderInput.value = '';
 
     try {
-        const response = await fetch('/get-folders');
+        const urlParams = new URLSearchParams(window.location.search);
+        const location = urlParams.get('location') || 'loras';
+        const response = await fetch(`/get-folders?location=${encodeURIComponent(location)}`);
         if (response.ok) {
             const data = await response.json();
             const folders = data.folders || [];

@@ -193,6 +193,126 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(data_cache).encode())
+            
+        elif parsed_url.path == '/load-single-model':
+            # Load a single model's data
+            model_name = query_params.get('modelName', [''])[0]
+            location = query_params.get('location', ['loras'])[0]
+            
+            if not model_name:
+                self.send_error(400, "Missing 'modelName' parameter")
+                return
+                
+            models_path = self.get_path_for_location(location)
+            if not models_path or not os.path.exists(models_path):
+                self.send_error(400, f"Directory not set or does not exist for location: {location}")
+                return
+                
+            model_file_path = self.find_file_path(models_path, model_name + ".safetensors")
+            if not model_file_path:
+                self.send_error(404, f"Model file not found: {model_name}.safetensors")
+                return
+                
+            root = os.path.dirname(model_file_path)
+            file = os.path.basename(model_file_path)
+            lora_path = models_path
+            
+            preview_path = os.path.join(root, f"{model_name}.preview.png")
+            json_path = os.path.join(root, f"{model_name}.json")
+            civitai_path = os.path.join(root, f"{model_name}.civitai.info")
+            
+            relative_preview_path = os.path.relpath(preview_path, lora_path).replace("\\", "/")
+            preview_images = []
+            if os.path.exists(preview_path):
+                preview_images.append("/" + relative_preview_path)
+            for i in range(2, 5):
+                extra_preview_path = os.path.join(root, f"{model_name}.preview{i}.png")
+                if os.path.exists(extra_preview_path):
+                    relative_extra_preview = os.path.relpath(extra_preview_path, lora_path).replace("\\", "/")
+                    preview_images.append("/" + relative_extra_preview)
+            
+            main_preview_url = preview_images[0] if preview_images else "/assets/placeholder.png"
+            base_model = "Unknown"
+            
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, "r") as json_file:
+                        json_data = json.load(json_file)
+                        if "baseModel" in json_data:
+                            base_model = json_data["baseModel"]
+                        elif "base model" in json_data:
+                            base_model = json_data["base model"]
+                except Exception:
+                    pass
+                    
+            if base_model == "Unknown" and os.path.exists(civitai_path):
+                try:
+                    with open(civitai_path, "r") as civitai_file:
+                        civitai_data = json.load(civitai_file)
+                        if "baseModel" in civitai_data:
+                            base_model = civitai_data["baseModel"]
+                        elif "base model" in civitai_data:
+                            base_model = civitai_data["base model"]
+                except Exception:
+                    pass
+                    
+            associated_files = []
+            for associated_file in os.listdir(root):
+                if associated_file.startswith(model_name + "."):
+                    associated_files.append(associated_file)
+                    
+            model_info = {
+                "id": model_name,
+                "name": model_name,
+                "filename": file,
+                "path": os.path.join(root, file),
+                "previewUrl": main_preview_url,
+                "previewImages": preview_images,
+                "size": os.path.getsize(os.path.join(root, file)),
+                "dateModified": os.path.getmtime(os.path.join(root, file)),
+                "category": os.path.basename(root),
+                "baseModel": base_model,
+                "associatedFiles": associated_files
+            }
+            
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, "r") as json_file:
+                        json_data = json.load(json_file)
+                        model_info["json"] = json_data
+                        if "category" in json_data:
+                            model_info["category"] = json_data["category"]
+                except Exception:
+                    model_info["json"] = {}
+            else:
+                model_info["json"] = {}
+                
+            if os.path.exists(civitai_path):
+                try:
+                    with open(civitai_path, "r") as civitai_file:
+                        civitai_data = json.load(civitai_file)
+                        model_info["civitaiInfo"] = civitai_data
+                        if "url" in civitai_data:
+                            model_info["civitaiInfo"]["modelUrl"] = civitai_data["url"]
+                except Exception:
+                    model_info["civitaiInfo"] = {}
+            else:
+                model_info["civitaiInfo"] = {}
+                
+            # Update cache if it exists
+            target_cache = _checkpoints_data_cache if location == 'checkpoints' else _lora_data_cache
+            if target_cache is not None:
+                for i, m in enumerate(target_cache):
+                    if m['name'] == model_name:
+                        target_cache[i] = model_info
+                        break
+                else:
+                    target_cache.append(model_info)
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(model_info).encode())
         
         elif parsed_url.path == '/load-settings':
             settings = self.load_settings()

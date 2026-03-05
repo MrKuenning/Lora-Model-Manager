@@ -162,26 +162,35 @@ export async function refreshModelData(currentModel, models, updateCallback, loc
     }
 
     try {
-        // Fetch the latest data for the specified location
-        const response = await fetch(`/load-loras?refresh=true&location=${encodeURIComponent(location)}`);
+        // Fetch the latest data for the specific model
+        const response = await fetch(`/load-single-model?modelName=${encodeURIComponent(currentModel.name)}&location=${encodeURIComponent(location)}`);
+
         if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Could not find the current model in the updated data. The model may have been renamed or deleted.');
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Update the models array
-        const updatedModels = await response.json();
-
-        // Find the current model in the updated data
-        const updatedModel = updatedModels.find(model => model.name === currentModel.name);
+        // Get the updated model data
+        const updatedModel = await response.json();
 
         if (updatedModel) {
+            // Update the model in the models array
+            const modelIndex = models.findIndex(m => m.name === currentModel.name);
+            if (modelIndex !== -1) {
+                models[modelIndex] = updatedModel;
+            } else {
+                models.push(updatedModel);
+            }
+
             // Call the update callback to refresh UI
             if (updateCallback) {
                 updateCallback(updatedModel);
             }
 
             console.log('Model data refreshed successfully');
-            return { updatedModel, updatedModels };
+            return { updatedModel, updatedModels: models };
         } else {
             throw new Error('Could not find the current model in the updated data. The model may have been renamed or deleted.');
         }
