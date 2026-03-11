@@ -90,13 +90,13 @@
 }
 
 .btn-danger {
-    background-color: #dc3545;
+    background-color: #f85149;
     color: white;
     transition: var(--transition-standard);
 }
 
 .btn-danger:hover {
-    background-color: #c82333;
+    background-color: #da3633;
     transform: scale(1.02);
 }
 

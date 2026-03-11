@@ -68,9 +68,9 @@ let currentSort = appSettings.getSetting('defaultSort');
 let currentGroupBy = 'none'; // Default to no grouping
 let currentModelFilters = []; // empty array means show all models
 let currentFolderFilter = null; // Default to no folder filter
-let showSidebar = false; // Default sidebar visibility
-let folderViewMode = 'list'; // 'list' or 'tree'
-let folderDensityMode = 'comfy'; // 'comfy' or 'compact'
+let showSidebar = localStorage.getItem('showSidebar') === 'true'; // Default sidebar visibility
+let folderViewMode = localStorage.getItem('folderViewMode') || 'list'; // 'list' or 'tree'
+let folderDensityMode = localStorage.getItem('folderDensityMode') || 'comfy'; // 'comfy' or 'compact'
 let searchTerm = '';
 let currentJsonType = 'model'; // 'model' or 'civitai'
 let selectedThumbnailIndex = 0; // Currently selected thumbnail (0-based for preview-thumb elements)
@@ -141,20 +141,26 @@ refreshBtn.addEventListener('click', refreshModels);
 sidebarToggleBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     showSidebar = !showSidebar;
+    localStorage.setItem('showSidebar', showSidebar);
     folderSidebar.style.display = showSidebar ? 'block' : 'none';
     if (showSidebar) {
+        sidebarToggleBtn.classList.add('active');
         renderFolderSidebar();
+    } else {
+        sidebarToggleBtn.classList.remove('active');
     }
 });
 
 folderViewToggleBtn?.addEventListener('click', () => {
     folderViewMode = folderViewMode === 'list' ? 'tree' : 'list';
+    localStorage.setItem('folderViewMode', folderViewMode);
     folderViewToggleBtn.innerHTML = folderViewMode === 'list' ? '<i class="fas fa-list"></i>' : '<i class="fas fa-sitemap"></i>';
     renderFolderSidebar();
 });
 
 folderDensityToggleBtn?.addEventListener('click', () => {
     folderDensityMode = folderDensityMode === 'comfy' ? 'compact' : 'comfy';
+    localStorage.setItem('folderDensityMode', folderDensityMode);
     folderDensityToggleBtn.innerHTML = folderDensityMode === 'comfy' ? '<i class="fas fa-compress-arrows-alt"></i>' : '<i class="fas fa-expand-arrows-alt"></i>';
     if (folderDensityMode === 'compact') {
         folderContainer.classList.add('compact-view');
@@ -1137,6 +1143,25 @@ async function initApp() {
 
     // Apply saved view preference
     switchView(currentView, false);
+
+    // Apply saved folder pane state
+    folderSidebar.style.display = showSidebar ? 'block' : 'none';
+    if (showSidebar) sidebarToggleBtn?.classList.add('active');
+
+    // Apply saved folder view mode
+    if (folderViewToggleBtn) {
+        folderViewToggleBtn.innerHTML = folderViewMode === 'list' ? '<i class="fas fa-list"></i>' : '<i class="fas fa-sitemap"></i>';
+    }
+
+    // Apply saved folder density mode
+    if (folderDensityToggleBtn) {
+        folderDensityToggleBtn.innerHTML = folderDensityMode === 'comfy' ? '<i class="fas fa-compress-arrows-alt"></i>' : '<i class="fas fa-expand-arrows-alt"></i>';
+        if (folderDensityMode === 'compact') {
+            folderContainer.classList.add('compact-view');
+        } else {
+            folderContainer.classList.remove('compact-view');
+        }
+    }
 
     // Set sort select value from settings
     sortSelect.value = currentSort;

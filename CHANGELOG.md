@@ -1,5 +1,44 @@
 # Lora Model Manager - Changelog
 
+
+### 03/10/2026
+
+**Added**
+- **Folder Pane Persistence**
+  - The folder pane's state (visible/hidden) and view mode (Tree/List) now persist across sessions using `localStorage`.
+
+---
+
+### 03/05/2026
+
+**Added**
+- **All-In-One Scan Button**
+  - New "Run All-In-One Scan" button on the Civitai scan page to automate matching, info file creation, and thumbnail downloads in one click.
+- **Multi-Select Model Filter**
+  - Replaced the single-select model filter with a multi-select dropdown, allowing users to filter by multiple base models simultaneously.
+
+**Changed**
+- **Model Popup UI Cleanup**
+  - Refined the model card interface for better clarity and added new action buttons.
+
+---
+
+### 03/02/2026
+
+**Changed**
+- **Clean Name Improvements**
+  - The "Clean Name" button now automatically converts ALL-CAPS names to Title Case for better readability.
+- **Fast Media Updates**
+  - Optimized the media update process to bypass slow disk scans, allowing new images to appear in the UI almost instantly.
+
+---
+
+### 02/24/2026
+
+**Added**
+- **Folder Tree & List View**
+  - New sidebar with toggleable Tree and List views for enhanced folder navigation and management.
+
 ---
 
 ### 01/27/2026

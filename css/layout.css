@@ -862,7 +862,9 @@ main {
     box-shadow: var(--shadow-standard);
     padding: var(--spacing-md);
     flex-shrink: 0;
-    max-height: 80vh;
+    position: sticky;
+    top: 180px;
+    height: calc(100vh - 220px);
     overflow-y: auto;
 }
 
