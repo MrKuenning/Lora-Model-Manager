@@ -1,11 +1,16 @@
 # Lora Model Manager - Changelog
 
 
-### 03/19/2026
+### 03/20/2026
 
-**Added**
-- **Migration Scripts**
-  - Added purely temporary standalone scripts `Temp Migrate JSON Structure.py` and `Temp Populate Prompts from Info.py` to seamlessly transition existing downloaded models to the new structure without overwriting specific user edits.
+**Fixed**
+- **Video Thumbnail Extraction**
+  - Fixed an issue where `.mp4` and `.webm` video URLs from Civitai were being mistakenly saved directly as unreadable `.png` files. The application now correctly identifies video URLs and passes them to FFmpeg to extract proper image frames for thumbnails.
+  - Implemented this fix for both the standalone `All-In-One Scan.py` script and the main web UI backend (`civitai_handler.py`).
+
+---
+
+### 03/19/2026
 
 **Changed**
 - **Unified JSON Architecture**

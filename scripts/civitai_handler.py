@@ -34,6 +34,32 @@ INFO_EXTENSION = '.civitai.info'
 PREVIEW_EXTENSION = '.preview.png'
 
 
+def load_json_robust(file_path):
+    """
+    Load JSON from a file with robust encoding handling and error reporting.
+    Specifically handles UTF-8 with BOM (common on Windows).
+    
+    Args:
+        file_path: Path to the JSON file
+        
+    Returns:
+        dict: The loaded data, or None if the file doesn't exist or is invalid.
+    """
+    if not os.path.exists(file_path):
+        return None
+        
+    try:
+        # Try utf-8-sig first to handle potential BOM
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON format in {file_path}: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: Could not read JSON file {file_path}: {e}")
+        return None
+
+
 def generate_sha256(file_path, chunk_size=8192):
     """
     Generate SHA256 hash for a file
@@ -72,14 +98,15 @@ def save_sha256_to_json(model_path, sha256_hash):
         json_path = f"{base_path}.json"
         
         # Load existing JSON if it exists
-        existing_data = {}
-        if os.path.exists(json_path):
-            try:
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
-            except:
-                pass
-        
+        existing_data = load_json_robust(json_path)
+        if existing_data is None and os.path.exists(json_path):
+            # If the file exists but we couldn't read it, ABORT to prevent data loss!
+            print(f"CRITICAL: Failed to read existing JSON at {json_path}. Aborting update to prevent data loss.")
+            return False
+            
+        if existing_data is None:
+            existing_data = {}
+            
         # Update with SHA256
         existing_data['sha256'] = sha256_hash
         
@@ -118,18 +145,14 @@ def find_duplicate_models(directory):
                     base_path = os.path.splitext(model_path)[0]
                     json_path = f"{base_path}.json"
                     
-                    if os.path.exists(json_path):
-                        try:
-                            with open(json_path, 'r', encoding='utf-8') as f:
-                                json_data = json.load(f)
-                                sha256 = json_data.get('sha256')
-                                if sha256:
-                                    if sha256 not in hash_map:
-                                        hash_map[sha256] = []
-                                    hash_map[sha256].append(model_path)
-                                else:
-                                    missing_hash.append(model_path)
-                        except:
+                    json_data = load_json_robust(json_path)
+                    if json_data:
+                        sha256 = json_data.get('sha256')
+                        if sha256:
+                            if sha256 not in hash_map:
+                                hash_map[sha256] = []
+                            hash_map[sha256].append(model_path)
+                        else:
                             missing_hash.append(model_path)
                     else:
                         missing_hash.append(model_path)
@@ -459,11 +482,9 @@ def create_json_from_api_data(model_path, api_data, use_api_for_creator=True, ex
  
         
         # --- Merge with existing JSON data (preserve user-edited fields) ---
-        if os.path.exists(json_path):
+        existing_data = load_json_robust(json_path)
+        if existing_data:
             try:
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
-                
                 # Fields to preserve if already populated by user
                 fields_to_preserve = [
                     'activation text', 'sd version', 'preferred weight',
@@ -496,7 +517,9 @@ def create_json_from_api_data(model_path, api_data, use_api_for_creator=True, ex
                         mapped_data[key] = value
                         
             except Exception as e:
-                print(f"Error reading existing JSON for field preservation: {e}")
+                print(f"Error merging existing JSON data: {e}")
+        elif os.path.exists(json_path):
+            print(f"WARNING: Could not read existing JSON for merging at {json_path}. Proceeding with new data only.")
         
         # --- Write sorted JSON ---
         sorted_data = {k: mapped_data[k] for k in sorted(mapped_data.keys())}
@@ -542,13 +565,14 @@ def create_dummy_info_file(model_path):
         json_path = f"{base_path}.json"
         
         # Load existing JSON if it exists to preserve data
-        existing_data = {}
-        if os.path.exists(json_path):
-            try:
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
-            except:
-                pass
+        existing_data = load_json_robust(json_path)
+        if existing_data is None and os.path.exists(json_path):
+            # If the file exists but we couldn't read it, ABORT to prevent data loss!
+            print(f"CRITICAL: Failed to read existing JSON at {json_path}. Aborting dummy creation to prevent data loss.")
+            return False
+            
+        if existing_data is None:
+            existing_data = {}
         
         # Mark as checked but not found
         existing_data['civitai_matched'] = False
@@ -614,7 +638,7 @@ def extract_video_frames(video_path, output_base_path):
         preview_path = f"{output_base_path}{PREVIEW_EXTENSION}"
         preview2_path = f"{output_base_path}.preview2.png"
         
-        # Extract first frame
+        # Extract first frame using select filter (as in the standalone version)
         first_frame_cmd = [
             'ffmpeg', '-y',
             '-i', video_path,
@@ -624,6 +648,7 @@ def extract_video_frames(video_path, output_base_path):
             preview_path
         ]
         
+        print(f"Executing: {' '.join(first_frame_cmd)}")
         result = subprocess.run(
             first_frame_cmd,
             stdout=subprocess.PIPE,
@@ -632,9 +657,12 @@ def extract_video_frames(video_path, output_base_path):
         )
         
         if result.returncode != 0:
-            return (False, f"FFmpeg error extracting first frame: {result.stderr.decode()[:200]}")
+            error_msg = result.stderr.decode()
+            print(f"FFmpeg error extracting first frame: {error_msg}")
+            return (False, f"FFmpeg error extracting first frame: {error_msg[:200]}")
         
-        # Extract last frame using reverse filter
+        # Extract last frame using reverse filter (proven method from standalone version)
+        # This is slower but more reliable for certain formats/containers
         last_frame_cmd = [
             'ffmpeg', '-y',
             '-i', video_path,
@@ -644,19 +672,31 @@ def extract_video_frames(video_path, output_base_path):
             preview2_path
         ]
         
+        print(f"Executing: {' '.join(last_frame_cmd)}")
         result = subprocess.run(
             last_frame_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=30
+            timeout=60  # Increased timeout for slow reverse filter
         )
         
         if result.returncode != 0:
-            # First frame succeeded, just log warning for second
-            print(f"Warning: Could not extract last frame: {result.stderr.decode()[:200]}")
-            return (True, f"Extracted first frame (last frame failed)")
+            error_msg = result.stderr.decode()
+            print(f"FFmpeg error extracting last frame: {error_msg}")
+            
+            # Fallback: Just try to get one frame normally for the second slot if reverse fails
+            print(f"Warning: Last frame extraction failed, using fallback.")
+            fallback_cmd = [
+                'ffmpeg', '-y',
+                '-i', video_path,
+                '-vframes', '1',
+                '-q:v', '2',
+                preview2_path
+            ]
+            subprocess.run(fallback_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+            return (True, "Extracted first frame (last frame fallback used)")
         
-        return (True, f"Extracted first and last frames")
+        return (True, "Extracted first and last frames")
         
     except subprocess.TimeoutExpired:
         return (False, "FFmpeg timeout - video too long or complex")
@@ -726,9 +766,11 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_add
                 if not img2:
                     img2 = json_data.get('preview_image_2', '')
                 if img1:
-                    images.append({'url': img1, 'type': 'image', 'nsfwLevel': 1})
+                    img_type = 'video' if '.mp4' in img1.lower() or '.webm' in img1.lower() else 'image'
+                    images.append({'url': img1, 'type': img_type, 'nsfwLevel': 1})
                 if img2:
-                    images.append({'url': img2, 'type': 'image', 'nsfwLevel': 1})
+                    img_type = 'video' if '.mp4' in img2.lower() or '.webm' in img2.lower() else 'image'
+                    images.append({'url': img2, 'type': img_type, 'nsfwLevel': 1})
                 
                 # Fallback: check z_info_file.images
                 if not images:
@@ -911,22 +953,19 @@ def scan_models_directory(directory):
                     json_path = f"{base_path}.json"
                     
                     # Check if hash exists in JSON and if model has civitai data
+                    json_data = load_json_robust(json_path)
                     has_hash = False
                     has_civitai_data = False
-                    if os.path.exists(json_path):
-                        try:
-                            with open(json_path, 'r', encoding='utf-8') as f:
-                                json_data = json.load(f)
-                                has_hash = bool(json_data.get('sha256'))
-                                # Model has civitai data if it has z_info_file, web_civitai_data, or civitai_matched marker
-                                has_civitai_data = bool(
-                                    json_data.get('z_info_file') or 
-                                    json_data.get('web_civitai_data', {}).get('model_id') or
-                                    json_data.get('model_id') or  # legacy flat format
-                                    json_data.get('civitai_matched') is not None
-                                )
-                        except:
-                            pass
+                    
+                    if json_data:
+                        has_hash = bool(json_data.get('sha256'))
+                        # Model has civitai data if it has z_info_file, web_civitai_data, or civitai_matched marker
+                        has_civitai_data = bool(
+                            json_data.get('z_info_file') or 
+                            json_data.get('web_civitai_data', {}).get('model_id') or
+                            json_data.get('model_id') or  # legacy flat format
+                            json_data.get('civitai_matched') is not None
+                        )
                     
                     model_data = {
                         'path': file_path,

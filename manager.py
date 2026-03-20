@@ -1,4 +1,4 @@
-import http.server
+﻿import http.server
 import socketserver
 import json
 import os
@@ -237,25 +237,25 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             
             if os.path.exists(json_path):
                 try:
-                    with open(json_path, "r") as json_file:
+                    with open(json_path, "r", encoding='utf-8-sig') as json_file:
                         json_data = json.load(json_file)
                         if "baseModel" in json_data:
                             base_model = json_data["baseModel"]
                         elif "base model" in json_data:
                             base_model = json_data["base model"]
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Error loading JSON for single model: {e}")
                     
             if base_model == "Unknown" and os.path.exists(civitai_path):
                 try:
-                    with open(civitai_path, "r") as civitai_file:
+                    with open(civitai_path, "r", encoding='utf-8-sig') as civitai_file:
                         civitai_data = json.load(civitai_file)
                         if "baseModel" in civitai_data:
                             base_model = civitai_data["baseModel"]
                         elif "base model" in civitai_data:
                             base_model = civitai_data["base model"]
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Error loading Civitai info for single model: {e}")
                     
             associated_files = []
             for associated_file in os.listdir(root):
@@ -278,24 +278,26 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
             
             if os.path.exists(json_path):
                 try:
-                    with open(json_path, "r") as json_file:
+                    with open(json_path, "r", encoding='utf-8-sig') as json_file:
                         json_data = json.load(json_file)
                         model_info["json"] = json_data
                         if "category" in json_data:
                             model_info["category"] = json_data["category"]
-                except Exception:
+                except Exception as e:
+                    print(f"Error loading JSON for model info: {e}")
                     model_info["json"] = {}
             else:
                 model_info["json"] = {}
                 
             if os.path.exists(civitai_path):
                 try:
-                    with open(civitai_path, "r") as civitai_file:
+                    with open(civitai_path, "r", encoding='utf-8-sig') as civitai_file:
                         civitai_data = json.load(civitai_file)
                         model_info["civitaiInfo"] = civitai_data
                         if "url" in civitai_data:
                             model_info["civitaiInfo"]["modelUrl"] = civitai_data["url"]
-                except Exception:
+                except Exception as e:
+                    print(f"Error loading Civitai info for model info: {e}")
                     model_info["civitaiInfo"] = {}
             else:
                 model_info["civitaiInfo"] = {}
@@ -675,14 +677,14 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 json_data = {}
                 if os.path.exists(json_path):
                     try:
-                        with open(json_path, "r") as json_file:
+                        with open(json_path, "r", encoding='utf-8-sig') as json_file:
                             json_data = json.load(json_file)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"Error loading JSON for hash update: {e}")
                 
                 json_data['sha256'] = hash_hex
                 
-                with open(json_path, 'w') as file:
+                with open(json_path, 'w', encoding='utf-8') as file:
                     json.dump(json_data, file, indent=4)
                 
                 # Invalidate cache
@@ -1066,8 +1068,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 
                 # Invalidate caches
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1257,7 +1259,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 json_converter.write_json_file(info_path, mapped_data)
                 
                 # Invalidate cache
-                self.lora_data_cache = None
+                _lora_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1312,7 +1314,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
                 if success:
                     # Invalidate cache
-                    self.lora_data_cache = None
+                    _lora_data_cache = None
+                    _checkpoints_data_cache = None
                     
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -1351,7 +1354,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     json_path = f"{base_path}.json"
                     if os.path.exists(json_path):
                         try:
-                            with open(json_path, 'r', encoding='utf-8') as f:
+                            with open(json_path, 'r', encoding='utf-8-sig') as f:
                                 existing_data = json.load(f)
                                 if existing_data.get('sha256'):
                                     self.send_response(200)
@@ -1363,8 +1366,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                                         'sha256': existing_data['sha256']
                                     }).encode())
                                     return
-                        except:
-                            pass
+                        except Exception as e:
+                            print(f"Error checking existing hash in JSON: {e}")
                 
                 print(f"Generating SHA256 hash for: {model_path}")
                 file_hash = civitai_handler.generate_sha256(model_path)
@@ -1471,8 +1474,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                             print(f"Failed to delete {file_path}: {e}")
                 
                 # Invalidate cache
-                self.lora_data_cache = None
-                self.checkpoint_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1553,8 +1556,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"Saved preview image: {preview_path}")
                 
                 # Invalidate both caches
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1645,8 +1648,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     print(f"Final rename: {temp_path} -> {final_path}")
                 
                 # Invalidate both caches
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1716,8 +1719,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     print(f"Final rename: {temp_path} -> {final_path}")
                 
                 # Invalidate both caches
-                self.lora_data_cache = None
-                self.checkpoints_data_cache = None
+                _lora_data_cache = None
+                _checkpoints_data_cache = None
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -1741,7 +1744,8 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
 
     def refresh_lora_data_cache(self, lora_path):
         """Refresh the cached model data."""
-        self.lora_data_cache = self.get_lora_data(lora_path)
+        global _lora_data_cache
+        _lora_data_cache = self.get_lora_data(lora_path)
 
     def get_lora_data(self, lora_path):
         lora_data = []
