@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import shutil
 from pathlib import Path
+from html import unescape
 
 # Civitai API endpoints
 CIVITAI_API_URLS = {
@@ -264,9 +265,256 @@ def parse_civitai_url(url):
     return (model_id, version_id)
 
 
+def strip_html_tags(text):
+    """
+    Remove HTML tags from text using regular expressions
+    """
+    clean = re.compile('<.*?>')
+    return re.sub(clean, ' ', text)
+
+
+def get_creator_from_api(model_id, use_api=True):
+    """
+    Fetch creator information from Civitai API using model ID
+    """
+    if not use_api:
+        return ''
+    try:
+        api_url = f"https://civitai.com/api/v1/models/{model_id}"
+        response = requests.get(api_url, headers=DEFAULT_HEADERS, timeout=10)
+        if response.status_code == 200:
+            model_data = response.json()
+            if 'creator' in model_data and 'username' in model_data['creator']:
+                return model_data['creator']['username']
+        return 'Unknown'
+    except Exception as e:
+        print(f"Error fetching creator information: {e}")
+        return 'Unknown'
+
+
+def create_json_from_api_data(model_path, api_data, use_api_for_creator=True, existing_creator=''):
+    """
+    Create a .json file directly from Civitai API response data.
+    This replaces the old two-step process of saving .civitai.info then converting.
+    
+    Args:
+        model_path: Path to the model file
+        api_data: Dict from Civitai API response
+        use_api_for_creator: Whether to make API call for creator info
+        existing_creator: Existing creator name to preserve
+        
+    Returns:
+        True on success, False on error
+    """
+    try:
+        base_path = os.path.splitext(model_path)[0]
+        json_path = f"{base_path}.json"
+        
+        # Initialize all fields with empty values (same structure as existing JSONs)
+        mapped_data = {
+            'activation text': '',
+            'base model': '',
+            'base_model_type': '',
+            'category': '',
+            'description': '',
+            'example prompt 1': '',
+            'example prompt 2': '',
+            'folder': '',
+            'high low': '',
+            'model version': '',
+            'model_type': '',
+            'name': '',
+            'negative text': '',
+            'notes': '',
+            'nsfw': '',
+            'preferred weight': 0,
+            'sd version': '',
+            'sha256': '',
+            'subcategory': '',
+            'tags': '',
+            'web_civitai_data': {
+                'civitai name': '',
+                'civitai text': '',
+                'creator': '',
+                'downloadUrl': '',
+                'file_id': '',
+                'model_id': '',
+                'original_filename': '',
+                'preview_image_1': '',
+                'preview_image_2': '',
+                'published_date': '',
+                'url': ''
+            }
+        }
+        
+        # --- Extract data from API response ---
+        
+        # Trained words / activation text
+        if 'trainedWords' in api_data:
+            trained_words = api_data['trainedWords']
+            if isinstance(trained_words, list) and trained_words:
+                mapped_data['activation text'] = trained_words[0]
+                mapped_data['web_civitai_data']['civitai text'] = ', '.join(trained_words)
+        
+        # Base model
+        if 'baseModel' in api_data:
+            mapped_data['base model'] = api_data['baseModel']
+            mapped_data['sd version'] = 'SD1' if api_data['baseModel'].startswith('SD 1') else 'SD2'
+        
+        # Base model type (NEW)
+        if 'baseModelType' in api_data:
+            mapped_data['base_model_type'] = api_data['baseModelType']
+        
+        # Model info (name, nsfw, type)
+        if 'model' in api_data:
+            if 'name' in api_data['model']:
+                mapped_data['web_civitai_data']['civitai name'] = api_data['model']['name']
+                mapped_data['name'] = api_data['model']['name']
+            if 'nsfw' in api_data['model']:
+                mapped_data['nsfw'] = str(api_data['model']['nsfw']).lower()
+            # Model type (NEW)
+            if 'type' in api_data['model']:
+                mapped_data['model_type'] = api_data['model']['type']
+        
+        # Model ID and File/Version ID (NEW)
+        if 'modelId' in api_data:
+            mapped_data['web_civitai_data']['model_id'] = api_data['modelId']
+        if 'id' in api_data:
+            mapped_data['web_civitai_data']['file_id'] = api_data['id']
+        
+        # Published date (NEW)
+        if 'publishedAt' in api_data:
+            mapped_data['web_civitai_data']['published_date'] = api_data['publishedAt']
+        
+        # Files info: original filename, download URL (NEW)
+        if 'files' in api_data and isinstance(api_data['files'], list) and api_data['files']:
+            first_file = api_data['files'][0]
+            if 'name' in first_file:
+                mapped_data['web_civitai_data']['original_filename'] = first_file['name']
+            if 'downloadUrl' in first_file:
+                mapped_data['web_civitai_data']['downloadUrl'] = first_file['downloadUrl']
+            # Also get SHA256 from file hashes if available
+            if 'hashes' in first_file and 'SHA256' in first_file['hashes']:
+                mapped_data['sha256'] = first_file['hashes']['SHA256'].lower()
+        
+        # Root-level download URL fallback
+        if not mapped_data['web_civitai_data']['downloadUrl'] and 'downloadUrl' in api_data:
+            mapped_data['web_civitai_data']['downloadUrl'] = api_data['downloadUrl']
+        
+        # Process description for notes field
+        description = ''
+        if 'description' in api_data and api_data['description']:
+            description = api_data['description']
+            description = unescape(description)
+            description = strip_html_tags(description)
+            description = ' '.join(description.split())
+        
+        # Extract example prompts and preview image URLs from images
+        if 'images' in api_data:
+            images = api_data['images']
+            if isinstance(images, list) and images:
+                # First image: example prompt + preview URL
+                first_image = images[0]
+                if 'meta' in first_image and isinstance(first_image['meta'], dict):
+                    if 'prompt' in first_image['meta']:
+                        mapped_data['example prompt 1'] = first_image['meta']['prompt']
+                    if 'negativePrompt' in first_image['meta']:
+                        mapped_data['negative text'] = first_image['meta']['negativePrompt']
+                if 'url' in first_image:
+                    mapped_data['web_civitai_data']['preview_image_1'] = first_image['url']
+                
+                # Second image: example prompt 2 + preview URL (NEW)
+                if len(images) > 1:
+                    second_image = images[1]
+                    if 'meta' in second_image and isinstance(second_image['meta'], dict):
+                        if 'prompt' in second_image['meta']:
+                            mapped_data['example prompt 2'] = second_image['meta']['prompt']
+                    if 'url' in second_image:
+                        mapped_data['web_civitai_data']['preview_image_2'] = second_image['url']
+        
+        # Build URL and notes
+        wcd = mapped_data['web_civitai_data']
+        if wcd['model_id'] and wcd['file_id']:
+            url = f"https://civitai.com/models/{wcd['model_id']}?modelVersionId={wcd['file_id']}"
+            wcd['url'] = url
+            
+            # Get creator
+            if existing_creator:
+                wcd['creator'] = existing_creator
+            elif use_api_for_creator:
+                creator = get_creator_from_api(wcd['model_id'], use_api_for_creator)
+                if creator:
+                    wcd['creator'] = creator
+            
+            # Construct notes field
+            notes = [f"URL: {url}"]
+            if 'baseModel' in api_data:
+                notes.append(f"Base Model: {api_data['baseModel']}")
+            if 'trainedWords' in api_data and api_data['trainedWords']:
+                notes.append(f"Activation Words: {', '.join(api_data['trainedWords'])}")
+            if description:
+                notes.append(f"Description: {description}")
+            mapped_data['notes'] = '\n'.join(notes)
+        
+ 
+        
+        # --- Merge with existing JSON data (preserve user-edited fields) ---
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+                
+                # Fields to preserve if already populated by user
+                fields_to_preserve = [
+                    'activation text', 'sd version', 'preferred weight',
+                    'negative text',
+                    'nsfw', 'base model', 'example prompt 1',
+                    'category', 'subcategory', 'tags',
+                    'name', 'model version', 'high low',
+                    'sha256', 'folder', 'description'
+                ]
+                for field in fields_to_preserve:
+                    if field in existing_data and existing_data[field] is not None and existing_data[field] != '':
+                        mapped_data[field] = existing_data[field]
+                
+                # Preserve web_civitai_data sub-fields if they exist in old format
+                # (migrate from old flat format to nested)
+                existing_wcd = existing_data.get('web_civitai_data', {})
+                wcd_fields_to_preserve = ['civitai text', 'url', 'creator']
+                for field in wcd_fields_to_preserve:
+                    # Check nested location first
+                    if field in existing_wcd and existing_wcd[field]:
+                        mapped_data['web_civitai_data'][field] = existing_wcd[field]
+                    # Fallback: check old flat location
+                    elif field in existing_data and existing_data[field] is not None and existing_data[field] != '':
+                        mapped_data['web_civitai_data'][field] = existing_data[field]
+                
+                # Also preserve any extra fields in existing JSON not in our template
+                fields_to_ignore = {'creator', 'original_filename', 'downloadUrl', 'z_info_file'}
+                for key, value in existing_data.items():
+                    if key not in mapped_data and key not in fields_to_ignore:
+                        mapped_data[key] = value
+                        
+            except Exception as e:
+                print(f"Error reading existing JSON for field preservation: {e}")
+        
+        # --- Write sorted JSON ---
+        sorted_data = {k: mapped_data[k] for k in sorted(mapped_data.keys())}
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(sorted_data, f, indent=4)
+        
+        print(f"Created JSON directly from API data: {json_path}")
+        return True
+        
+    except Exception as e:
+        print(f"Error creating JSON from API data: {e}")
+        return False
+
+
 def save_civitai_info(model_path, model_info):
     """
-    Save model info as .civitai.info file
+    Save model info directly as .json file (no longer creates .civitai.info).
+    This is the main entry point called by the server routes.
     
     Args:
         model_path: Path to the model file
@@ -275,23 +523,13 @@ def save_civitai_info(model_path, model_info):
     Returns:
         True on success, False on error
     """
-    try:
-        base_path = os.path.splitext(model_path)[0]
-        info_path = f"{base_path}{INFO_EXTENSION}"
-        
-        with open(info_path, 'w', encoding='utf-8') as f:
-            json.dump(model_info, f, indent=2)
-        
-        print(f"Saved model info to: {info_path}")
-        return True
-    except Exception as e:
-        print(f"Error saving civitai info: {e}")
-        return False
+    return create_json_from_api_data(model_path, model_info)
 
 
 def create_dummy_info_file(model_path):
     """
-    Create an empty .civitai.info file to mark model as already checked
+    Create a minimal .json file to mark model as already checked but not found on Civitai.
+    No longer creates .civitai.info files.
     
     Args:
         model_path: Path to the model file
@@ -301,16 +539,27 @@ def create_dummy_info_file(model_path):
     """
     try:
         base_path = os.path.splitext(model_path)[0]
-        info_path = f"{base_path}{INFO_EXTENSION}"
+        json_path = f"{base_path}.json"
         
-        # Create empty JSON object
-        with open(info_path, 'w', encoding='utf-8') as f:
-            json.dump({}, f, indent=2)
+        # Load existing JSON if it exists to preserve data
+        existing_data = {}
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+            except:
+                pass
         
-        print(f"Created dummy info file: {info_path}")
+        # Mark as checked but not found
+        existing_data['civitai_matched'] = False
+        
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, indent=4)
+        
+        print(f"Created dummy JSON marker: {json_path}")
         return True
     except Exception as e:
-        print(f"Error creating dummy info file: {e}")
+        print(f"Error creating dummy JSON: {e}")
         return False
 
 
@@ -417,7 +666,9 @@ def extract_video_frames(video_path, output_base_path):
 
 def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_additional=False):
     """
-    Download preview image for a model from its .civitai.info file
+    Download preview image for a model.
+    Reads image URLs from the model's .json file (preview_image_1/2 fields,
+    with fallback to z_info_file.images, then .civitai.info for backward compat).
     
     Args:
         model_path: Path to the model file
@@ -431,6 +682,7 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_add
     try:
         base_path = os.path.splitext(model_path)[0]
         info_path = f"{base_path}{INFO_EXTENSION}"
+        json_path = f"{base_path}.json"
         preview_path = f"{base_path}{PREVIEW_EXTENSION}"
         preview2_path = f"{base_path}.preview2.png"
         
@@ -455,26 +707,54 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_add
             print(f"Preview exists (use force mode to add more): {preview_path}")
             return True
         
-        # Load civitai info
-        if not os.path.exists(info_path):
-            print(f"No civitai info file found: {info_path}")
-            return False
-            
-        with open(info_path, 'r', encoding='utf-8') as f:
-            model_info = json.load(f)
+        # --- Try to get image URLs from multiple sources ---
+        images = []
         
-        # Get images from model info
-        images = model_info.get('images', [])
+        # Source 1: JSON file preview_image fields (preferred)
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    json_data = json.load(f)
+                
+                # Check for preview_image fields in web_civitai_data
+                wcd = json_data.get('web_civitai_data', {})
+                img1 = wcd.get('preview_image_1', '')
+                img2 = wcd.get('preview_image_2', '')
+                # Fallback to old flat format
+                if not img1:
+                    img1 = json_data.get('preview_image_1', '')
+                if not img2:
+                    img2 = json_data.get('preview_image_2', '')
+                if img1:
+                    images.append({'url': img1, 'type': 'image', 'nsfwLevel': 1})
+                if img2:
+                    images.append({'url': img2, 'type': 'image', 'nsfwLevel': 1})
+                
+                # Fallback: check z_info_file.images
+                if not images:
+                    z_info = json_data.get('z_info_file', {})
+                    if 'images' in z_info:
+                        images = z_info['images']
+            except Exception as e:
+                print(f"Error reading JSON for preview URLs: {e}")
+        
+        # Source 2: Legacy .civitai.info file (backward compat)
+        if not images and os.path.exists(info_path):
+            try:
+                with open(info_path, 'r', encoding='utf-8') as f:
+                    model_info = json.load(f)
+                images = model_info.get('images', [])
+            except Exception as e:
+                print(f"Error reading info file for preview URLs: {e}")
+        
         if not images:
-            print(f"No images found in civitai info")
+            print(f"No preview image URLs found")
             return False
         
         # Track if we found any video to try as fallback
         video_to_try = None
         
         # Collect suitable images
-        # We need to skip images for slots that are already filled
-        # If preview1 exists, skip 1 image. If both exist, skip 2.
         images_to_skip = 0
         if has_preview1:
             images_to_skip += 1
@@ -485,13 +765,19 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_add
         skipped_count = 0
         
         for img in images:
-            # Skip if NSFW and skip_nsfw is True
-            if skip_nsfw and img.get('nsfw') and img.get('nsfw') != 'None':
-                print(f"Skipping NSFW item")
-                continue
-            
-            img_type = img.get('type', 'image')
-            img_url = img.get('url')
+            # Handle both dict format (from z_info_file/info) and simple URL string
+            if isinstance(img, dict):
+                # Skip if NSFW and skip_nsfw is True
+                if skip_nsfw and img.get('nsfw') and img.get('nsfw') != 'None':
+                    print(f"Skipping NSFW item")
+                    continue
+                
+                img_type = img.get('type', 'image')
+                img_url = img.get('url')
+            else:
+                # Simple URL string from preview_image fields
+                img_type = 'image'
+                img_url = img
             
             if not img_url:
                 continue
@@ -504,7 +790,7 @@ def download_preview_image(model_path, max_size=False, skip_nsfw=True, force_add
                     continue
                 
                 # Use max size if requested
-                if max_size and img.get('width'):
+                if max_size and isinstance(img, dict) and img.get('width'):
                     img_url = get_full_size_image_url(img_url, img['width'])
                 suitable_images.append(img_url)
                 
@@ -624,20 +910,28 @@ def scan_models_directory(directory):
                     base_path = os.path.splitext(file_path)[0]
                     json_path = f"{base_path}.json"
                     
-                    # Check if hash exists in JSON
+                    # Check if hash exists in JSON and if model has civitai data
                     has_hash = False
+                    has_civitai_data = False
                     if os.path.exists(json_path):
                         try:
                             with open(json_path, 'r', encoding='utf-8') as f:
                                 json_data = json.load(f)
                                 has_hash = bool(json_data.get('sha256'))
+                                # Model has civitai data if it has z_info_file, web_civitai_data, or civitai_matched marker
+                                has_civitai_data = bool(
+                                    json_data.get('z_info_file') or 
+                                    json_data.get('web_civitai_data', {}).get('model_id') or
+                                    json_data.get('model_id') or  # legacy flat format
+                                    json_data.get('civitai_matched') is not None
+                                )
                         except:
                             pass
                     
                     model_data = {
                         'path': file_path,
                         'name': filename,
-                        'has_info': os.path.exists(f"{base_path}{INFO_EXTENSION}"),
+                        'has_info': has_civitai_data or os.path.exists(f"{base_path}{INFO_EXTENSION}"),
                         'has_preview': os.path.exists(f"{base_path}{PREVIEW_EXTENSION}"),
                         'has_json': os.path.exists(json_path),
                         'has_hash': has_hash

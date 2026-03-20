@@ -53,12 +53,9 @@ Manage both LoRA and Checkpoint models from separate directories:
   - Filename (renames all associated files)
   - Model Version and High/Low variant toggle
   - Tags, Category, Subcategory
-  - Creator, Placeholder
-  - Positive/Negative/Civitai keywords
-  - Example prompts, Notes, Description
 - **NSFW toggle** for content rating
 - **Preferred weight slider** (-4 to +4 range with color gradient)
-- **Dual JSON editor** for both model.json and civitai.info files
+- **Built-in JSON editor** for powerful metadata management
 - **File information** split into File Info and File Data panels
 
 ### 🛠️ Filename Helper Tools
@@ -81,17 +78,15 @@ Powerful buttons to help format and manage filenames:
 
 Dedicated Civitai Scan page with powerful tools:
 
-- **Get Civitai Data**: Fetch model info using SHA256 hash lookup
+- **Get Civitai Data**: Fetch model info using SHA256 hash lookup (creates JSON directly)
 - **Manual URL Matching**: Enter Civitai URL when hash matching fails
 - **Download Thumbnails**: Download preview images from Civitai
-- **Convert to JSON**: Convert .civitai.info to .json format
 - **Fix Thumbnail Names**: Standardize thumbnail filenames
-- **Dummy Info Files**: Create placeholder files for unmatched models
+- **Dummy JSON Files**: Create marker files for unmatched models
 
 ### 📝 Model-Specific Actions
-Four Civitai action buttons in the model popup for single-model operations:
+Three Civitai action buttons in the model popup for single-model operations:
 - Get Civitai Data for current model
-- Create JSON from .civitai.info
 - Download thumbnail
 - Fix thumbnail name
 
@@ -172,12 +167,11 @@ Customize what information appears on model cards in grid view via **Settings �
 
 ## File Structure
 
-Each model consists of up to four files:
+Each model consists of:
 
 ```
 model_name.safetensors          # The model file
-model_name.json                 # Metadata for AI Web UI
-model_name.civitai.info         # Civitai metadata (optional)
+model_name.json                 # Metadata (including Civitai data)
 model_name.preview.png          # Primary thumbnail
 model_name.preview2.png         # Additional previews (optional)
 model_name.preview3.png         # Additional previews (optional)
@@ -194,11 +188,8 @@ The `model_name.json` file contains metadata in the following structure:
   "base model": "SDXL 1.0",
   "category": "Style",
   "subcategory": "Anime",
-  "civitai name": "Official Model Name",
-  "civitai text": "official, trigger, words",
-  "creator": "Artist Name",
   "description": "Model description",
-  "example prompt": "Example prompt text",
+  "example prompt 1": "Example prompt text",
   "example prompt 2": "Additional example",
   "high low": "High",
   "model name": "Display Name",
@@ -208,7 +199,15 @@ The `model_name.json` file contains metadata in the following structure:
   "notes": "Personal notes about the model",
   "preferred weight": "0.8",
   "tags": "tag1, tag2, tag3",
-  "url": "https://civitai.com/models/..."
+  "web_civitai_data": {
+    "civitai name": "Official Model Name",
+    "civitai text": "official, trigger, words",
+    "creator": "Artist Name",
+    "url": "https://civitai.com/models/...",
+    "model_id": "123456",
+    "file_id": "7890",
+    "published_date": "2024-03-19T00:00:00Z"
+  }
 }
 ```
 
@@ -228,11 +227,10 @@ Settings are stored in `config.json` and include:
 
 1. Navigate to **Civitai Scan** page (button in header)
 2. Select **LoRAs** or **Checkpoints** tab
-3. Click **"Scan Models & Create Info Files"** to fetch metadata
-4. For unmatched models: enter Civitai URL manually or create dummy file
+3. Click **"Scan & Fetch Missing"** to fetch metadata directly into JSON
+4. For unmatched models: enter Civitai URL manually or create dummy JSON
 5. Click **"Download Preview Images"** to get thumbnails
-6. Click **"Convert to JSON"** to create .json files
-7. Click **"Fix Thumbnail Names"** to standardize filenames (optional)
+6. Click **"Fix Thumbnail Names"** to standardize filenames (optional)
 
 ### Rate Limiting
 - Smart delays (0.5s default) respect Civitai API limits

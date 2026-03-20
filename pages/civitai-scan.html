@@ -39,7 +39,7 @@
                         <i class="fas fa-magic"></i>
                         <h3>All-in-One Scan</h3>
                     </div>
-                    <p class="action-card-desc">Perform steps 1, 2, and 3 sequentially: Fetch missing data, create missing JSON, and download missing thumbnails.</p>
+                    <p class="action-card-desc">Perform steps 1 and 2 sequentially: Fetch missing data (creates JSON directly) and download missing thumbnails.</p>
                     <button id="runAllInOneBtn" class="btn btn-large btn-success">
                         <i class="fas fa-bolt"></i> Run All-in-One Scan
                     </button>
@@ -51,36 +51,17 @@
                         <i class="fas fa-cloud-download-alt"></i>
                         <h3>1. Civitai Data</h3>
                     </div>
-                    <p class="action-card-desc">Fetch model info from Civitai API using file hashes. Downloads
-                        .civitai.info files.</p>
+                    <p class="action-card-desc">Fetch model info from Civitai API using file hashes. Creates JSON metadata files directly.</p>
                     <button id="scanModelsBtn" class="btn btn-large btn-primary">
                         <i class="fas fa-search"></i> Scan & Fetch Missing
                     </button>
-                </div>
-
-                <!-- JSON Files Card -->
-                <div class="action-card">
-                    <div class="action-card-header">
-                        <i class="fas fa-file-code"></i>
-                        <h3>2. JSON Metadata</h3>
-                    </div>
-                    <p class="action-card-desc">Create or update .json files with model metadata from the civitai info
-                        files.</p>
-                    <div class="action-card-buttons">
-                        <button id="convertMissingJsonBtn" class="btn btn-medium btn-success">
-                            <i class="fas fa-plus"></i> Create Missing
-                        </button>
-                        <button id="convertToJsonBtn" class="btn btn-medium btn-secondary">
-                            <i class="fas fa-sync"></i> Update All
-                        </button>
-                    </div>
                 </div>
 
                 <!-- Thumbnails Card -->
                 <div class="action-card">
                     <div class="action-card-header">
                         <i class="fas fa-images"></i>
-                        <h3>3. Thumbnails</h3>
+                        <h3>2. Thumbnails</h3>
                     </div>
                     <p class="action-card-desc">Download preview images from Civitai. Also fixes naming for
                         compatibility.</p>
@@ -145,12 +126,8 @@
                         <span id="totalModels">0</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Missing Civitai Info:</span>
+                        <span class="summary-label">Missing Civitai Data:</span>
                         <span id="modelsWithoutInfo">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Missing JSON:</span>
-                        <span id="modelsMissingJson">0</span>
                     </div>
                     <div class="summary-item">
                         <span class="summary-label">Missing Thumbnails:</span>
@@ -181,7 +158,7 @@
             <div class="setting-group">
                 <label>
                     <input type="checkbox" id="skipExisting" checked>
-                    Skip models with existing .civitai.info files
+                    Skip models with existing Civitai data
                 </label>
             </div>
             <div class="setting-group">

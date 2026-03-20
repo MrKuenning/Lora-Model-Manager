@@ -962,7 +962,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     }).encode())
                     return
                 
-                # Save civitai info file
+                # Save directly as JSON (no longer creates .civitai.info)
                 success = civitai_handler.save_civitai_info(model_path, model_info)
                 
                 # Also save the SHA256 hash to the model's JSON file
@@ -974,7 +974,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         'status': 'error',
-                        'message': 'Failed to save civitai info file'
+                        'message': 'Failed to save model JSON'
                     }).encode())
                     return
                 
@@ -983,7 +983,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'status': 'success',
-                    'message': 'Model info saved successfully',
+                    'message': 'Model data saved to JSON successfully',
                     'modelInfo': model_info
                 }).encode())
                 
@@ -1052,7 +1052,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     }).encode())
                     return
                 
-                # Save civitai info file
+                # Save directly as JSON (no longer creates .civitai.info)
                 success = civitai_handler.save_civitai_info(model_path, model_info)
                 
                 if not success:
@@ -1061,7 +1061,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         'status': 'error',
-                        'message': 'Failed to save civitai info file'
+                        'message': 'Failed to save model JSON'
                     }).encode())
                     return
                 
@@ -1074,7 +1074,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'status': 'success',
-                    'message': 'Model info saved successfully from URL',
+                    'message': 'Model data saved to JSON from URL',
                     'modelInfo': model_info
                 }).encode())
                 
@@ -1157,6 +1157,69 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
                 mapped_data = json_converter.parse_civitai_info_file(info_path, use_api, existing_creator)
                 
+                # --- Add new fields from info file for the enhanced JSON format ---
+                try:
+                    with open(info_path, 'r', encoding='utf-8') as f:
+                        info_data = json.load(f)
+                    
+                    # Initialize web_civitai_data sub-object
+                    wcd = {
+                        'civitai name': mapped_data.pop('civitai name', ''),
+                        'civitai text': mapped_data.pop('civitai text', ''),
+                        'creator': mapped_data.pop('creator', ''),
+                        'downloadUrl': '',
+                        'file_id': '',
+                        'model_id': '',
+                        'original_filename': '',
+                        'preview_image_1': '',
+                        'preview_image_2': '',
+                        'published_date': '',
+                        'url': mapped_data.pop('url', '')
+                    }
+                    
+                    # New fields into web_civitai_data
+                    if 'modelId' in info_data:
+                        wcd['model_id'] = info_data['modelId']
+                    if 'id' in info_data:
+                        wcd['file_id'] = info_data['id']
+                    if 'publishedAt' in info_data:
+                        wcd['published_date'] = info_data['publishedAt']
+                    if 'baseModelType' in info_data:
+                        mapped_data['base_model_type'] = info_data['baseModelType']
+                    if 'model' in info_data and 'type' in info_data['model']:
+                        mapped_data['model_type'] = info_data['model']['type']
+                    
+                    # Files info (into web_civitai_data)
+                    if 'files' in info_data and isinstance(info_data['files'], list) and info_data['files']:
+                        first_file = info_data['files'][0]
+                        if 'name' in first_file:
+                            wcd['original_filename'] = first_file['name']
+                        if 'downloadUrl' in first_file:
+                            wcd['downloadUrl'] = first_file['downloadUrl']
+                    if not wcd.get('downloadUrl') and 'downloadUrl' in info_data:
+                        wcd['downloadUrl'] = info_data['downloadUrl']
+                    
+                    # Preview image URLs (into web_civitai_data)
+                    if 'images' in info_data and isinstance(info_data['images'], list):
+                        if len(info_data['images']) > 0 and 'url' in info_data['images'][0]:
+                            wcd['preview_image_1'] = info_data['images'][0]['url']
+                        if len(info_data['images']) > 1 and 'url' in info_data['images'][1]:
+                            wcd['preview_image_2'] = info_data['images'][1]['url']
+                        # Example prompt 2 from second image (stays at root)
+                        if len(info_data['images']) > 1:
+                            second_img = info_data['images'][1]
+                            if 'meta' in second_img and isinstance(second_img['meta'], dict) and 'prompt' in second_img['meta']:
+                                mapped_data['example prompt 2'] = second_img['meta']['prompt']
+                    
+                    # Build URL if not already set
+                    if not wcd['url'] and wcd['model_id'] and wcd['file_id']:
+                        wcd['url'] = f"https://civitai.com/models/{wcd['model_id']}?modelVersionId={wcd['file_id']}"
+                    
+                    mapped_data['web_civitai_data'] = wcd
+                    
+                except Exception as e:
+                    print(f"Error adding new fields from info file: {e}")
+                
                 # Preserve existing data for certain fields (same logic as in zCivitai-2-JSONv4.py)
                 if os.path.exists(json_path):
                     try:
@@ -1168,22 +1231,26 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                             # Fields to preserve if already populated
                             fields_to_preserve = [
                                 'activation text', 'sd version', 'preferred weight',
-                                'negative text', 'civitai text', 
-                                'nsfw', 'url', 'base model', 'example prompt',
-                                'category', 'subcategory', 'tags', 'creator',
-                                'name', 'model version', 'high low',  # User-editable fields
-                                'sha256'  # Hash should always be preserved
+                                'negative text',
+                                'nsfw', 'base model', 'example prompt 1',
+                                'category', 'subcategory', 'tags',
+                                'name', 'model version', 'high low',
+                                'sha256'
                             ]
                             for field in fields_to_preserve:
-                                # If field exists in existing data and has a value, keep the existing value
-                                # Otherwise, use the new value from civitai.info
-                                # Check explicitly for None and empty string to handle 0 and other falsy values correctly
                                 if field in existing_data and existing_data[field] is not None and existing_data[field] != '':
                                     print(f"DEBUG: Preserving field '{field}': '{existing_data[field]}'")
-                                    # Existing field has data, preserve it
                                     mapped_data[field] = existing_data[field]
                                 else:
                                     print(f"DEBUG: Not preserving field '{field}' (empty or missing)")
+                            
+                            # Preserve web_civitai_data sub-fields from old format
+                            existing_wcd = existing_data.get('web_civitai_data', {})
+                            for field in ['civitai text', 'url', 'creator']:
+                                if field in existing_wcd and existing_wcd[field]:
+                                    mapped_data['web_civitai_data'][field] = existing_wcd[field]
+                                elif field in existing_data and existing_data[field] is not None and existing_data[field] != '':
+                                    mapped_data['web_civitai_data'][field] = existing_data[field]
                     except Exception as e:
                         print(f"Error reading existing JSON for field preservation: {e}")
                 
@@ -1252,7 +1319,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({
                         'status': 'success',
-                        'message': 'Dummy info file created successfully'
+                        'message': 'Dummy JSON marker created successfully'
                     }).encode())
                 else:
                     self.send_response(200)

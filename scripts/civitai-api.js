@@ -21,7 +21,6 @@ export function showCivitaiStatus(message, type = 'info') {
 export function disableCivitaiButtons(disabled = true) {
     const buttons = [
         document.getElementById('get-civitai-data-btn'),
-        document.getElementById('create-json-btn'),
         document.getElementById('download-thumbnail-btn'),
         document.getElementById('generate-sha256-btn'),
         document.getElementById('delete-model-btn')
@@ -137,47 +136,6 @@ export async function fetchCivitaiByUrl(model, civitaiUrl, refreshCallback) {
     }
 }
 
-/**
- * Create JSON from .civitai.info file
- * @param {Object} model - Model object
- * @param {Function} refreshCallback - Callback to refresh model data
- */
-export async function convertCivitaiToJson(model, refreshCallback) {
-    if (!model) throw new Error('No model provided');
-
-    disableCivitaiButtons(true);
-    showCivitaiStatus(`Converting to JSON for ${model.name}...`, 'info');
-
-    try {
-        const response = await fetch('/civitai/convert-to-json', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                modelPath: model.path,
-                useApi: true
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            showCivitaiStatus('✓ JSON created successfully!', 'success');
-            if (refreshCallback) await refreshCallback();
-        } else {
-            showCivitaiStatus(`✗ Error: ${data.message}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error creating JSON:', error);
-        showCivitaiStatus(`✗ Error: ${error.message}`, 'error');
-        throw error;
-    } finally {
-        disableCivitaiButtons(false);
-    }
-}
 
 /**
  * Download thumbnail from Civitai
@@ -289,7 +247,7 @@ export async function createDummyInfoFile(model, refreshCallback) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            showCivitaiStatus('✓ Dummy info file created. Model will be skipped in future scans.', 'success');
+            showCivitaiStatus('✓ Dummy JSON marker created. Model will be skipped in future scans.', 'success');
             if (refreshCallback) await refreshCallback();
         } else {
             showCivitaiStatus(`✗ Error: ${data.message}`, 'error');

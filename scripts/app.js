@@ -247,7 +247,8 @@ document.querySelectorAll('.save-btn').forEach(btn => {
         // Update the model object based on field ID
         switch (fieldId) {
             case 'model-author':
-                currentModel.json['civitai name'] = value;
+                if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                currentModel.json.web_civitai_data['civitai name'] = value;
                 break;
             case 'model-basemodel':
                 currentModel.baseModel = value;
@@ -266,7 +267,8 @@ document.querySelectorAll('.save-btn').forEach(btn => {
                 currentModel.json['negative text'] = value;
                 break;
             case 'model-authors':
-                currentModel.json['civitai text'] = value;
+                if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                currentModel.json.web_civitai_data['civitai text'] = value;
                 break;
             case 'model-description':
                 currentModel.json['description'] = value;
@@ -278,10 +280,11 @@ document.querySelectorAll('.save-btn').forEach(btn => {
                 currentModel.json['subcategory'] = value;
                 break;
             case 'model-creator':
-                currentModel.json['creator'] = value;
+                if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                currentModel.json.web_civitai_data['creator'] = value;
                 break;
             case 'model-example-prompt':
-                currentModel.json['example prompt'] = value;
+                currentModel.json['example prompt 1'] = value;
                 break;
             case 'model-tags':
                 currentModel.json['tags'] = value;
@@ -807,9 +810,11 @@ function setupStaticFieldEdit(fieldName) {
         try {
             // Update the model object based on field
             if (fieldName === 'url') {
-                currentModel.json['url'] = newValue;
+                if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                currentModel.json.web_civitai_data['url'] = newValue;
             } else if (fieldName === 'author') {
-                currentModel.json['civitai name'] = newValue;
+                if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                currentModel.json.web_civitai_data['civitai name'] = newValue;
             } else if (fieldName === 'basemodel') {
                 currentModel.baseModel = newValue;
                 currentModel.json['base model'] = newValue;
@@ -1430,8 +1435,8 @@ function sortModelsByColumn(models, column, direction) {
                 valueB = (b.json && b.json['negative text'] || '').toLowerCase();
                 break;
             case "Civitai Words":
-                valueA = (a.json && a.json['civitai text'] || '').toLowerCase();
-                valueB = (b.json && b.json['civitai text'] || '').toLowerCase();
+                valueA = (a.json?.web_civitai_data?.['civitai text'] || '').toLowerCase();
+                valueB = (b.json?.web_civitai_data?.['civitai text'] || '').toLowerCase();
                 break;
             case 'Description':
                 valueA = (a.json && a.json['description'] || '').toLowerCase();
@@ -1446,12 +1451,12 @@ function sortModelsByColumn(models, column, direction) {
                 valueB = (b.json && b.json['subcategory'] || '').toLowerCase();
                 break;
             case 'Creator':
-                valueA = (a.json && a.json['creator'] || '').toLowerCase();
-                valueB = (b.json && b.json['creator'] || '').toLowerCase();
+                valueA = (a.json && (a.json?.web_civitai_data?.['creator'] || a.json['creator']) || '').toLowerCase();
+                valueB = (b.json && (b.json?.web_civitai_data?.['creator'] || b.json['creator']) || '').toLowerCase();
                 break;
             case 'Example Prompt':
-                valueA = (a.json && a.json['example prompt'] || '').toLowerCase();
-                valueB = (b.json && b.json['example prompt'] || '').toLowerCase();
+                valueA = (a.json && (a.json['example prompt 1'] || a.json['example prompt']) || '').toLowerCase();
+                valueB = (b.json && (b.json['example prompt 1'] || b.json['example prompt']) || '').toLowerCase();
                 break;
             case 'Tags':
                 valueA = (a.json && a.json['tags'] || '').toLowerCase();
@@ -1874,7 +1879,7 @@ function openModelDetails(model) {
     modelSha256.textContent = model.json?.['sha256'] || 'Not generated';
 
     // Set URL in the non-editable section
-    const modelUrl = model.json?.['url'] || '';
+    const modelUrl = model.json?.web_civitai_data?.['url'] || model.json?.['url'] || '';
     const urlLink = document.getElementById('model-url-link');
     urlLink.href = modelUrl;
     urlLink.textContent = modelUrl;
@@ -1888,9 +1893,9 @@ function openModelDetails(model) {
     }
 
     // Set author, base model, creator in static info section
-    document.getElementById('model-author-static').textContent = model.json?.['civitai name'] || '';
+    document.getElementById('model-author-static').textContent = model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'] || '';
     document.getElementById('model-basemodel-static').textContent = model.baseModel || '';
-    document.getElementById('model-creator-static').textContent = model.json?.['creator'] || '';
+    document.getElementById('model-creator-static').textContent = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || '';
 
     // Set editable fields - Populate both inputs and displays
 
@@ -1910,7 +1915,7 @@ function openModelDetails(model) {
     document.getElementById('model-negative-display').textContent = negativeTextField || '';
 
     // Civitai Words (Authors)
-    const civitaiTextField = model.json?.['civitai text'] || '';
+    const civitaiTextField = model.json?.web_civitai_data?.['civitai text'] || model.json?.['civitai text'] || '';
     document.getElementById('model-authors').value = civitaiTextField;
     document.getElementById('model-authors-display').textContent = civitaiTextField || '';
 
@@ -1930,7 +1935,7 @@ function openModelDetails(model) {
     document.getElementById('model-subcategory-display').textContent = subcategoryField || '';
 
     // Example Prompt
-    const examplePromptField = model.json?.['example prompt'] || '';
+    const examplePromptField = model.json?.['example prompt 1'] || model.json?.['example prompt'] || '';
     document.getElementById('model-example-prompt').value = examplePromptField;
     document.getElementById('model-example-prompt-display').textContent = examplePromptField || '';
 
@@ -1952,7 +1957,7 @@ function openModelDetails(model) {
     tagsInput.setTags(tagsField);
 
     // Model Name - initially from json['name'] or Civitai name as fallback
-    const modelNameField = model.json?.['name'] || model.json?.['civitai name'] || '';
+    const modelNameField = model.json?.['name'] || model.json?.web_civitai_data?.['civitai name'] || '';
     document.getElementById('model-name').value = modelNameField;
     document.getElementById('model-name-display').textContent = modelNameField || '';
 
@@ -2032,7 +2037,8 @@ function openModelDetails(model) {
     });
 
     setupGenericFieldEdit('model-authors', 'textarea', async (val) => {
-        currentModel.json['civitai text'] = val;
+        if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+        currentModel.json.web_civitai_data['civitai text'] = val;
         await saveModel();
     });
 
@@ -2047,7 +2053,7 @@ function openModelDetails(model) {
     });
 
     setupGenericFieldEdit('model-example-prompt', 'textarea', async (val) => {
-        currentModel.json['example prompt'] = val;
+        currentModel.json['example prompt 1'] = val;
         await saveModel();
     });
 
@@ -2122,7 +2128,8 @@ function openModelDetails(model) {
                     currentModel.json['negative text'] = value;
                     break;
                 case 'model-authors':
-                    currentModel.json['civitai text'] = value;
+                    if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                    currentModel.json.web_civitai_data['civitai text'] = value;
                     break;
                 case 'model-description':
                     currentModel.json['description'] = value;
@@ -2134,10 +2141,11 @@ function openModelDetails(model) {
                     currentModel.json['subcategory'] = value;
                     break;
                 case 'model-creator':
-                    currentModel.json['creator'] = value;
+                    if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                    currentModel.json.web_civitai_data['creator'] = value;
                     break;
                 case 'model-example-prompt':
-                    currentModel.json['example prompt'] = value;
+                    currentModel.json['example prompt 1'] = value;
                     break;
                 case 'model-tags':
                     currentModel.json['tags'] = value;
@@ -2548,14 +2556,12 @@ function formatFileSize(bytes) {
 
 // DOM Elements for Civitai Actions
 const getCivitaiDataBtn = document.getElementById('get-civitai-data-btn');
-const createJsonBtn = document.getElementById('create-json-btn');
 const downloadThumbnailBtn = document.getElementById('download-thumbnail-btn');
 const generateSha256Btn = document.getElementById('generate-sha256-btn');
 const deleteModelBtn = document.getElementById('delete-model-btn');
 
 // Event Listeners (using CivitaiAPI module)
 getCivitaiDataBtn?.addEventListener('click', () => CivitaiAPI.getCivitaiData(currentModel, refreshModelData));
-createJsonBtn?.addEventListener('click', () => CivitaiAPI.convertCivitaiToJson(currentModel, refreshModelData));
 downloadThumbnailBtn?.addEventListener('click', () => CivitaiAPI.downloadCivitaiThumbnail(currentModel, refreshModelData));
 generateSha256Btn?.addEventListener('click', () => CivitaiAPI.generateSha256(currentModel, refreshModelData));
 
@@ -2619,6 +2625,7 @@ function handleUseCivitaiName() {
 
     // Get the Civitai name from the model's civitai info
     const civitaiName = currentModel.civitaiInfo?.model?.name ||
+        currentModel.json?.web_civitai_data?.['civitai name'] ||
         currentModel.json?.['civitai name'] ||
         '';
 
@@ -3119,6 +3126,7 @@ function handleModelNameCivitai() {
 
     // Get the Civitai name from the model's civitai info
     const civitaiName = currentModel.civitaiInfo?.model?.name ||
+        currentModel.json?.web_civitai_data?.['civitai name'] ||
         currentModel.json?.['civitai name'] ||
         '';
 
@@ -3223,7 +3231,7 @@ function handleGuessVersion() {
     // Get potential sources for version info
     const modelName = currentModel.json?.['name'] || '';
     const filename = currentModel.name || currentModel.filename || '';
-    const civitaiName = currentModel.json?.['civitai name'] || '';
+    const civitaiName = currentModel.json?.web_civitai_data?.['civitai name'] || currentModel.json?.['civitai name'] || '';
 
     // Combine all sources to search
     const searchTexts = [modelName, filename, civitaiName];

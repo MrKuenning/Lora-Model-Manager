@@ -1,6 +1,23 @@
 # Lora Model Manager - Changelog
 
 
+### 03/19/2026
+
+**Added**
+- **Migration Scripts**
+  - Added purely temporary standalone scripts `Temp Migrate JSON Structure.py` and `Temp Populate Prompts from Info.py` to seamlessly transition existing downloaded models to the new structure without overwriting specific user edits.
+
+**Changed**
+- **Unified JSON Architecture**
+  - Eliminated the redundant two-step file generation pipeline. The `.civitai.info` files are no longer created; Civitai API data is mapped and injected directly into the model's `.json` file at scan time.
+  - Added a dedicated nested `web_civitai_data` object in the JSON to neatly house all WebUI/API-exclusive variables (`creator`, `published_date`, `url`, `preview_image_1/2`, `model_id`, `file_id`, `downloadUrl`, `original_filename`).
+- **Bloat Removal**
+  - Removed the bulky, unformatted `z_info_file` raw payload from the JSON completely to save substantial storage space.
+- **Example Prompts**
+  - Standardized prompt terminology: The legacy `example prompt` root-level key has been structurally renamed to `example prompt 1` to gracefully pair with `example prompt 2`.
+
+---
+
 ### 03/10/2026
 
 **Added**

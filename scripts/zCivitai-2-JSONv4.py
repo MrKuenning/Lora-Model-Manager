@@ -49,7 +49,7 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'civitai text': '',
         'creator': '',
         'description': '',  # Will keep this empty as per requirement
-        'example prompt': '',
+        'example prompt 1': '',
         'high low': '',  # High/Low toggle field
         'model version': '',  # Model version field
         'name': '',  # Model name field (populated from civitai name)
@@ -100,7 +100,7 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
             first_image = images[0]
             # Check if 'meta' is a dictionary before accessing 'prompt'
             if 'meta' in first_image and isinstance(first_image['meta'], dict) and 'prompt' in first_image['meta']:
-                mapped_data['example prompt'] = first_image['meta']['prompt']
+                mapped_data['example prompt 1'] = first_image['meta']['prompt']
             # Check if 'meta' has 'negativePrompt'
             if 'meta' in first_image and isinstance(first_image['meta'], dict) and 'negativePrompt' in first_image['meta']:
                 mapped_data['negative text'] = first_image['meta']['negativePrompt']
@@ -172,7 +172,7 @@ def process_civitai_info_files(directory, use_api=True):
                             fields_to_preserve = [
                                 'activation text', 'sd version', 'preferred weight',
                                 'negative text', 'civitai text', 
-                                'nsfw', 'url', 'base model', 'example prompt',
+                                'nsfw', 'url', 'base model', 'example prompt 1',
                                 'category', 'subcategory', 'tags', 'creator',
                                 'name', 'model version', 'high low'  # New fields to preserve
                             ]

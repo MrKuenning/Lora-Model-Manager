@@ -10,8 +10,6 @@ const backButton = document.getElementById('backButton');
 const runAllInOneBtn = document.getElementById('runAllInOneBtn');
 const scanModelsBtn = document.getElementById('scanModelsBtn');
 const downloadPreviewsBtn = document.getElementById('downloadPreviewsBtn');
-const convertToJsonBtn = document.getElementById('convertToJsonBtn');
-const convertMissingJsonBtn = document.getElementById('convertMissingJsonBtn');
 const fixThumbnailsBtn = document.getElementById('fixThumbnailsBtn');
 const clearLogBtn = document.getElementById('clearLogBtn');
 
@@ -27,7 +25,6 @@ const progressBar = document.getElementById('progressBar');
 
 const totalModelsSpan = document.getElementById('totalModels');
 const modelsWithoutInfoSpan = document.getElementById('modelsWithoutInfo');
-const modelsMissingJsonSpan = document.getElementById('modelsMissingJson');
 const modelsMissingThumbnailsSpan = document.getElementById('modelsMissingThumbnails');
 const modelsMissingHashesSpan = document.getElementById('modelsMissingHashes');
 const resultsLog = document.getElementById('resultsLog');
@@ -150,8 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     scanModelsBtn.addEventListener('click', scanAllModels);
     downloadPreviewsBtn.addEventListener('click', downloadMissingPreviews);
     document.getElementById('downloadAllPreviewsBtn')?.addEventListener('click', downloadAllPreviews);
-    convertToJsonBtn.addEventListener('click', convertAllToJson);
-    convertMissingJsonBtn?.addEventListener('click', convertMissingToJson);
     fixThumbnailsBtn?.addEventListener('click', fixThumbnailNames);
     clearLogBtn?.addEventListener('click', clearLog);
     document.getElementById('generateHashesBtn')?.addEventListener('click', generateAllHashes);
@@ -201,13 +196,11 @@ async function loadModels() {
 // Update summary statistics
 function updateSummary() {
     const withoutInfo = models.filter(m => !m.has_info).length;
-    const missingJson = models.filter(m => !m.has_json).length;
     const missingThumbnails = models.filter(m => !m.has_preview).length;
     const missingHashes = models.filter(m => !m.has_hash).length;
 
     totalModelsSpan.textContent = models.length;
     modelsWithoutInfoSpan.textContent = withoutInfo;
-    modelsMissingJsonSpan.textContent = missingJson;
     if (modelsMissingThumbnailsSpan) modelsMissingThumbnailsSpan.textContent = missingThumbnails;
     if (modelsMissingHashesSpan) modelsMissingHashesSpan.textContent = missingHashes;
 }
@@ -219,15 +212,12 @@ async function runAllInOneScan() {
         return;
     }
 
-    addLog('info', '--- Starting All-In-One Scan (Steps 1, 2, and 3) ---');
+    addLog('info', '--- Starting All-In-One Scan (Steps 1 and 2) ---');
 
-    // Step 1: Civitai Data
+    // Step 1: Civitai Data (now creates JSON directly)
     await scanAllModels();
 
-    // Step 2: JSON Metadata
-    await convertMissingToJson();
-
-    // Step 3: Thumbnails
+    // Step 2: Thumbnails
     await downloadMissingPreviews();
 
     addLog('info', '--- All-In-One Scan Sequence Complete ---');
@@ -282,9 +272,10 @@ async function scanAllModels() {
             const data = await response.json();
 
             if (data.status === 'success') {
-                addLog('success', `✓ ${model.name}: Info saved`);
+                addLog('success', `✓ ${model.name}: JSON created`);
                 successCount++;
                 model.has_info = true;
+                model.has_json = true;
             } else if (data.status === 'not_found') {
                 addLog('warning', `⚠ ${model.name}: Not found on Civitai`);
                 notFoundModels.push(model);
@@ -345,8 +336,9 @@ async function scanAllModels() {
                     if (response.ok) {
                         const data = await response.json();
                         if (data.status === 'success') {
-                            addLog('success', `✓ ${model.name}: Dummy file created`);
+                            addLog('success', `✓ ${model.name}: Dummy JSON created`);
                             model.has_info = true;
+                            model.has_json = true;
                             dummyCreatedCount++;
                         }
                     }
@@ -404,8 +396,8 @@ async function downloadMissingPreviews() {
     const skipNsfw = skipNsfwPreviewCheckbox.checked;
     const delay = parseFloat(delayInput.value) * 1000;
 
-    // Only download for models with .civitai.info files AND no preview
-    const modelsToDownload = models.filter(m => m.has_info && !m.has_preview);
+    // Only download for models with Civitai data AND no preview
+    const modelsToDownload = models.filter(m => (m.has_info || m.has_json) && !m.has_preview);
 
     if (modelsToDownload.length === 0) {
         addLog('info', 'No models missing previews');
@@ -481,8 +473,8 @@ async function downloadAllPreviews() {
     const skipNsfw = skipNsfwPreviewCheckbox.checked;
     const delay = parseFloat(delayInput.value) * 1000;
 
-    // Process ALL models with .civitai.info files
-    const modelsToDownload = models.filter(m => m.has_info);
+    // Process ALL models with Civitai data
+    const modelsToDownload = models.filter(m => m.has_info || m.has_json);
 
     if (modelsToDownload.length === 0) {
         addLog('info', 'No models with Civitai info to process');
@@ -543,159 +535,6 @@ async function downloadAllPreviews() {
 
     updateProgress('Download complete', modelsToDownload.length, modelsToDownload.length);
     addLog('info', `Preview download complete: ${successCount} success, ${skippedCount} skipped, ${errorCount} errors`);
-
-    currentOperation = null;
-    enableButtons();
-}
-
-// Convert missing to JSON
-async function convertMissingToJson() {
-    if (currentOperation) {
-        addLog('warning', 'An operation is already in progress');
-        return;
-    }
-
-    const useApi = useApiForCreatorCheckbox.checked;
-    const delay = parseFloat(delayInput.value) * 1000;
-
-    // Only convert models with .civitai.info files BUT WITHOUT .json files
-    const modelsToConvert = models.filter(m => m.has_info && !m.has_json);
-
-    if (modelsToConvert.length === 0) {
-        addLog('info', 'No models need JSON conversion - all models with info files already have JSON');
-        return;
-    }
-
-    currentOperation = 'convert';
-    disableButtons();
-
-    addLog('info', `Starting conversion of ${modelsToConvert.length} missing JSON files...`);
-    if (useApi) {
-        addLog('info', 'Note: API calls enabled for creator info - this will be slower');
-    }
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < modelsToConvert.length; i++) {
-        const model = modelsToConvert[i];
-
-        updateProgress(`Converting: ${model.name}`, i + 1, modelsToConvert.length);
-
-        try {
-            const response = await fetch('/civitai/convert-to-json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    modelPath: model.path,
-                    useApi: useApi
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                addLog('success', `✓ ${model.name}: Converted to JSON`);
-                successCount++;
-                model.has_json = true;
-
-                // Only delay if an API call was made for this model
-                if (data.apiCallMade && i < modelsToConvert.length - 1 && delay > 0) {
-                    await sleep(delay);
-                }
-            } else {
-                addLog('error', `✗ ${model.name}: ${data.message}`);
-                errorCount++;
-            }
-
-        } catch (error) {
-            addLog('error', `✗ ${model.name}: ${error.message}`);
-            errorCount++;
-        }
-    }
-
-    updateProgress('Conversion complete', modelsToConvert.length, modelsToConvert.length);
-    addLog('info', `Conversion complete: ${successCount} success, ${errorCount} errors`);
-
-    currentOperation = null;
-    enableButtons();
-}
-
-// Convert all to JSON
-async function convertAllToJson() {
-    if (currentOperation) {
-        addLog('warning', 'An operation is already in progress');
-        return;
-    }
-
-    const useApi = useApiForCreatorCheckbox.checked;
-    const delay = parseFloat(delayInput.value) * 1000;
-
-    // Only convert models with .civitai.info files
-    const modelsToConvert = models.filter(m => m.has_info);
-
-    if (modelsToConvert.length === 0) {
-        addLog('info', 'No models to convert');
-        return;
-    }
-
-    currentOperation = 'convert';
-    disableButtons();
-
-    addLog('info', `Starting conversion of ${modelsToConvert.length} models to JSON...`);
-    if (useApi) {
-        addLog('info', 'Note: API calls enabled for creator info - this will be slower');
-    }
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < modelsToConvert.length; i++) {
-        const model = modelsToConvert[i];
-
-        updateProgress(`Converting: ${model.name}`, i + 1, modelsToConvert.length);
-
-        try {
-            const response = await fetch('/civitai/convert-to-json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    modelPath: model.path,
-                    useApi: useApi
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                addLog('success', `✓ ${model.name}: Converted to JSON`);
-                successCount++;
-
-                // Only delay if an API call was made for this model
-                if (data.apiCallMade && i < modelsToConvert.length - 1 && delay > 0) {
-                    await sleep(delay);
-                }
-            } else {
-                addLog('error', `✗ ${model.name}: ${data.message}`);
-                errorCount++;
-            }
-
-        } catch (error) {
-            addLog('error', `✗ ${model.name}: ${error.message}`);
-            errorCount++;
-        }
-    }
-
-    updateProgress('Conversion complete', modelsToConvert.length, modelsToConvert.length);
-    addLog('info', `Conversion complete: ${successCount} success, ${errorCount} errors`);
 
     currentOperation = null;
     enableButtons();
@@ -989,8 +828,6 @@ function disableButtons() {
     scanModelsBtn.disabled = true;
     downloadPreviewsBtn.disabled = true;
     document.getElementById('downloadAllPreviewsBtn').disabled = true;
-    convertToJsonBtn.disabled = true;
-    convertMissingJsonBtn.disabled = true;
     if (fixThumbnailsBtn) fixThumbnailsBtn.disabled = true;
     const genHashBtn = document.getElementById('generateHashesBtn');
     const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');
@@ -1006,8 +843,6 @@ function enableButtons() {
     scanModelsBtn.disabled = false;
     downloadPreviewsBtn.disabled = false;
     document.getElementById('downloadAllPreviewsBtn').disabled = false;
-    convertToJsonBtn.disabled = false;
-    convertMissingJsonBtn.disabled = false;
     if (fixThumbnailsBtn) fixThumbnailsBtn.disabled = false;
     const genHashBtn = document.getElementById('generateHashesBtn');
     const genMissingHashBtn = document.getElementById('generateMissingHashesBtn');

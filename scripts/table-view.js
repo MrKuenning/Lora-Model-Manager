@@ -31,8 +31,8 @@ function sortModels(models, column) {
                 valueB = b.filename.replace(/\.safetensors$/i, '').toLowerCase();
                 break;
             case 'Civitai Name':
-                valueA = (a.json && a.json['civitai name'] || '').toLowerCase();
-                valueB = (b.json && b.json['civitai name'] || '').toLowerCase();
+                valueA = (a.json?.web_civitai_data?.['civitai name'] || a.json?.['civitai name'] || '').toLowerCase();
+                valueB = (b.json?.web_civitai_data?.['civitai name'] || b.json?.['civitai name'] || '').toLowerCase();
                 break;
             case 'Base Model':
                 valueA = (a.baseModel || 'Unknown').toLowerCase();
@@ -67,8 +67,8 @@ function sortModels(models, column) {
                 valueB = (b.json && b.json['negative text'] || '').toLowerCase();
                 break;
             case "Civitai Words":
-                valueA = (a.json && a.json['civitai text'] || '').toLowerCase();
-                valueB = (b.json && b.json['civitai text'] || '').toLowerCase();
+                valueA = (a.json?.web_civitai_data?.['civitai text'] || a.json?.['civitai text'] || '').toLowerCase();
+                valueB = (b.json?.web_civitai_data?.['civitai text'] || b.json?.['civitai text'] || '').toLowerCase();
                 break;
             case 'Description':
                 valueA = (a.json && a.json['description'] || '').toLowerCase();
@@ -83,12 +83,12 @@ function sortModels(models, column) {
                 valueB = (b.json && b.json['subcategory'] || '').toLowerCase();
                 break;
             case 'Creator':
-                valueA = (a.json && a.json['creator'] || '').toLowerCase();
-                valueB = (b.json && b.json['creator'] || '').toLowerCase();
+                valueA = (a.json && (a.json?.web_civitai_data?.['creator'] || a.json['creator']) || '').toLowerCase();
+                valueB = (b.json && (b.json?.web_civitai_data?.['creator'] || b.json['creator']) || '').toLowerCase();
                 break;
             case 'Example Prompt':
-                valueA = (a.json && a.json['example prompt'] || '').toLowerCase();
-                valueB = (b.json && b.json['example prompt'] || '').toLowerCase();
+                valueA = (a.json && (a.json['example prompt 1'] || a.json['example prompt']) || '').toLowerCase();
+                valueB = (b.json && (b.json['example prompt 1'] || b.json['example prompt']) || '').toLowerCase();
                 break;
             case 'Tags':
                 valueA = (a.json && a.json['tags'] || '').toLowerCase();
@@ -146,7 +146,8 @@ function groupModelsByProperty(models, property) {
                 groupValue = getFolderFromPath(model) || 'Uncategorized';
                 break;
             case 'Creator':
-                groupValue = model.json && model.json['creator'] ? model.json['creator'] : 'Unknown Creator';
+                const modelCreator = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'];
+                groupValue = modelCreator ? modelCreator : 'Unknown Creator';
                 break;
             case 'Tags':
                 groupValue = model.json && model.json['tags'] ?
@@ -467,7 +468,7 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     cell.textContent = model.filename.replace(/\.safetensors$/i, '');
                     break;
                 case 'Civitai Name':
-                    cell.textContent = model.json?.['civitai name'] || '';
+                    cell.textContent = model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'] || '';
                     break;
                 case 'Base Model':
                     cell.textContent = model.baseModel || 'Unknown';
@@ -519,7 +520,7 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     cell.textContent = model.json?.['negative text'] || '';
                     break;
                 case "Civitai Words":
-                    cell.textContent = model.json?.['civitai text'] || '';
+                    cell.textContent = model.json?.web_civitai_data?.['civitai text'] || model.json?.['civitai text'] || '';
                     break;
                 case 'Description':
                     const desc = model.json?.['description'] || '';
@@ -532,10 +533,10 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     cell.textContent = model.json?.['subcategory'] || '';
                     break;
                 case 'Creator':
-                    cell.textContent = model.json?.['creator'] || '';
+                    cell.textContent = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || '';
                     break;
                 case 'Example Prompt':
-                    const prompt = model.json?.['example prompt'] || '';
+                    const prompt = model.json?.['example prompt 1'] || model.json?.['example prompt'] || '';
                     cell.textContent = prompt.length > 50 ? `${prompt.substring(0, 50)}...` : prompt;
                     break;
                 case 'Tags':

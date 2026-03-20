@@ -272,16 +272,16 @@ function searchInModel(model, term, exactMatch) {
         { value: model.baseModel, weight: 7, exactMatch: true },
 
         // JSON fields
-        { value: model.json?.['civitai name'], weight: 8 },
+        { value: model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'], weight: 8 },
         { value: model.json?.['subcategory'], weight: 7 },
         { value: getFolderFromPath(model), weight: 6 },
-        { value: model.json?.['creator'], weight: 8, exactMatch: true },
+        { value: model.json?.web_civitai_data?.['creator'] || model.json?.['creator'], weight: 8, exactMatch: true },
         { value: model.json?.['tags'], weight: 9 },
         { value: model.json?.['activation text'], weight: 5 },
         { value: model.json?.['negative text'], weight: 5 },
-        { value: model.json?.['civitai text'], weight: 5 },
+        { value: model.json?.web_civitai_data?.['civitai text'] || model.json?.['civitai text'], weight: 5 },
         { value: model.json?.['description'], weight: 6 },
-        { value: model.json?.['example prompt'], weight: 5 },
+        { value: model.json?.['example prompt 1'] || model.json?.['example prompt'], weight: 5 },
 
         // Path
         { value: model.path, weight: 4 }
