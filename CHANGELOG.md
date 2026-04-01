@@ -25,6 +25,8 @@
   - Fixed a Python `SyntaxError` in `manager.py` related to global cache declarations.
 - **UI Feedback**
   - Corrected DOM element selection in `civitai-api.js` to ensure operation status messages are properly displayed.
+- **Creator Suffix Button**
+  - Fixed the "Creator Suffix" button logic to correctly retrieve the creator's name from the new `web_civitai_data` nested JSON object.
 
 ---
 

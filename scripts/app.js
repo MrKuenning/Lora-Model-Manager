@@ -3445,7 +3445,8 @@ function handleCreatorSuffix() {
     if (!currentModel) return;
 
     // Get the creator name from the model
-    const creatorName = currentModel.json?.['creator'] ||
+    const creatorName = currentModel.json?.web_civitai_data?.creator || 
+        currentModel.json?.['creator'] ||
         currentModel.civitaiInfo?.creator?.username ||
         '';
 
