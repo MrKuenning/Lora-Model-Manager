@@ -2109,7 +2109,8 @@ function openModelDetails(model) {
             // Update the model object based on field ID
             switch (fieldId) {
                 case 'model-author':
-                    currentModel.json['author name'] = value;
+                    if (!currentModel.json.web_civitai_data) currentModel.json.web_civitai_data = {};
+                    currentModel.json.web_civitai_data['civitai name'] = value;
                     break;
                 case 'model-basemodel':
                     currentModel.baseModel = value;

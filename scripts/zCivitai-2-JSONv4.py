@@ -45,9 +45,6 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'activation text': '',
         'base model': '',
         'category': '',
-        'civitai name': '',
-        'civitai text': '',
-        'creator': '',
         'description': '',  # Will keep this empty as per requirement
         'example prompt 1': '',
         'high low': '',  # High/Low toggle field
@@ -60,7 +57,12 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         'sd version': '',
         'subcategory': '',
         'tags': '',
-        'url': ''
+        'web_civitai_data': {
+            'civitai name': '',
+            'civitai text': '',
+            'creator': '',
+            'url': ''
+        }
     }
     
     # Extract data from civitai.info
@@ -68,7 +70,7 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         trained_words = civitai_info_data['trainedWords']
         if isinstance(trained_words, list) and trained_words:
             mapped_data['activation text'] = trained_words[0]
-            mapped_data['civitai text'] = ', '.join(trained_words)
+            mapped_data['web_civitai_data']['civitai text'] = ', '.join(trained_words)
 
     if 'baseModel' in civitai_info_data:
         mapped_data['base model'] = civitai_info_data['baseModel']
@@ -76,7 +78,7 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
 
     if 'model' in civitai_info_data:
         if 'name' in civitai_info_data['model']:
-            mapped_data['civitai name'] = civitai_info_data['model']['name']
+            mapped_data['web_civitai_data']['civitai name'] = civitai_info_data['model']['name']
             # Also populate the 'name' field with civitai name
             mapped_data['name'] = civitai_info_data['model']['name']
         if 'nsfw' in civitai_info_data['model']:
@@ -110,15 +112,15 @@ def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
         model_id = civitai_info_data['modelId']
         version_id = civitai_info_data['id']
         url = f"https://civitai.com/models/{model_id}?modelVersionId={version_id}"
-        mapped_data['url'] = url
+        mapped_data['web_civitai_data']['url'] = url
 
         # Use existing creator if provided, otherwise get from API if enabled
         if existing_creator:
-            mapped_data['creator'] = existing_creator
+            mapped_data['web_civitai_data']['creator'] = existing_creator
         elif use_api:
             creator = get_creator_from_api(model_id, use_api)
             if creator:
-                mapped_data['creator'] = creator
+                mapped_data['web_civitai_data']['creator'] = creator
 
         # Construct notes field
         notes = [f"URL: {url}"]

@@ -1,6 +1,33 @@
 # Lora Model Manager - Changelog
 
 
+### 04/01/2026
+
+**Added**
+- **SHA256 Generation & Display**
+  - Added a "Generate SHA256" button to the model actions panel.
+  - Hashes are now persisted in the model's `.json` file and displayed in the "File Info" section of the model popup.
+- **Model Deletion**
+  - Added a "Delete Model" button to the model popup for streamlined file management.
+
+**Changed**
+- **Model Popup Layout Refinement**
+  - Renamed "Civitai Actions" to "Actions".
+  - Restructured the actions area to display buttons and associated files side-by-side for better space utilization.
+- **Multi-Select Model Filter**
+  - Refined the multi-select model filter with a custom checkbox-based dropdown.
+  - Increased the dropdown height and tightened item spacing for improved usability in large collections.
+
+**Fixed**
+- **Checkpoint Bulk Operations**
+  - Resolved a bug where Lora folders were incorrectly displayed in bulk edit/move modals when viewing Checkpoints.
+- **Server Stability**
+  - Fixed a Python `SyntaxError` in `manager.py` related to global cache declarations.
+- **UI Feedback**
+  - Corrected DOM element selection in `civitai-api.js` to ensure operation status messages are properly displayed.
+
+---
+
 ### 03/20/2026
 
 **Fixed**

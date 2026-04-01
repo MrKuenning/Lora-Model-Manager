@@ -134,7 +134,7 @@ function groupModelsByProperty(models, property) {
                 groupValue = model.category || 'Uncategorized';
                 break;
             case 'Civitai Name':
-                groupValue = model.json && model.json['author name'] ? model.json['author name'] : 'Unknown Author';
+                groupValue = model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'] || model.json?.['author name'] || 'Unknown Author';
                 break;
             case 'Base Model':
                 groupValue = model.baseModel || 'Unknown';

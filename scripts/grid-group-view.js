@@ -21,7 +21,7 @@ function getFieldValue(model, fieldKey) {
         case 'modelVersion': return model.json?.['model version'] || '';
         case 'highLow': return model.json?.['high low'] || '';
         case 'triggerWords': return model.json?.['activation text'] || '';
-        case 'creator': return model.json?.['creator'] || '';
+        case 'creator': return model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || '';
         case 'tags': return model.json?.['tags'] || '';
         default: return '';
     }
@@ -240,7 +240,7 @@ function groupModelsByProperty(models, property) {
                 groupValue = model.category || 'Uncategorized';
                 break;
             case 'Civitai Name':
-                groupValue = model.json && model.json['author name'] ? model.json['author name'] : 'Unknown Author';
+                groupValue = model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'] || model.json?.['author name'] || 'Unknown Author';
                 break;
             case 'Base Model':
                 groupValue = model.baseModel || 'Unknown';
@@ -252,7 +252,7 @@ function groupModelsByProperty(models, property) {
                 groupValue = getFolderFromPath(model) || 'Uncategorized';
                 break;
             case 'Creator':
-                groupValue = model.json && model.json['creator'] ? model.json['creator'] : 'Unknown Creator';
+                groupValue = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || 'Unknown Creator';
                 break;
             case 'Tags':
                 // If tags exist, use the first tag as the group, otherwise 'No Tags'

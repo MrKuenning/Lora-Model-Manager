@@ -1,4 +1,4 @@
-﻿import http.server
+import http.server
 import socketserver
 import json
 import os
@@ -1164,19 +1164,22 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     with open(info_path, 'r', encoding='utf-8') as f:
                         info_data = json.load(f)
                     
-                    # Initialize web_civitai_data sub-object
+                    # Extract web_civitai_data if it already exists (from new zCivitai-2-JSONv4)
+                    existing_wcd = mapped_data.pop('web_civitai_data', {})
+                    
+                    # Initialize web_civitai_data sub-object, pulling from top level (old format) or existing_wcd (new format)
                     wcd = {
-                        'civitai name': mapped_data.pop('civitai name', ''),
-                        'civitai text': mapped_data.pop('civitai text', ''),
-                        'creator': mapped_data.pop('creator', ''),
-                        'downloadUrl': '',
-                        'file_id': '',
-                        'model_id': '',
-                        'original_filename': '',
-                        'preview_image_1': '',
-                        'preview_image_2': '',
-                        'published_date': '',
-                        'url': mapped_data.pop('url', '')
+                        'civitai name': existing_wcd.get('civitai name') or mapped_data.pop('civitai name', ''),
+                        'civitai text': existing_wcd.get('civitai text') or mapped_data.pop('civitai text', ''),
+                        'creator': existing_wcd.get('creator') or mapped_data.pop('creator', ''),
+                        'downloadUrl': existing_wcd.get('downloadUrl', ''),
+                        'file_id': existing_wcd.get('file_id', ''),
+                        'model_id': existing_wcd.get('model_id', ''),
+                        'original_filename': existing_wcd.get('original_filename', ''),
+                        'preview_image_1': existing_wcd.get('preview_image_1', ''),
+                        'preview_image_2': existing_wcd.get('preview_image_2', ''),
+                        'published_date': existing_wcd.get('published_date', ''),
+                        'url': existing_wcd.get('url') or mapped_data.pop('url', '')
                     }
                     
                     # New fields into web_civitai_data
