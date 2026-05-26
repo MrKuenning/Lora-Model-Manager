@@ -30,9 +30,12 @@ See the full changelog at [CHANGELOG.md](CHANGELOG.md)
 - **Grouped View**: Organize models by category, folder, or base model
 <img src="https://github.com/user-attachments/assets/87ff8bba-4e2a-48ec-9f92-4a4085077e75" width="500" />
 
+- **Folder Tree & List View Sidebar**: Sidebar layout allowing toggleable Tree or List representations of directories. The sidebar's visibility and current view mode are persisted in your browser's local storage.
+
 ### 🔍 Advanced Search & Filtering
-- Full-text search across all model metadata
-- Filter by category, tags, creator, base model
+- Full-text search across all model metadata (including tags)
+- **Multi-select base model filtering** to filter by multiple base models simultaneously
+- Filter by category, tags, creator
 - Safe Mode toggle for NSFW content filtering
 - Sort by name, date, size, or any column
 
@@ -56,7 +59,9 @@ Manage both LoRA and Checkpoint models from separate directories:
 - **NSFW toggle** for content rating
 - **Preferred weight slider** (-4 to +4 range with color gradient)
 - **Built-in JSON editor** for powerful metadata management
-- **File information** split into File Info and File Data panels
+- **File information** split into File Info (with SHA256 display) and File Data panels
+- **SHA256 Hash Generation**: Instantly compute the SHA256 checksum of model files
+- **Model Deletion**: Safely delete the model file and all associated files (metadata JSON, preview images) directly from the details view
 
 ### 🛠️ Filename Helper Tools
 <img src="https://github.com/user-attachments/assets/212f2a7d-ca5a-43aa-a994-c83af99dbb70" width="500" />
@@ -79,16 +84,19 @@ Powerful buttons to help format and manage filenames:
 Dedicated Civitai Scan page with powerful tools:
 
 - **Get Civitai Data**: Fetch model info using SHA256 hash lookup (creates JSON directly)
+- **All-In-One Scan**: Automate matching, metadata JSON creation, and thumbnail downloads in a single click
 - **Manual URL Matching**: Enter Civitai URL when hash matching fails
 - **Download Thumbnails**: Download preview images from Civitai
 - **Fix Thumbnail Names**: Standardize thumbnail filenames
 - **Dummy JSON Files**: Create marker files for unmatched models
 
 ### 📝 Model-Specific Actions
-Three Civitai action buttons in the model popup for single-model operations:
-- Get Civitai Data for current model
-- Download thumbnail
-- Fix thumbnail name
+Action buttons in the model popup for single-model operations:
+- **Get Civitai Data** for current model
+- **Download Thumbnail**
+- **Fix Thumbnail Name**
+- **Generate SHA256 Hash** for model integrity and duplicate scanning
+- **Delete Model** to clean up the model and its associated metadata/previews
 
 ### 📦 Bulk Editing Mode
 <img src="https://github.com/user-attachments/assets/bc2b8b01-c59c-4989-b2da-141576cd8df5" width="500" />
@@ -127,6 +135,13 @@ Customize what information appears on model cards in grid view via **Settings �
 ### 📋 Smart Textarea Behavior
 - View mode: Textareas shrink to fit content (max 20 lines with scrollbar)
 - Edit mode: Textareas expand to show all content with auto-resize
+
+### 🗺️ Model Type Roots
+Organize and clean up folder navigation when moving models by mapping Base Model Types to specific root directories:
+- **Set Roots in Settings**: Map any base model (e.g. `Qwen`) to a target root folder (e.g., `Comfy/QWEN`) under the **Model Type Roots** settings tab.
+- **Smart Path Auto-complete**: Configured via a drop-down combo-box that fetches valid, actual relative folders from both your LoRA and Checkpoint directories.
+- **Dynamic Move Filtering**: When moving a model, the target location dropdown filters automatically to only show the configured root folder and its subdirectories.
+- **Bulk Operations Integration**: Filters the destination folder list in bulk move operations if all selected models share the same base model.
 
 ## Installation
 
