@@ -162,7 +162,27 @@ export async function openBulkMoveModal(settingsManager) {
         const response = await fetch(`/get-folders?location=${encodeURIComponent(location)}`);
         if (response.ok) {
             const data = await response.json();
-            const folders = data.folders || [];
+            let folders = data.folders || [];
+
+            // Filter folders based on model type (baseModel) if all selected models share the same baseModel
+            const selectedModelsList = getSelectedModels();
+            if (selectedModelsList.length > 0) {
+                const firstBaseModel = selectedModelsList[0].baseModel;
+                const allSame = selectedModelsList.every(m => m.baseModel === firstBaseModel);
+                
+                if (allSame && firstBaseModel) {
+                    const modelTypeRoots = settingsManager.getSetting('modelTypeRoots') || [];
+                    const mapping = modelTypeRoots.find(r => r.baseModel === firstBaseModel);
+                    if (mapping && mapping.rootFolder) {
+                        const rootPath = mapping.rootFolder.replace(/\\/g, '/').toLowerCase().replace(/\/$/, '');
+                        folders = folders.filter(f => {
+                            if (f.path === '') return false;
+                            const fPath = f.path.replace(/\\/g, '/').toLowerCase();
+                            return fPath === rootPath || fPath.startsWith(rootPath + '/');
+                        });
+                    }
+                }
+            }
 
             folderList.innerHTML = folders.map(f => `
                 <div class="bulk-folder-item" data-path="${f.path}" tabindex="0">

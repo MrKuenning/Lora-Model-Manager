@@ -1,6 +1,17 @@
 # Lora Model Manager - Changelog
 
 
+### 05/26/2026
+
+**Added**
+- **Model Type Roots**
+  - Added a new Settings tab for mapping Base Model Types to specific subdirectory paths within the models directory.
+  - Implemented dropdown/combo-box selection using a <datalist> populated with actual folders from the backend, ensuring valid relative paths are configured.
+  - Added dynamic filtering for folder dropdowns in single-model moving operations based on configured model roots.
+  - Added dynamic filtering for folder dropdowns in bulk-moving operations (applies when all selected models share the same base model).
+
+---
+
 ### 04/01/2026
 
 **Added**

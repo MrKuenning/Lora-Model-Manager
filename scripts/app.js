@@ -489,6 +489,9 @@ async function openSettingsModal() {
     // Load filename formats
     loadFilenameFormats(settings.filenameFormats || []);
 
+    // Load model type roots
+    loadModelTypeRoots(settings.modelTypeRoots || []);
+
     // Load grid card settings
     const gridCardSettings = settings.gridCardSettings || {};
     document.getElementById('gridcard-imageMode').value = gridCardSettings.imageMode || 'carousel';
@@ -620,6 +623,105 @@ function getFilenameFormats() {
         }
     });
     return formats;
+}
+
+// Initialize model type roots settings UI
+async function loadModelTypeRoots(roots) {
+    const list = document.getElementById('modeltype-root-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    // Fetch folders for autocomplete datalist
+    let availableFolders = [];
+    try {
+        const resLoras = await fetch('/get-folders?location=loras');
+        if (resLoras.ok) {
+            const data = await resLoras.json();
+            availableFolders.push(...(data.folders || []).map(f => f.path).filter(Boolean));
+        }
+        const resCheckpoints = await fetch('/get-folders?location=checkpoints');
+        if (resCheckpoints.ok) {
+            const data = await resCheckpoints.json();
+            availableFolders.push(...(data.folders || []).map(f => f.path).filter(Boolean));
+        }
+        availableFolders = [...new Set(availableFolders)].sort();
+    } catch (e) {
+        console.error('Error fetching folders for datalist', e);
+    }
+    
+    // Add datalist to DOM if not exists
+    let datalist = document.getElementById('folder-datalist');
+    if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'folder-datalist';
+        document.body.appendChild(datalist);
+    }
+    datalist.innerHTML = availableFolders.map(f => `<option value="${f}">`).join('');
+
+    const addBtn = document.getElementById('add-modeltype-root-btn');
+    if (addBtn) {
+        const newAddBtn = addBtn.cloneNode(true);
+        addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+        newAddBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const existing = getModelTypeRoots().map(r => r.baseModel);
+            const currentModels = (typeof models !== 'undefined') ? models : [];
+            const allBaseModels = [...new Set(currentModels.map(m => m.baseModel).filter(Boolean))];
+            const available = allBaseModels.filter(m => !existing.includes(m));
+            addModelTypeRootRow('', '', available);
+        });
+    }
+
+    roots.forEach(r => addModelTypeRootRow(r.baseModel, r.rootFolder));
+}
+
+function addModelTypeRootRow(baseModel = '', rootFolder = '', availableModels = null) {
+    const list = document.getElementById('modeltype-root-list');
+    const row = document.createElement('div');
+    row.className = 'modeltype-root-row';
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+
+    let baseModelInput;
+    if (availableModels && Array.isArray(availableModels) && availableModels.length > 0) {
+        availableModels.sort((a, b) => a.localeCompare(b));
+        const options = availableModels.map(m => `<option value="${m}">${m}</option>`).join('');
+        baseModelInput = `<select class="root-base-model" style="flex: 1; padding: 4px;">
+            <option value="" disabled selected>Select Base Model...</option>
+            ${options}
+        </select>`;
+    } else {
+        baseModelInput = `<input type="text" class="root-base-model" placeholder="Base Model" value="${baseModel}" style="flex: 1; padding: 4px;">`;
+    }
+
+    row.innerHTML = `
+        ${baseModelInput}
+        <input type="text" list="folder-datalist" class="root-folder" placeholder="Relative Root Folder (e.g. Comfy/QWEN)" value="${rootFolder}" style="flex: 2; padding: 4px;">
+        <button class="btn btn-tiny btn-danger remove-root-btn"><i class="fas fa-times"></i></button>
+    `;
+
+    row.querySelector('.remove-root-btn').addEventListener('click', () => {
+        list.removeChild(row);
+    });
+
+    list.appendChild(row);
+}
+
+function getModelTypeRoots() {
+    const list = document.getElementById('modeltype-root-list');
+    if (!list) return [];
+
+    const roots = [];
+    list.querySelectorAll('.modeltype-root-row').forEach(row => {
+        const baseModel = row.querySelector('.root-base-model').value.trim();
+        const rootFolder = row.querySelector('.root-folder').value.trim();
+        if (baseModel) {
+            roots.push({ baseModel, rootFolder });
+        }
+    });
+    return roots;
 }
 
 
@@ -1650,6 +1752,8 @@ async function saveSettings() {
         columnOrder: Array.from(document.querySelectorAll('#sortable-columns li')).map(li => li.dataset.columnKey),
         // Get filename formats
         filenameFormats: getFilenameFormats(),
+        // Get model type roots
+        modelTypeRoots: getModelTypeRoots(),
         // Get grid card settings
         gridCardSettings: {
             imageMode: document.getElementById('gridcard-imageMode')?.value || 'carousel',
@@ -2810,7 +2914,23 @@ async function populateFileLocationDropdown(modelRelativePath) {
         }
 
         const data = await response.json();
-        const folders = data.folders || [];
+        let folders = data.folders || [];
+
+        // Filter folders based on model type (baseModel)
+        const baseModel = currentModel?.baseModel;
+        if (baseModel) {
+            const modelTypeRoots = settingsManager.getSetting('modelTypeRoots') || [];
+            const mapping = modelTypeRoots.find(r => r.baseModel === baseModel);
+            if (mapping && mapping.rootFolder) {
+                // Ensure rootPath uses standard slashes and doesn't end with slash
+                const rootPath = mapping.rootFolder.replace(/\\/g, '/').toLowerCase().replace(/\/$/, '');
+                folders = folders.filter(f => {
+                    if (f.path === '') return false; // Exclude root if a specific root is defined
+                    const fPath = f.path.replace(/\\/g, '/').toLowerCase();
+                    return fPath === rootPath || fPath.startsWith(rootPath + '/');
+                });
+            }
+        }
 
         // Clear existing options
         fileLocationSelect.innerHTML = '';

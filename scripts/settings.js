@@ -69,7 +69,8 @@ class Settings {
                 subtitle1: 'folder',     // field key or 'none'
                 subtitle2: 'baseModel',  // field key or 'none'
                 subtitle3: 'none'        // field key or 'none'
-            }
+            },
+            modelTypeRoots: []
         };
 
         this.settings = { ...this.defaultSettings };

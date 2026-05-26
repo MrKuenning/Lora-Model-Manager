@@ -992,6 +992,7 @@
                 <button class="tab-btn" data-tab="settings-columns">Table Columns</button>
                 <button class="tab-btn" data-tab="settings-gridcard">Grid Card</button>
                 <button class="tab-btn" data-tab="settings-filename">Filename Formatting</button>
+                <button class="tab-btn" data-tab="settings-modeltypes">Model Type Roots</button>
             </div>
 
             <div id="settings-general" class="tab-content active">
@@ -1108,6 +1109,29 @@
                     <div class="add-format-row">
                         <button id="add-filename-format-btn" class="btn btn-small btn-secondary" style="width: 100%;">
                             <i class="fas fa-plus"></i> Add Format Rule
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Type Roots Section -->
+            <div id="settings-modeltypes" class="tab-content">
+                <div class="setting-group modeltype-roots-group">
+                    <div class="group-header"
+                        style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <label>Model Type Roots:</label>
+                        <small style="color: var(--color-text-secondary);">Map Model Types to root folders to filter Move UI</small>
+                    </div>
+                    <p style="color: var(--color-text-secondary); font-size: 0.8rem; margin: 0 0 10px 0;">
+                        When moving models, if the model has a matching Model Type (Base Model), the folder dropdown will be filtered to only show the root folder and its subdirectories. You should use a <strong>relative path</strong> (e.g., <code>Comfy/QWEN</code>) rather than a full system path. You can select existing folders from the dropdown.
+                    </p>
+                    <div class="modeltype-root-list" id="modeltype-root-list"
+                        style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                        <!-- Rows will be injected here by JS -->
+                    </div>
+                    <div class="add-format-row">
+                        <button id="add-modeltype-root-btn" class="btn btn-small btn-secondary" style="width: 100%;">
+                            <i class="fas fa-plus"></i> Add Root Mapping
                         </button>
                     </div>
                 </div>
