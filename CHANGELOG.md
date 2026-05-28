@@ -1,6 +1,14 @@
 # Lora Model Manager - Changelog
 
 
+### 05/28/2026
+
+**Fixed**
+- **Bulk Model Moving Filter**
+  - Updated bulk move folder filtering to check if all selected models resolve to the exact same configured root folder (even if they have different base model names, such as different Wan Video variants), ensuring the destination folder list is still filtered correctly.
+
+---
+
 ### 05/26/2026
 
 **Added**
