@@ -466,6 +466,7 @@ async function openSettingsModal() {
     document.getElementById('col-filename').checked = columns.filename !== false;
     document.getElementById('col-author').checked = columns.civitaiName !== false;
     document.getElementById('col-basemodel').checked = columns.baseModel !== false;
+    document.getElementById('col-sdversion').checked = columns.sdVersion !== false;
     document.getElementById('col-category').checked = columns.category !== false;
     document.getElementById('col-folder').checked = columns.folder !== false;
     document.getElementById('col-subcategory').checked = columns.subcategory !== false;
@@ -1728,6 +1729,7 @@ async function saveSettings() {
             filename: document.getElementById('col-filename').checked,
             civitaiName: document.getElementById('col-author').checked,
             baseModel: document.getElementById('col-basemodel').checked,
+            sdVersion: document.getElementById('col-sdversion').checked,
             category: document.getElementById('col-category').checked,
             folder: document.getElementById('col-folder').checked,
             subcategory: document.getElementById('col-subcategory').checked,
@@ -1996,9 +1998,11 @@ function openModelDetails(model) {
         associatedFilesElement.innerHTML = '<li>None</li>';
     }
 
-    // Set author, base model, creator in static info section
+    // Set author, base model, sd version, creator in static info section
     document.getElementById('model-author-static').textContent = model.json?.web_civitai_data?.['civitai name'] || model.json?.['civitai name'] || '';
     document.getElementById('model-basemodel-static').textContent = model.baseModel || '';
+    const sdVersionElement = document.getElementById('model-sdversion-static');
+    if (sdVersionElement) sdVersionElement.textContent = model.json?.['sd version'] || '';
     document.getElementById('model-creator-static').textContent = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || '';
 
     // Set editable fields - Populate both inputs and displays
@@ -3773,6 +3777,83 @@ function initBaseModelDropdown() {
     });
 }
 
+// Initialize sd version field event handlers
+function initSdVersionEdit() {
+    const editBtn = document.getElementById('edit-sdversion-btn');
+    const saveBtn = document.getElementById('save-sdversion-btn');
+    const cancelBtn = document.getElementById('cancel-sdversion-btn');
+    const staticDisplay = document.getElementById('model-sdversion-static');
+    const inputField = document.getElementById('model-sdversion-input');
+
+    if (!editBtn || !saveBtn || !cancelBtn || !staticDisplay || !inputField) {
+        return;
+    }
+
+    editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        inputField.value = staticDisplay.textContent;
+        staticDisplay.style.display = 'none';
+        inputField.style.display = 'block';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+        inputField.focus();
+    });
+
+    cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        inputField.style.display = 'none';
+        staticDisplay.style.display = 'inline';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+    });
+
+    saveBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newValue = inputField.value.trim();
+        
+        try {
+            // Update the model json
+            if (!currentModel.json) currentModel.json = {};
+            currentModel.json['sd version'] = newValue;
+
+            // Save to server by leveraging the '/save-model' endpoint 
+            // the endpoint accepts a generic 'json_update' payload if we don't have a specific field?
+            // Wait, looking at the backend saveModel handler, it accepts specific fields or 'json_update' maybe?
+            // Actually, in the switch statement for editable-fields, it doesn't do that. It just updates currentModel and then sends:
+            // body: JSON.stringify(currentModel)  maybe?
+            // Let me check how other edits are saved inside the editable fields. Wait, earlier I saw saveBtn inside initBaseModelDropdown calls await saveModel()!
+            // No, wait, in my earlier view of initBaseModelDropdown, it called saveModel()! 
+            // Wait, let's look at initBaseModelDropdown's save logic.
+            // I'll just copy what initBaseModelDropdown did exactly!
+
+            // Save to server
+            await saveModel();
+
+            // Update static display
+            staticDisplay.textContent = newValue;
+
+            // Hide edit container, show static display
+            inputField.style.display = 'none';
+            staticDisplay.style.display = 'inline';
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+
+        } catch (error) {
+            console.error('Error saving sd version:', error);
+            showToast('Failed to save sd version. Please try again.', 'error');
+        }
+    });
+}
+
 function renderFolderSidebar() {
     if (!folderContainer) return;
 
@@ -3967,4 +4048,5 @@ function renderFolderSidebar() {
 document.addEventListener('DOMContentLoaded', () => {
     // Delay to ensure other setup has completed
     setTimeout(initBaseModelDropdown, 100);
+    setTimeout(initSdVersionEdit, 100);
 });

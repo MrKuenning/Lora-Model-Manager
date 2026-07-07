@@ -34,6 +34,23 @@ INFO_EXTENSION = '.civitai.info'
 PREVIEW_EXTENSION = '.preview.png'
 
 
+def map_sd_version(base_model):
+    if not base_model:
+        return 'Unknown'
+    
+    if base_model == 'SD 1.5': return 'sd'
+    if base_model in ['SDXL 1.0', 'Pony', 'Illustrious']: return 'xl'
+    if base_model in ['Flux.1 D', 'Flux.1 S']: return 'flux'
+    if base_model in ['Flux.2 Klein 9B', 'Flux.2 Klein 9B-Base', 'lux.2 Klein 9B-Base']: return 'klein'
+    if base_model == 'Qwen': return 'qwen'
+    if base_model in ['ZImageTurbo', 'ZImageBase']: return 'zit'
+    if base_model in ['Wan Video 2.2 I2V-A14B', 'Wan Video 2.2 T2V-A14B']: return 'wan'
+    if base_model == 'Anima': return 'anima'
+    if base_model == 'Ernie': return 'ernie'
+    if base_model == 'Krea 2': return 'krea'
+    
+    return 'Unknown'
+
 def load_json_robust(file_path):
     """
     Load JSON from a file with robust encoding handling and error reporting.
@@ -382,7 +399,7 @@ def create_json_from_api_data(model_path, api_data, use_api_for_creator=True, ex
         # Base model
         if 'baseModel' in api_data:
             mapped_data['base model'] = api_data['baseModel']
-            mapped_data['sd version'] = 'SD1' if api_data['baseModel'].startswith('SD 1') else 'SD2'
+            mapped_data['sd version'] = map_sd_version(api_data['baseModel'])
         
         # Base model type (NEW)
         if 'baseModelType' in api_data:

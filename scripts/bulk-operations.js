@@ -321,6 +321,8 @@ export async function executeBulkEdit(fields, refreshCallback) {
             if (fields.subcategory) jsonData.subcategory = fields.subcategory;
             if (fields.version) jsonData['model version'] = fields.version;
             if (fields.highLow) jsonData['high low'] = fields.highLow;
+            if (fields.baseModel) jsonData['base model'] = fields.baseModel;
+            if (fields.sdVersion) jsonData['sd version'] = fields.sdVersion;
 
             // Save updated JSON
             const response = await fetch('/save-model', {
@@ -670,7 +672,9 @@ export function initBulkOperations(displayModelsCallback, refreshCallback, setti
             category: document.getElementById('bulkCategory').value.trim(),
             subcategory: document.getElementById('bulkSubcategory').value.trim(),
             version: document.getElementById('bulkVersion').value.trim(),
-            highLow: document.getElementById('bulkHighLow').value
+            highLow: document.getElementById('bulkHighLow').value,
+            baseModel: document.getElementById('bulkBaseModel')?.value.trim() || '',
+            sdVersion: document.getElementById('bulkSdVersion')?.value.trim() || ''
         };
         executeBulkEdit(fields, refreshCallback);
     });

@@ -183,6 +183,8 @@
                             <option value="column:Model Name:desc">Model Name (Z-A)</option>
                             <option value="column:Model Version:asc">Model Version (A-Z)</option>
                             <option value="column:Model Version:desc">Model Version (Z-A)</option>
+                            <option value="column:SD Version:asc">SD Version (A-Z)</option>
+                            <option value="column:SD Version:desc">SD Version (Z-A)</option>
                             <option value="column:High/Low:asc">High/Low (A-Z)</option>
                             <option value="column:High/Low:desc">High/Low (Z-A)</option>
                         </select>
@@ -287,6 +289,24 @@
                                             </button>
                                             <button id="cancel-basemodel-btn" class="btn btn-tiny btn-secondary"
                                                 title="Cancel" style="display: none;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="static-info-row editable-static-row">
+                                    <label>SD VERSION:</label>
+                                    <div class="static-editable-content">
+                                        <span id="model-sdversion-static" class="static-value"></span>
+                                        <input type="text" id="model-sdversion-input" class="static-edit-input" style="display: none;">
+                                        <div class="static-edit-buttons">
+                                            <button id="edit-sdversion-btn" class="btn btn-tiny btn-secondary" title="Edit SD Version">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button id="save-sdversion-btn" class="btn btn-tiny btn-success" title="Save SD Version" style="display: none;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button id="cancel-sdversion-btn" class="btn btn-tiny btn-secondary" title="Cancel" style="display: none;">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
@@ -1258,6 +1278,13 @@
                                     <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
                                 </div>
                             </li>
+                            <li data-column-key="sdVersion">
+                                <div class="column-item">
+                                    <div class="column-checkbox"><input type="checkbox" id="col-sdversion"></div>
+                                    <div class="column-name">SD Version</div>
+                                    <div class="column-handle"><i class="fas fa-grip-lines"></i></div>
+                                </div>
+                            </li>
                             <li data-column-key="category">
                                 <div class="column-item">
                                     <div class="column-checkbox"><input type="checkbox" id="col-category"></div>
@@ -1448,6 +1475,14 @@
                 <div class="setting-group">
                     <label for="bulkVersion">Model Version:</label>
                     <input type="text" id="bulkVersion" placeholder="Leave empty to keep existing">
+                </div>
+                <div class="setting-group">
+                    <label for="bulkBaseModel">Base Model:</label>
+                    <input type="text" id="bulkBaseModel" placeholder="Leave empty to keep existing">
+                </div>
+                <div class="setting-group">
+                    <label for="bulkSdVersion">SD Version:</label>
+                    <input type="text" id="bulkSdVersion" placeholder="Leave empty to keep existing">
                 </div>
                 <div class="setting-group">
                     <label for="bulkHighLow">High/Low:</label>

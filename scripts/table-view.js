@@ -38,6 +38,10 @@ function sortModels(models, column) {
                 valueA = (a.baseModel || 'Unknown').toLowerCase();
                 valueB = (b.baseModel || 'Unknown').toLowerCase();
                 break;
+            case 'SD Version':
+                valueA = (a.json && a.json['sd version'] || 'Unknown').toLowerCase();
+                valueB = (b.json && b.json['sd version'] || 'Unknown').toLowerCase();
+                break;
             case 'Category':
                 valueA = (a.category || 'Uncategorized').toLowerCase();
                 valueB = (b.category || 'Uncategorized').toLowerCase();
@@ -138,6 +142,9 @@ function groupModelsByProperty(models, property) {
                 break;
             case 'Base Model':
                 groupValue = model.baseModel || 'Unknown';
+                break;
+            case 'SD Version':
+                groupValue = (model.json && model.json['sd version']) || 'Unknown';
                 break;
             case 'Subcategory':
                 groupValue = model.json && model.json['subcategory'] ? model.json['subcategory'] : 'Uncategorized';
@@ -243,6 +250,7 @@ export function displayTableView(models, container, openModelDetails, settings, 
         'Filename': 'filename',
         'Civitai Name': 'civitaiName',
         'Base Model': 'baseModel',
+        'SD Version': 'sdVersion',
         'Category': 'category',
         'Subcategory': 'subcategory',
         'Folder': 'folder',
@@ -472,6 +480,9 @@ function displayTableBody(models, table, openModelDetails, columns, bulkMode = f
                     break;
                 case 'Base Model':
                     cell.textContent = model.baseModel || 'Unknown';
+                    break;
+                case 'SD Version':
+                    cell.textContent = (model.json && model.json['sd version']) || '';
                     break;
                 case 'Category':
                     cell.textContent = model.category || 'Uncategorized';

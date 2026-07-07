@@ -1,6 +1,20 @@
 # Lora Model Manager - Changelog
 
 
+### 07/07/2026
+
+**Added**
+- **SD Version Mapping & Column**
+  - Integrated `sd version` mapping into Civitai scanning logic based on `baseModel` attributes.
+  - Added `SD Version` to the table list view columns list (complete with sorting, visibility toggle, and configuration persistence).
+  - Integrated `Base Model` and `SD Version` fields into the Bulk Edit modal for batch updating.
+
+**Fixed**
+- **Incorrect SD2 Tags**
+  - Ran database migration to clean up incorrect "SD2" tags and update all existing model JSON files to match correct SD Version mapping configurations.
+
+---
+
 ### 05/28/2026
 
 **Fixed**
