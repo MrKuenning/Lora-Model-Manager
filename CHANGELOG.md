@@ -12,6 +12,7 @@
 **Fixed**
 - **Incorrect SD2 Tags**
   - Ran database migration to clean up incorrect "SD2" tags and update all existing model JSON files to match correct SD Version mapping configurations.
+  - Applied the new mapping logic to the standalone `All-In-One Scan.py` script to ensure it correctly populates `sd version` going forward.
 
 ---
 

@@ -7,6 +7,26 @@ import subprocess
 import tempfile
 import time
 from html import unescape
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+def map_sd_version(base_model):
+    if not base_model:
+        return 'Unknown'
+    
+    if base_model == 'SD 1.5': return 'sd'
+    if base_model in ['SDXL 1.0', 'Pony', 'Illustrious']: return 'xl'
+    if base_model in ['Flux.1 D', 'Flux.1 S']: return 'flux'
+    if base_model in ['Flux.2 Klein 9B', 'Flux.2 Klein 9B-Base', 'lux.2 Klein 9B-Base']: return 'klein'
+    if base_model == 'Qwen': return 'qwen'
+    if base_model in ['ZImageTurbo', 'ZImageBase']: return 'zit'
+    if base_model in ['Wan Video 2.2 I2V-A14B', 'Wan Video 2.2 T2V-A14B']: return 'wan'
+    if base_model == 'Anima': return 'anima'
+    if base_model == 'Ernie': return 'ernie'
+    if base_model == 'Krea 2': return 'krea'
+    
+    return 'Unknown'
 
 # Enable ANSI colors on Windows
 if os.name == 'nt':
@@ -108,7 +128,10 @@ def create_json_from_api_data(model_path, api_data):
         
         if 'baseModel' in api_data:
             data['base model'] = api_data['baseModel']
-            data['sd version'] = 'SD1' if api_data['baseModel'].startswith('SD 1') else 'SD2'
+            
+            # Map sd version based on baseModel if sd version doesn't exist yet
+            if not data.get('sd version'):
+                data['sd version'] = map_sd_version(api_data['baseModel'])
         
         if 'model' in api_data:
             if 'name' in api_data['model']:
@@ -387,7 +410,8 @@ def parse_civitai_info_to_json(model_path, existing_creator='', use_api=True):
         
     if 'baseModel' in info:
         data['base model'] = info['baseModel']
-        data['sd version'] = 'SD1' if info['baseModel'].startswith('SD 1') else 'SD2'
+        if not data.get('sd version'):
+            data['sd version'] = map_sd_version(info['baseModel'])
         
     if 'model' in info:
         if 'name' in info['model']:
