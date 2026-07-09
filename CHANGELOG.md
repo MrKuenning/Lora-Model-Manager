@@ -29,6 +29,8 @@
   - Deleted the legacy `zCivitai-2-JSONv4.py` script.
 
 **Fixed**
+- **Settings UI Javascript Crash**
+  - Fixed an issue where the settings modal script crashed on loading because it searched for the removed "Hide NSFW" DOM element, preventing other settings tabs from displaying their items.
 - **Bulk Edit NSFW Data Type**
   - Fixed an issue where the bulk edit NSFW toggle saved the value as a boolean `true`/`false` instead of the expected string `"true"`/`"false"`.
 
