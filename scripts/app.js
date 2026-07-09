@@ -457,8 +457,7 @@ async function openSettingsModal() {
     // Default sort
     document.getElementById('default-sort-select').value = settings.defaultSort || 'name-asc';
 
-    // Hide NSFW
-    document.getElementById('hideNSFW').checked = settings.hideNSFW || false;
+    // Hide NSFW is handled via the SafeMode toggle now
 
     // Visible columns
     const columns = settings.visibleColumns || {};
@@ -1768,7 +1767,7 @@ async function saveSettings() {
         theme: document.querySelector('input[name="theme"]:checked').value,
         defaultView: document.querySelector('input[name="defaultView"]:checked').value,
         defaultSort: document.getElementById('default-sort-select').value,
-        hideNSFW: document.getElementById('hideNSFW').checked,
+        hideNSFW: settingsManager.getSetting('hideNSFW') || false,
         visibleColumns: {
             thumbnail: document.getElementById('col-thumbnail').checked,
             filename: document.getElementById('col-filename').checked,
