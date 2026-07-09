@@ -1,6 +1,31 @@
 # Lora Model Manager - Changelog
 
 
+### 07/09/2026
+
+**Added**
+- **Combo Boxes for Metadata Fields**
+  - Converted `Base Model`, `SD Version`, `Category`, and `Subcategory` into combo boxes in both the Model Card details popup and the Bulk Edit Modal.
+  - Dropdowns dynamically fetch and display all unique values currently in use in the database.
+  - Includes a "Custom..." option that reveals a manual text input for entering custom values.
+- **Bulk Edit Modal Restructuring**
+  - Grouped Category & Subcategory fields, and Base Model & SD Version fields.
+  - Renamed the "High/Low" toggle field to "WAN High / Low".
+  - Added "NSFW" toggle selection to bulk operations.
+  - Removed the deprecated "Model Version" field from bulk editing.
+
+**Changed**
+- **Consolidated Scan Script**
+  - Ported the `.civitai.info` parsing and JSON creation functions from `zCivitai-2-JSONv4.py` directly into `civitai_handler.py`.
+  - Refactored `manager.py` to call `civitai_handler.py` directly.
+  - Deleted the legacy `zCivitai-2-JSONv4.py` script.
+
+**Fixed**
+- **Bulk Edit NSFW Data Type**
+  - Fixed an issue where the bulk edit NSFW toggle saved the value as a boolean `true`/`false` instead of the expected string `"true"`/`"false"`.
+
+---
+
 ### 07/07/2026
 
 **Added**

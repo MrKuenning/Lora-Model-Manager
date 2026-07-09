@@ -1018,6 +1018,22 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
+    // Setup combobox specific listeners
+    if (fieldType === 'combobox') {
+        const select = input.querySelector('select');
+        const customInput = input.querySelector('input');
+        if (select && customInput) {
+            select.addEventListener('change', () => {
+                if (select.value === '__custom__') {
+                    customInput.style.display = 'block';
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            });
+        }
+    }
+
     // Make display clickable to enter edit mode
     display.style.cursor = 'pointer';
     display.title = 'Click to edit';
@@ -1049,6 +1065,24 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             if (liveValue) {
                 liveValue.textContent = parseFloat(input.value).toFixed(1);
             }
+        } else if (fieldType === 'combobox') {
+            // Combo box: container is `input`, select is inside, custom input is inside
+            const select = input.querySelector('select');
+            const customInput = input.querySelector('input');
+            const currentVal = display.textContent.trim();
+            const optionExists = Array.from(select.options).some(opt => opt.value === currentVal && currentVal !== '');
+            
+            if (optionExists || currentVal === '') {
+                select.value = currentVal;
+                customInput.style.display = 'none';
+            } else {
+                select.value = '__custom__';
+                customInput.value = currentVal;
+                customInput.style.display = 'block';
+            }
+            
+            display.style.display = 'none';
+            input.style.display = 'flex';
         } else {
             // Text or textarea
             input.value = display.textContent.trim();
@@ -1095,6 +1129,9 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
             document.getElementById('weight-slider-container').style.display = 'none';
             document.getElementById('weight-visual-bar').style.display = 'block';
             display.style.display = 'inline';
+        } else if (fieldType === 'combobox') {
+            input.style.display = 'none';
+            display.style.display = 'block';
         } else {
             input.style.display = 'none';
             display.style.display = 'block';
@@ -1124,6 +1161,10 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
                 newValue = input.checked;
             } else if (fieldType === 'range') {
                 newValue = parseFloat(input.value);
+            } else if (fieldType === 'combobox') {
+                const select = input.querySelector('select');
+                const customInput = input.querySelector('input');
+                newValue = (select.value === '__custom__') ? customInput.value.trim() : select.value;
             } else {
                 newValue = input.value.trim();
             }
@@ -1143,6 +1184,10 @@ function setupGenericFieldEdit(fieldId, fieldType, saveCallback) {
                 display.style.display = 'inline';
                 // Update visual indicator position
                 updateWeightIndicator(newValue);
+            } else if (fieldType === 'combobox') {
+                display.textContent = newValue || '';
+                input.style.display = 'none';
+                display.style.display = 'block';
             } else {
                 display.textContent = newValue || '';
                 input.style.display = 'none';
@@ -2003,14 +2048,15 @@ function openModelDetails(model) {
     document.getElementById('model-basemodel-static').textContent = model.baseModel || '';
     const sdVersionElement = document.getElementById('model-sdversion-static');
     if (sdVersionElement) sdVersionElement.textContent = model.json?.['sd version'] || '';
+    populateSdVersionDropdown(model.json?.['sd version'] || '');
     document.getElementById('model-creator-static').textContent = model.json?.web_civitai_data?.['creator'] || model.json?.['creator'] || '';
 
     // Set editable fields - Populate both inputs and displays
 
     // Category
     const categoryField = model.category || '';
-    document.getElementById('model-category').value = categoryField;
     document.getElementById('model-category-display').textContent = categoryField || '';
+    populateCategoryDropdown(categoryField);
 
     // Positive Words
     const positiveTextField = model.json?.['activation text'] || '';
@@ -2039,8 +2085,8 @@ function openModelDetails(model) {
 
     // Subcategory
     const subcategoryField = model.json?.['subcategory'] || '';
-    document.getElementById('model-subcategory').value = subcategoryField;
     document.getElementById('model-subcategory-display').textContent = subcategoryField || '';
+    populateSubcategoryDropdown(subcategoryField);
 
     // Example Prompt
     const examplePromptField = model.json?.['example prompt 1'] || model.json?.['example prompt'] || '';
@@ -2111,13 +2157,13 @@ function openModelDetails(model) {
     setupStaticFieldEdit('creator');
 
     // Initialize generic field edit handlers for all converted fields
-    setupGenericFieldEdit('model-category', 'text', async (val) => {
+    setupGenericFieldEdit('model-category', 'combobox', async (val) => {
         currentModel.category = val;
         currentModel.json['category'] = val;
         await saveModel();
     });
 
-    setupGenericFieldEdit('model-subcategory', 'text', async (val) => {
+    setupGenericFieldEdit('model-subcategory', 'combobox', async (val) => {
         currentModel.json['subcategory'] = val;
         await saveModel();
     });
@@ -3617,7 +3663,7 @@ function handleUseRecommended() {
 // ===== Base Model Dropdown Functions =====
 
 // Get unique base models from all loaded models (same logic as populateModelFilter)
-function getUniqueBaseModels() {
+export function getUniqueBaseModels() {
     const baseModels = new Set();
     models.forEach(model => {
         const baseModel = model.baseModel || 'Unknown';
@@ -3628,6 +3674,33 @@ function getUniqueBaseModels() {
 
     // Convert to array and sort alphabetically
     return Array.from(baseModels).sort((a, b) => a.localeCompare(b));
+}
+
+export function getUniqueSdVersions() {
+    const versions = new Set();
+    models.forEach(model => {
+        const val = model.json?.['sd version'];
+        if (val) versions.add(val);
+    });
+    return Array.from(versions).sort((a, b) => a.localeCompare(b));
+}
+
+export function getUniqueCategories() {
+    const categories = new Set();
+    models.forEach(model => {
+        const val = model.json?.category || model.category;
+        if (val) categories.add(val);
+    });
+    return Array.from(categories).sort((a, b) => a.localeCompare(b));
+}
+
+export function getUniqueSubcategories() {
+    const subcats = new Set();
+    models.forEach(model => {
+        const val = model.json?.subcategory;
+        if (val) subcats.add(val);
+    });
+    return Array.from(subcats).sort((a, b) => a.localeCompare(b));
 }
 
 // Populate the base model dropdown with existing base models
@@ -3649,17 +3722,21 @@ function populateBaseModelDropdown(currentValue = '') {
         option.value = baseModel;
         option.textContent = baseModel;
         // Insert before the Custom option (which is at index 1)
-        select.add(option, select.options.length);
+        select.add(option, select.options.length - 1);
     });
 
     // Set the current value
     if (currentValue) {
-        // Check if the current value exists in the options
-        const existingOption = Array.from(select.options).find(opt => opt.value === currentValue);
-        if (existingOption) {
-            select.value = currentValue;
-        } else if (currentValue !== '') {
-            // Current value is custom - show custom input
+        let found = false;
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === currentValue) {
+                select.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
             select.value = '__custom__';
             const customInput = document.getElementById('model-basemodel-custom');
             if (customInput) {
@@ -3668,6 +3745,55 @@ function populateBaseModelDropdown(currentValue = '') {
             }
         }
     }
+}
+
+function populateSdVersionDropdown(currentValue = '') {
+    const select = document.getElementById('model-sdversion-select');
+    if (!select) return;
+    while (select.options.length > 2) select.remove(2);
+    getUniqueSdVersions().forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        select.add(option, select.options.length - 1);
+    });
+    if (currentValue) {
+        let found = Array.from(select.options).some(opt => opt.value === currentValue);
+        if (found) {
+            select.value = currentValue;
+        } else {
+            select.value = '__custom__';
+            const customInput = document.getElementById('model-sdversion-input');
+            if (customInput) {
+                customInput.value = currentValue;
+                customInput.style.display = 'block';
+            }
+        }
+    }
+}
+
+function populateCategoryDropdown(currentValue = '') {
+    const select = document.getElementById('model-category-select');
+    if (!select) return;
+    while (select.options.length > 2) select.remove(2);
+    getUniqueCategories().forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        select.add(option, select.options.length - 1);
+    });
+}
+
+function populateSubcategoryDropdown(currentValue = '') {
+    const select = document.getElementById('model-subcategory-select');
+    if (!select) return;
+    while (select.options.length > 2) select.remove(2);
+    getUniqueSubcategories().forEach(val => {
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = val;
+        select.add(option, select.options.length - 1);
+    });
 }
 
 // Initialize base model dropdown event handlers
@@ -3783,30 +3909,43 @@ function initSdVersionEdit() {
     const saveBtn = document.getElementById('save-sdversion-btn');
     const cancelBtn = document.getElementById('cancel-sdversion-btn');
     const staticDisplay = document.getElementById('model-sdversion-static');
-    const inputField = document.getElementById('model-sdversion-input');
+    const editContainer = document.getElementById('model-sdversion-edit-container');
+    const select = document.getElementById('model-sdversion-select');
+    const customInput = document.getElementById('model-sdversion-input');
 
-    if (!editBtn || !saveBtn || !cancelBtn || !staticDisplay || !inputField) {
+    if (!editBtn || !saveBtn || !cancelBtn || !staticDisplay || !editContainer || !select || !customInput) {
         return;
     }
+
+    select.addEventListener('change', () => {
+        if (select.value === '__custom__') {
+            customInput.style.display = 'block';
+            customInput.focus();
+        } else {
+            customInput.style.display = 'none';
+            customInput.value = '';
+        }
+    });
 
     editBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        inputField.value = staticDisplay.textContent;
+        populateSdVersionDropdown(staticDisplay.textContent.trim());
+
         staticDisplay.style.display = 'none';
-        inputField.style.display = 'block';
+        editContainer.style.display = 'flex';
         editBtn.style.display = 'none';
         saveBtn.style.display = 'inline-block';
         cancelBtn.style.display = 'inline-block';
-        inputField.focus();
     });
 
     cancelBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        inputField.style.display = 'none';
+        editContainer.style.display = 'none';
+        customInput.style.display = 'none';
         staticDisplay.style.display = 'inline';
         saveBtn.style.display = 'none';
         cancelBtn.style.display = 'none';
@@ -3817,39 +3956,34 @@ function initSdVersionEdit() {
         e.preventDefault();
         e.stopPropagation();
 
-        const newValue = inputField.value.trim();
+        let newValue;
+        if (select.value === '__custom__') {
+            newValue = customInput.value.trim();
+        } else if (select.value === '') {
+            newValue = '';
+        } else {
+            newValue = select.value;
+        }
         
         try {
-            // Update the model json
             if (!currentModel.json) currentModel.json = {};
             currentModel.json['sd version'] = newValue;
 
-            // Save to server by leveraging the '/save-model' endpoint 
-            // the endpoint accepts a generic 'json_update' payload if we don't have a specific field?
-            // Wait, looking at the backend saveModel handler, it accepts specific fields or 'json_update' maybe?
-            // Actually, in the switch statement for editable-fields, it doesn't do that. It just updates currentModel and then sends:
-            // body: JSON.stringify(currentModel)  maybe?
-            // Let me check how other edits are saved inside the editable fields. Wait, earlier I saw saveBtn inside initBaseModelDropdown calls await saveModel()!
-            // No, wait, in my earlier view of initBaseModelDropdown, it called saveModel()! 
-            // Wait, let's look at initBaseModelDropdown's save logic.
-            // I'll just copy what initBaseModelDropdown did exactly!
-
-            // Save to server
             await saveModel();
 
-            // Update static display
             staticDisplay.textContent = newValue;
 
-            // Hide edit container, show static display
-            inputField.style.display = 'none';
+            editContainer.style.display = 'none';
+            customInput.style.display = 'none';
             staticDisplay.style.display = 'inline';
+
             editBtn.style.display = 'inline-block';
             saveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
 
         } catch (error) {
-            console.error('Error saving sd version:', error);
-            showToast('Failed to save sd version. Please try again.', 'error');
+            console.error('Error saving SD Version:', error);
+            showToast('Failed to save SD Version. Please try again.', 'error');
         }
     });
 }

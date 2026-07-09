@@ -2,6 +2,7 @@
 // Handles bulk selection mode and operations (Move, Edit, Rename)
 
 import { showToast } from './toast.js';
+import { getUniqueBaseModels, getUniqueSdVersions, getUniqueCategories, getUniqueSubcategories } from './app.js';
 
 // ========== State ==========
 let bulkModeActive = false;
@@ -295,11 +296,36 @@ export function openBulkEditModal() {
 
     document.getElementById('bulkEditCount').textContent = count;
 
+    // Helper to populate select
+    const populateSelect = (selectId, uniqueValues) => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        while (select.options.length > 2) select.remove(2);
+        uniqueValues.forEach(val => {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = val;
+            select.add(option, select.options.length - 1);
+        });
+        select.value = ''; // Reset to default
+    };
+
+    populateSelect('bulkCategory-select', getUniqueCategories());
+    populateSelect('bulkSubcategory-select', getUniqueSubcategories());
+    populateSelect('bulkBaseModel-select', getUniqueBaseModels());
+    populateSelect('bulkSdVersion-select', getUniqueSdVersions());
+
     // Clear form
-    document.getElementById('bulkCategory').value = '';
-    document.getElementById('bulkSubcategory').value = '';
-    document.getElementById('bulkVersion').value = '';
+    ['bulkCategory', 'bulkSubcategory', 'bulkBaseModel', 'bulkSdVersion'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.value = '';
+            input.style.display = 'none';
+        }
+    });
+
     document.getElementById('bulkHighLow').value = '';
+    document.getElementById('bulkNsfw').value = '';
 
     bulkEditModal.style.display = 'block';
 }
@@ -319,10 +345,10 @@ export async function executeBulkEdit(fields, refreshCallback) {
             // Only update fields that have values
             if (fields.category) jsonData.category = fields.category;
             if (fields.subcategory) jsonData.subcategory = fields.subcategory;
-            if (fields.version) jsonData['model version'] = fields.version;
             if (fields.highLow) jsonData['high low'] = fields.highLow;
             if (fields.baseModel) jsonData['base model'] = fields.baseModel;
             if (fields.sdVersion) jsonData['sd version'] = fields.sdVersion;
+            if (fields.nsfw !== '') jsonData.nsfw = fields.nsfw;
 
             // Save updated JSON
             const response = await fetch('/save-model', {
@@ -638,6 +664,22 @@ export function initBulkOperations(displayModelsCallback, refreshCallback, setti
         bulkCancelBtn.addEventListener('click', () => exitBulkMode(displayModelsCallback));
     }
 
+    // Initialize combo box change listeners
+    ['bulkCategory', 'bulkSubcategory', 'bulkBaseModel', 'bulkSdVersion'].forEach(baseId => {
+        const select = document.getElementById(`${baseId}-select`);
+        const input = document.getElementById(baseId);
+        if (select && input) {
+            select.addEventListener('change', () => {
+                if (select.value === '__custom__') {
+                    input.style.display = 'block';
+                    input.focus();
+                } else {
+                    input.style.display = 'none';
+                }
+            });
+        }
+    });
+
     // Action buttons
     if (bulkMoveBtn) {
         bulkMoveBtn.addEventListener('click', () => openBulkMoveModal(settingsManager));
@@ -666,15 +708,23 @@ export function initBulkOperations(displayModelsCallback, refreshCallback, setti
     });
     document.getElementById('bulkMoveCancel')?.addEventListener('click', closeBulkMoveModal);
 
+    // Helper to get value from combobox
+    const getComboboxValue = (baseId) => {
+        const select = document.getElementById(`${baseId}-select`);
+        const input = document.getElementById(baseId);
+        if (!select || !input) return '';
+        return select.value === '__custom__' ? input.value.trim() : select.value;
+    };
+
     // Edit modal
     document.getElementById('bulkEditConfirm')?.addEventListener('click', () => {
         const fields = {
-            category: document.getElementById('bulkCategory').value.trim(),
-            subcategory: document.getElementById('bulkSubcategory').value.trim(),
-            version: document.getElementById('bulkVersion').value.trim(),
+            category: getComboboxValue('bulkCategory'),
+            subcategory: getComboboxValue('bulkSubcategory'),
             highLow: document.getElementById('bulkHighLow').value,
-            baseModel: document.getElementById('bulkBaseModel')?.value.trim() || '',
-            sdVersion: document.getElementById('bulkSdVersion')?.value.trim() || ''
+            baseModel: getComboboxValue('bulkBaseModel'),
+            sdVersion: getComboboxValue('bulkSdVersion'),
+            nsfw: document.getElementById('bulkNsfw')?.value || ''
         };
         executeBulkEdit(fields, refreshCallback);
     });

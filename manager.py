@@ -14,12 +14,7 @@ import hashlib
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'))
 import civitai_handler
 
-# Import the JSON converter module (has hyphens in name)
-import importlib.util
-spec = importlib.util.spec_from_file_location("json_converter", 
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "zCivitai-2-JSONv4.py"))
-json_converter = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(json_converter)
+# json_converter functionality has been merged into civitai_handler
 
 PORT = 8080
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
@@ -1157,7 +1152,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                 # API call only happens if: use_api is True AND existing_creator is empty
                 api_call_made = use_api and not existing_creator
                 
-                mapped_data = json_converter.parse_civitai_info_file(info_path, use_api, existing_creator)
+                mapped_data = civitai_handler.parse_civitai_info_file(info_path, use_api, existing_creator)
                 
                 # --- Add new fields from info file for the enhanced JSON format ---
                 try:
@@ -1259,7 +1254,7 @@ class LoraManagerHandler(http.server.SimpleHTTPRequestHandler):
                     except Exception as e:
                         print(f"Error reading existing JSON for field preservation: {e}")
                 
-                json_converter.write_json_file(info_path, mapped_data)
+                civitai_handler.write_json_file(info_path, mapped_data)
                 
                 # Invalidate cache
                 _lora_data_cache = None

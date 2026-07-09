@@ -298,7 +298,13 @@
                                     <label>SD VERSION:</label>
                                     <div class="static-editable-content">
                                         <span id="model-sdversion-static" class="static-value"></span>
-                                        <input type="text" id="model-sdversion-input" class="static-edit-input" style="display: none;">
+                                        <div id="model-sdversion-edit-container" style="display: none; flex: 1;">
+                                            <select id="model-sdversion-select" class="static-edit-input" style="width: 100%;">
+                                                <option value="">-- Select SD Version --</option>
+                                                <option value="__custom__">Custom...</option>
+                                            </select>
+                                            <input type="text" id="model-sdversion-input" class="static-edit-input" placeholder="Enter custom SD Version..." style="display: none; margin-top: 4px;">
+                                        </div>
                                         <div class="static-edit-buttons">
                                             <button id="edit-sdversion-btn" class="btn btn-tiny btn-secondary" title="Edit SD Version">
                                                 <i class="fas fa-edit"></i>
@@ -672,7 +678,13 @@
                                             </div>
                                         </div>
                                         <span class="field-display" id="model-category-display"></span>
-                                        <input type="text" id="model-category" class="field-input">
+                                        <div id="model-category" class="field-input" style="display: none; width: 100%; flex-direction: column;">
+                                            <select id="model-category-select" style="margin-bottom: 4px; padding: 4px;">
+                                                <option value="">-- Select Category --</option>
+                                                <option value="__custom__">Custom...</option>
+                                            </select>
+                                            <input type="text" id="model-category-input" placeholder="Enter custom category..." style="display: none; padding: 4px;">
+                                        </div>
                                         <div class="field-helper-buttons" data-field="model-category"
                                             style="display: none;">
                                             <button class="btn btn-small btn-secondary use-folder-btn"
@@ -701,7 +713,13 @@
                                             </div>
                                         </div>
                                         <span class="field-display" id="model-subcategory-display"></span>
-                                        <input type="text" id="model-subcategory" class="field-input">
+                                        <div id="model-subcategory" class="field-input" style="display: none; width: 100%; flex-direction: column;">
+                                            <select id="model-subcategory-select" style="margin-bottom: 4px; padding: 4px;">
+                                                <option value="">-- Select Subcategory --</option>
+                                                <option value="__custom__">Custom...</option>
+                                            </select>
+                                            <input type="text" id="model-subcategory-input" placeholder="Enter custom subcategory..." style="display: none; padding: 4px;">
+                                        </div>
                                         <div class="field-helper-buttons" data-field="model-subcategory"
                                             style="display: none;">
                                             <button class="btn btn-small btn-secondary use-folder-btn"
@@ -1464,33 +1482,59 @@
             <p>Edit <strong><span id="bulkEditCount">0</span></strong> selected models. Leave fields empty to keep
                 existing values.</p>
             <div class="bulk-edit-form">
-                <div class="setting-group">
-                    <label for="bulkCategory">Category:</label>
-                    <input type="text" id="bulkCategory" placeholder="Leave empty to keep existing">
+                <div style="display: flex; gap: 10px;">
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkCategory">Category:</label>
+                        <select id="bulkCategory-select" style="width: 100%;">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="__custom__">Custom...</option>
+                        </select>
+                        <input type="text" id="bulkCategory" placeholder="Enter custom category..." style="display: none; margin-top: 4px;">
+                    </div>
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkSubcategory">Subcategory:</label>
+                        <select id="bulkSubcategory-select" style="width: 100%;">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="__custom__">Custom...</option>
+                        </select>
+                        <input type="text" id="bulkSubcategory" placeholder="Enter custom subcategory..." style="display: none; margin-top: 4px;">
+                    </div>
                 </div>
-                <div class="setting-group">
-                    <label for="bulkSubcategory">Subcategory:</label>
-                    <input type="text" id="bulkSubcategory" placeholder="Leave empty to keep existing">
+                <div style="display: flex; gap: 10px;">
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkBaseModel">Base Model:</label>
+                        <select id="bulkBaseModel-select" style="width: 100%;">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="__custom__">Custom...</option>
+                        </select>
+                        <input type="text" id="bulkBaseModel" placeholder="Enter custom base model..." style="display: none; margin-top: 4px;">
+                    </div>
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkSdVersion">SD Version:</label>
+                        <select id="bulkSdVersion-select" style="width: 100%;">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="__custom__">Custom...</option>
+                        </select>
+                        <input type="text" id="bulkSdVersion" placeholder="Enter custom SD version..." style="display: none; margin-top: 4px;">
+                    </div>
                 </div>
-                <div class="setting-group">
-                    <label for="bulkVersion">Model Version:</label>
-                    <input type="text" id="bulkVersion" placeholder="Leave empty to keep existing">
-                </div>
-                <div class="setting-group">
-                    <label for="bulkBaseModel">Base Model:</label>
-                    <input type="text" id="bulkBaseModel" placeholder="Leave empty to keep existing">
-                </div>
-                <div class="setting-group">
-                    <label for="bulkSdVersion">SD Version:</label>
-                    <input type="text" id="bulkSdVersion" placeholder="Leave empty to keep existing">
-                </div>
-                <div class="setting-group">
-                    <label for="bulkHighLow">High/Low:</label>
-                    <select id="bulkHighLow">
-                        <option value="">-- Keep Existing --</option>
-                        <option value="High">High</option>
-                        <option value="Low">Low</option>
-                    </select>
+                <div style="display: flex; gap: 10px;">
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkHighLow">WAN High / Low:</label>
+                        <select id="bulkHighLow">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="High">High</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div class="setting-group" style="flex: 1;">
+                        <label for="bulkNsfw">NSFW Toggle:</label>
+                        <select id="bulkNsfw">
+                            <option value="">-- Keep Existing --</option>
+                            <option value="true">True</option>
+                            <option value="false">False</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="modal-buttons">

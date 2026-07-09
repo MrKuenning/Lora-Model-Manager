@@ -41,7 +41,7 @@ def map_sd_version(base_model):
     if base_model == 'SD 1.5': return 'sd'
     if base_model in ['SDXL 1.0', 'Pony', 'Illustrious']: return 'xl'
     if base_model in ['Flux.1 D', 'Flux.1 S']: return 'flux'
-    if base_model in ['Flux.2 Klein 9B', 'Flux.2 Klein 9B-Base', 'lux.2 Klein 9B-Base']: return 'klein'
+    if base_model in ['Flux.2 Klein 9B', 'Flux.2 Klein 9B-Base', 'Flux.2 Klein 9B-base']: return 'klein'
     if base_model == 'Qwen': return 'qwen'
     if base_model in ['ZImageTurbo', 'ZImageBase']: return 'zit'
     if base_model in ['Wan Video 2.2 I2V-A14B', 'Wan Video 2.2 T2V-A14B']: return 'wan'
@@ -1069,3 +1069,141 @@ def fix_thumbnail_name(model_path):
         print(f"Error fixing thumbnail name: {e}")
         return ('error', str(e))
 
+# ===== zCivitai-2-JSONv4 Ported Functions =====
+
+def strip_html_tags(text):
+    # Remove HTML tags from text using regular expressions
+    clean = re.compile('<.*?>')
+    # Replace HTML tags with a space to preserve spacing
+    return re.sub(clean, ' ', text)
+
+def get_creator_from_api(model_id, use_api=True):
+    """
+    Fetch creator information from Civitai API using model ID
+    """
+    # If API calls are disabled, return empty string
+    if not use_api:
+        return ''
+        
+    try:
+        # Make API request to get model information
+        api_url = f"https://civitai.com/api/v1/models/{model_id}"
+        response = requests.get(api_url, timeout=10)
+        
+        # Check if request was successful
+        if response.status_code == 200:
+            model_data = response.json()
+            # Extract creator information
+            if 'creator' in model_data and 'username' in model_data['creator']:
+                return model_data['creator']['username']
+        
+        # If we reach here, either the request failed or creator info wasn't found
+        return 'Unknown'
+    except Exception as e:
+        print(f"Error fetching creator information: {e}")
+        return 'Unknown'
+
+def parse_civitai_info_file(file_path, use_api=True, existing_creator=''):
+    civitai_info_data = {}
+    with open(file_path, 'r', encoding='utf-8') as file:
+        civitai_info_data = json.load(file)
+    # Initialize all fields with empty values
+    mapped_data = {
+        'activation text': '',
+        'base model': '',
+        'category': '',
+        'description': '',  # Will keep this empty as per requirement
+        'example prompt 1': '',
+        'high low': '',  # High/Low toggle field
+        'model version': '',  # Model version field
+        'name': '',  # Model name field (populated from civitai name)
+        'negative text': '',
+        'notes': '',
+        'nsfw': '',
+        'preferred weight': 0,
+        'sd version': '',
+        'subcategory': '',
+        'tags': '',
+        'web_civitai_data': {
+            'civitai name': '',
+            'civitai text': '',
+            'creator': '',
+            'url': ''
+        }
+    }
+    
+    # Extract data from civitai.info
+    if 'trainedWords' in civitai_info_data:
+        trained_words = civitai_info_data['trainedWords']
+        if isinstance(trained_words, list) and trained_words:
+            mapped_data['activation text'] = trained_words[0]
+            mapped_data['web_civitai_data']['civitai text'] = ', '.join(trained_words)
+
+    if 'baseModel' in civitai_info_data:
+        mapped_data['base model'] = civitai_info_data['baseModel']
+        mapped_data['sd version'] = map_sd_version(civitai_info_data['baseModel'])
+
+    if 'model' in civitai_info_data:
+        if 'name' in civitai_info_data['model']:
+            mapped_data['web_civitai_data']['civitai name'] = civitai_info_data['model']['name']
+            # Also populate the 'name' field with civitai name
+            mapped_data['name'] = civitai_info_data['model']['name']
+        if 'nsfw' in civitai_info_data['model']:
+            mapped_data['nsfw'] = str(civitai_info_data['model']['nsfw']).lower()
+
+    # Process description for notes field but don't map to description field
+    description = ''
+    if 'description' in civitai_info_data:
+        description = civitai_info_data['description']
+        if description:
+            description = unescape(description)
+            description = strip_html_tags(description)
+            # Normalize spaces by stripping leading/trailing spaces and reducing multiple spaces to a single space
+            description = ' '.join(description.split())
+            # No longer mapping to description field, but keeping for notes
+
+    # Extract example prompt from images -> meta -> prompt
+    if 'images' in civitai_info_data:
+        images = civitai_info_data['images']
+        if isinstance(images, list) and images:
+            first_image = images[0]
+            # Check if 'meta' is a dictionary before accessing 'prompt'
+            if 'meta' in first_image and isinstance(first_image['meta'], dict) and 'prompt' in first_image['meta']:
+                mapped_data['example prompt 1'] = first_image['meta']['prompt']
+            # Check if 'meta' has 'negativePrompt'
+            if 'meta' in first_image and isinstance(first_image['meta'], dict) and 'negativePrompt' in first_image['meta']:
+                mapped_data['negative text'] = first_image['meta']['negativePrompt']
+
+    # Build URL and notes
+    if 'modelId' in civitai_info_data and 'id' in civitai_info_data:
+        model_id = civitai_info_data['modelId']
+        version_id = civitai_info_data['id']
+        url = f"https://civitai.com/models/{model_id}?modelVersionId={version_id}"
+        mapped_data['web_civitai_data']['url'] = url
+
+        # Use existing creator if provided, otherwise get from API if enabled
+        if existing_creator:
+            mapped_data['web_civitai_data']['creator'] = existing_creator
+        elif use_api:
+            creator = get_creator_from_api(model_id, use_api)
+            if creator:
+                mapped_data['web_civitai_data']['creator'] = creator
+
+        # Construct notes field
+        notes = [f"URL: {url}"]
+        if 'baseModel' in civitai_info_data:
+            notes.append(f"Base Model: {civitai_info_data['baseModel']}")
+        if 'trainedWords' in civitai_info_data and civitai_info_data['trainedWords']:
+            notes.append(f"Activation Words: {', '.join(civitai_info_data['trainedWords'])}")
+        if description:
+            notes.append(f"Description: {description}")
+        mapped_data['notes'] = '\n'.join(notes)
+
+    return mapped_data
+
+def write_json_file(file_path, data):
+    json_file_path = file_path[:-len('.civitai.info')] + '.json'  # Create corresponding JSON file path
+    # Sort the data alphabetically by keys
+    sorted_data = {k: data[k] for k in sorted(data.keys())}
+    with open(json_file_path, 'w') as file:
+        json.dump(sorted_data, file, indent=4)
