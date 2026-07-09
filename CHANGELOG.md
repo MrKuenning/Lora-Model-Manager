@@ -4,6 +4,11 @@
 ### 07/09/2026
 
 **Added**
+- **Model Card Quick View in Bulk Mode**
+  - Added an info icon (`fa-info-circle`) next to the selection checkboxes on model cards when bulk mode is active.
+  - Allows opening the Model Card popup to view/edit details for a model directly without affecting the bulk selection state.
+- **Detailed Settings Descriptions**
+  - Added verbose, user-friendly descriptive labels below controls in General settings, Table Columns, Grid Card customization, and Filename Formatting tabs.
 - **Combo Boxes for Metadata Fields**
   - Converted `Base Model`, `SD Version`, `Category`, and `Subcategory` into combo boxes in both the Model Card details popup and the Bulk Edit Modal.
   - Dropdowns dynamically fetch and display all unique values currently in use in the database.
@@ -15,6 +20,9 @@
   - Removed the deprecated "Model Version" field from bulk editing.
 
 **Changed**
+- **Settings Layout Spacing and Order**
+  - Fixed a grid layout issue in General settings that pushed the Theme option to the top.
+  - Restructured setting group margins on Grid Card settings to resolve squished UI text issues.
 - **Consolidated Scan Script**
   - Ported the `.civitai.info` parsing and JSON creation functions from `zCivitai-2-JSONv4.py` directly into `civitai_handler.py`.
   - Refactored `manager.py` to call `civitai_handler.py` directly.
@@ -23,6 +31,10 @@
 **Fixed**
 - **Bulk Edit NSFW Data Type**
   - Fixed an issue where the bulk edit NSFW toggle saved the value as a boolean `true`/`false` instead of the expected string `"true"`/`"false"`.
+
+**Removed**
+- **Redundant NSFW Settings**
+  - Removed the duplicate "Hide NSFW Content" checkbox option from General settings, as it is already handled by SafeMode.
 
 ---
 

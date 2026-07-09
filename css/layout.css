@@ -627,6 +627,31 @@ main {
     font-size: 14px;
 }
 
+.bulk-info-overlay {
+    position: absolute;
+    top: 8px;
+    left: 36px;
+    z-index: 10;
+    width: 24px;
+    height: 24px;
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+.bulk-info-overlay:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    transform: scale(1.1);
+}
+
 .model-card.bulk-mode.selected {
     outline: 3px solid var(--color-btn-success);
     outline-offset: 2px;

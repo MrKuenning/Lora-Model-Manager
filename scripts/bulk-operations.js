@@ -118,7 +118,7 @@ function updateCardVisual(modelId) {
 }
 
 // ========== Checkbox Creation ==========
-export function addBulkCheckbox(modelCard, modelId) {
+export function addBulkCheckbox(modelCard, modelId, onInfoClick) {
     // Create checkbox overlay
     const checkbox = document.createElement('div');
     checkbox.className = 'bulk-checkbox-overlay';
@@ -129,11 +129,25 @@ export function addBulkCheckbox(modelCard, modelId) {
 
     checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
+        e.preventDefault();
         toggleModelSelection(modelId);
     });
 
     modelCard.classList.add('bulk-mode');
     modelCard.insertBefore(checkbox, modelCard.firstChild);
+    
+    if (onInfoClick) {
+        const infoIcon = document.createElement('div');
+        infoIcon.className = 'bulk-info-overlay';
+        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+        infoIcon.title = "View Model Details";
+        infoIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onInfoClick();
+        });
+        modelCard.insertBefore(infoIcon, modelCard.firstChild);
+    }
 
     // Override card click to toggle selection instead of opening modal
     modelCard.dataset.bulkClick = 'true';

@@ -196,7 +196,7 @@ export function displayGroupedGridView(models, modelsContainer, openModelDetails
 
             // In bulk mode, add checkbox and make entire card toggle selection
             if (bulkMode) {
-                addBulkCheckbox(modelCard, model.id);
+                addBulkCheckbox(modelCard, model.id, () => openModelDetails(model));
                 // Make entire card clickable to toggle selection
                 modelCard.addEventListener('click', (e) => {
                     e.preventDefault();

@@ -299,20 +299,26 @@
                                     <div class="static-editable-content">
                                         <span id="model-sdversion-static" class="static-value"></span>
                                         <div id="model-sdversion-edit-container" style="display: none; flex: 1;">
-                                            <select id="model-sdversion-select" class="static-edit-input" style="width: 100%;">
+                                            <select id="model-sdversion-select" class="static-edit-input"
+                                                style="width: 100%;">
                                                 <option value="">-- Select SD Version --</option>
                                                 <option value="__custom__">Custom...</option>
                                             </select>
-                                            <input type="text" id="model-sdversion-input" class="static-edit-input" placeholder="Enter custom SD Version..." style="display: none; margin-top: 4px;">
+                                            <input type="text" id="model-sdversion-input" class="static-edit-input"
+                                                placeholder="Enter custom SD Version..."
+                                                style="display: none; margin-top: 4px;">
                                         </div>
                                         <div class="static-edit-buttons">
-                                            <button id="edit-sdversion-btn" class="btn btn-tiny btn-secondary" title="Edit SD Version">
+                                            <button id="edit-sdversion-btn" class="btn btn-tiny btn-secondary"
+                                                title="Edit SD Version">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button id="save-sdversion-btn" class="btn btn-tiny btn-success" title="Save SD Version" style="display: none;">
+                                            <button id="save-sdversion-btn" class="btn btn-tiny btn-success"
+                                                title="Save SD Version" style="display: none;">
                                                 <i class="fas fa-check"></i>
                                             </button>
-                                            <button id="cancel-sdversion-btn" class="btn btn-tiny btn-secondary" title="Cancel" style="display: none;">
+                                            <button id="cancel-sdversion-btn" class="btn btn-tiny btn-secondary"
+                                                title="Cancel" style="display: none;">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
@@ -678,12 +684,16 @@
                                             </div>
                                         </div>
                                         <span class="field-display" id="model-category-display"></span>
-                                        <div id="model-category" class="field-input" style="display: none; width: 100%; flex-direction: column;">
-                                            <select id="model-category-select" style="margin-bottom: 4px; padding: 4px;">
+                                        <div id="model-category" class="field-input"
+                                            style="display: none; width: 100%; flex-direction: column;">
+                                            <select id="model-category-select"
+                                                style="margin-bottom: 4px; padding: 4px;">
                                                 <option value="">-- Select Category --</option>
                                                 <option value="__custom__">Custom...</option>
                                             </select>
-                                            <input type="text" id="model-category-input" placeholder="Enter custom category..." style="display: none; padding: 4px;">
+                                            <input type="text" id="model-category-input"
+                                                placeholder="Enter custom category..."
+                                                style="display: none; padding: 4px;">
                                         </div>
                                         <div class="field-helper-buttons" data-field="model-category"
                                             style="display: none;">
@@ -713,12 +723,16 @@
                                             </div>
                                         </div>
                                         <span class="field-display" id="model-subcategory-display"></span>
-                                        <div id="model-subcategory" class="field-input" style="display: none; width: 100%; flex-direction: column;">
-                                            <select id="model-subcategory-select" style="margin-bottom: 4px; padding: 4px;">
+                                        <div id="model-subcategory" class="field-input"
+                                            style="display: none; width: 100%; flex-direction: column;">
+                                            <select id="model-subcategory-select"
+                                                style="margin-bottom: 4px; padding: 4px;">
                                                 <option value="">-- Select Subcategory --</option>
                                                 <option value="__custom__">Custom...</option>
                                             </select>
-                                            <input type="text" id="model-subcategory-input" placeholder="Enter custom subcategory..." style="display: none; padding: 4px;">
+                                            <input type="text" id="model-subcategory-input"
+                                                placeholder="Enter custom subcategory..."
+                                                style="display: none; padding: 4px;">
                                         </div>
                                         <div class="field-helper-buttons" data-field="model-subcategory"
                                             style="display: none;">
@@ -1034,8 +1048,13 @@
             </div>
 
             <div id="settings-general" class="tab-content active">
+                <p class="tab-description" style="color: var(--color-text-secondary); margin-bottom: 15px;">Configure fundamental application
+                    behavior including storage locations, layout defaults, and theme preferences.</p>
                 <div class="setting-group directory-setting">
                     <label for="modelsDirectoryInput">Lora Models Directory:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">The absolute
+                        path to the root folder containing your Lora models. The application will scan this directory
+                        recursively.</small>
                     <div class="directory-input-container">
                         <input type="text" id="modelsDirectoryInput" placeholder="Enter path or use Browse" />
                         <button id="browse-loras-directory" class="btn btn-small btn-secondary">Browse</button>
@@ -1043,6 +1062,8 @@
                 </div>
                 <div class="setting-group directory-setting">
                     <label for="checkpointsDirectoryInput">Checkpoints Directory:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">The absolute
+                        path to the root folder containing your base Checkpoint models.</small>
                     <div class="directory-input-container">
                         <input type="text" id="checkpointsDirectoryInput" placeholder="Enter path or use Browse" />
                         <button id="browse-checkpoints-directory" class="btn btn-small btn-secondary">Browse</button>
@@ -1050,6 +1071,8 @@
                 </div>
                 <div class="setting-group">
                     <label>Theme:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Choose
+                        between a light or dark visual aesthetic for the application interface.</small>
                     <div class="radio-group">
                         <label><input type="radio" name="theme" id="theme-dark" value="dark"> Dark</label>
                         <label><input type="radio" name="theme" id="theme-light" value="light"> Light</label>
@@ -1057,6 +1080,9 @@
                 </div>
                 <div class="setting-group">
                     <label>Default View:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Set the
+                        preferred layout mode (Grid or Table) to load automatically upon launching the
+                        application.</small>
                     <div class="radio-group">
                         <label><input type="radio" name="defaultView" id="default-view-grid" value="grid">
                             Grid</label>
@@ -1066,6 +1092,8 @@
                 </div>
                 <div class="setting-group">
                     <label>Default Sort:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Determine how
+                        models should be ordered by default in both grid and table views.</small>
                     <select id="default-sort-select">
                         <option value="name-asc">Name (A-Z)</option>
                         <option value="name-desc">Name (Z-A)</option>
@@ -1115,17 +1143,13 @@
                         <option value="column:High/Low:desc">High/Low (Z-A)</option>
                     </select>
                 </div>
-                <div class="setting-group">
-                    <label>View Options:</label>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" id="hideNSFW"> Hide NSFW Content</label>
-                    </div>
-                </div>
+
 
             </div>
 
             <!-- Filename Formatting Section -->
             <div id="settings-filename" class="tab-content">
+                <p class="tab-description" style="color: var(--color-text-secondary); margin-bottom: 15px;">Define the default recommended filename structure when renaming models, configurable per Model Type (Base Model).</p>
                 <div class="setting-group filename-formats-group">
                     <div class="group-header"
                         style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
@@ -1137,7 +1161,7 @@
                     </div>
                     <p style="color: #f59e0b; font-size: 0.8rem; margin: 0 0 10px 0;">
                         <i class="fas fa-exclamation-triangle"></i>
-                        * {highlow} is a required field. Models missing this value will show a warning during
+                        * {highlow} is a required field. If you include it models will require it to be populated.
                         rename.
                     </p>
                     <div class="filename-format-list" id="filename-format-list"
@@ -1158,10 +1182,14 @@
                     <div class="group-header"
                         style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                         <label>Model Type Roots:</label>
-                        <small style="color: var(--color-text-secondary);">Map Model Types to root folders to filter Move UI</small>
+                        <small style="color: var(--color-text-secondary);">Map Model Types to root folders to filter
+                            Move UI</small>
                     </div>
                     <p style="color: var(--color-text-secondary); font-size: 0.8rem; margin: 0 0 10px 0;">
-                        When moving models, if the model has a matching Model Type (Base Model), the folder dropdown will be filtered to only show the root folder and its subdirectories. You should use a <strong>relative path</strong> (e.g., <code>Comfy/QWEN</code>) rather than a full system path. You can select existing folders from the dropdown.
+                        When moving models, if the model has a matching Model Type (Base Model), the folder dropdown
+                        will be filtered to only show the root folder and its subdirectories. You should use a
+                        <strong>relative path</strong> (e.g., <code>Comfy/QWEN</code>) rather than a full system path.
+                        You can select existing folders from the dropdown.
                     </p>
                     <div class="modeltype-root-list" id="modeltype-root-list"
                         style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
@@ -1182,6 +1210,9 @@
 
                 <div class="setting-group">
                     <label for="gridcard-imageMode">Image Display:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Choose
+                        whether to show a static single image or an interactive carousel when multiple previews
+                        exist.</small>
                     <select id="gridcard-imageMode">
                         <option value="carousel">Carousel (with arrows)</option>
                         <option value="single">Single Image</option>
@@ -1190,6 +1221,8 @@
 
                 <div class="setting-group">
                     <label for="gridcard-title">Title:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Select which
+                        metadata field should be used as the primary title on model cards.</small>
                     <select id="gridcard-title">
                         <option value="filename">File Name</option>
                         <option value="modelName">Model Name</option>
@@ -1199,6 +1232,8 @@
 
                 <div class="setting-group">
                     <label>Subtitles:</label>
+                    <small style="color: var(--color-text-secondary); display: block; margin-bottom: 5px;">Configure up
+                        to three additional metadata fields to display underneath the title.</small>
                     <div class="subtitle-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 120px;">
                             <label for="gridcard-subtitle1"
@@ -1259,6 +1294,8 @@
             </div>
 
             <div id="settings-columns" class="tab-content">
+                <p class="tab-description" style="color: var(--color-text-secondary); margin-bottom: 15px;">Customize which columns are visible
+                    in the table view and change their display order.</p>
                 <div class="setting-group">
                     <label>Table Columns:</label>
                     <div class="columns-container">
@@ -1489,7 +1526,8 @@
                             <option value="">-- Keep Existing --</option>
                             <option value="__custom__">Custom...</option>
                         </select>
-                        <input type="text" id="bulkCategory" placeholder="Enter custom category..." style="display: none; margin-top: 4px;">
+                        <input type="text" id="bulkCategory" placeholder="Enter custom category..."
+                            style="display: none; margin-top: 4px;">
                     </div>
                     <div class="setting-group" style="flex: 1;">
                         <label for="bulkSubcategory">Subcategory:</label>
@@ -1497,7 +1535,8 @@
                             <option value="">-- Keep Existing --</option>
                             <option value="__custom__">Custom...</option>
                         </select>
-                        <input type="text" id="bulkSubcategory" placeholder="Enter custom subcategory..." style="display: none; margin-top: 4px;">
+                        <input type="text" id="bulkSubcategory" placeholder="Enter custom subcategory..."
+                            style="display: none; margin-top: 4px;">
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
@@ -1507,7 +1546,8 @@
                             <option value="">-- Keep Existing --</option>
                             <option value="__custom__">Custom...</option>
                         </select>
-                        <input type="text" id="bulkBaseModel" placeholder="Enter custom base model..." style="display: none; margin-top: 4px;">
+                        <input type="text" id="bulkBaseModel" placeholder="Enter custom base model..."
+                            style="display: none; margin-top: 4px;">
                     </div>
                     <div class="setting-group" style="flex: 1;">
                         <label for="bulkSdVersion">SD Version:</label>
@@ -1515,7 +1555,8 @@
                             <option value="">-- Keep Existing --</option>
                             <option value="__custom__">Custom...</option>
                         </select>
-                        <input type="text" id="bulkSdVersion" placeholder="Enter custom SD version..." style="display: none; margin-top: 4px;">
+                        <input type="text" id="bulkSdVersion" placeholder="Enter custom SD version..."
+                            style="display: none; margin-top: 4px;">
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
